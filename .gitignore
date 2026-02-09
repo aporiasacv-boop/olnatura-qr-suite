@@ -21,3 +21,12 @@ OlnaturaQR/.idea/
 
 # --- Logs ---
 *.log
+
+# curl cookie jars / local
+cookies.txt
+**/cookies.txt
+
+# IDEs
+.idea/
+**/.idea/
+*.iml
