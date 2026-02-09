@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: olnatura-postgres
+    environment:
+      POSTGRES_DB: olnatura_qr
+      POSTGRES_USER: olnatura
+      POSTGRES_PASSWORD: olnatura123
+    ports:
+      - "5432:5432"
+    volumes:
+      - olnatura_pgdata:/var/lib/postgresql/data
+
+volumes:
+  olnatura_pgdata:

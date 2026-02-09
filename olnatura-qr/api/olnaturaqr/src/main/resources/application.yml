@@ -1,0 +1,49 @@
+server:
+  port: 3001
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/olnatura_qr
+    username: olnatura
+    password: olnatura123
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  cors:
+    allowed-origins: "http://localhost:5173,http://localhost:3000,http://192.168.100.8:5173,http://192.168.100.8:3000"
+
+  auth:
+    cookie:
+      name: "qr_session"
+      max-age-seconds: 86400
+      # (dev). prod lo sobreescribe.
+      secure: false
+      same-site: "Lax"
+
+jwt:
+  # Azure = env var JWT_SECRET
+  secret: ${JWT_SECRET:dev-secret-change-me-please-dev-secret-change-me}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+# app:
+# cors:
+#   allowed-origins: "https://tu-frontend.azurewebsites.net"
+# auth:
+#   cookie:
+#     secure: true
+#     same-site: "None"

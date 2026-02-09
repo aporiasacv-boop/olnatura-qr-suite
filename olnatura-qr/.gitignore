@@ -1,0 +1,27 @@
+@"
+# General
+.DS_Store
+Thumbs.db
+
+# Node (por si luego hay web/admin)
+node_modules/
+.next/
+dist/
+
+# Java/Gradle
+.gradle/
+build/
+out/
+*.log
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+.local/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Env
+.env
+"@ | Out-File -Encoding utf8 .gitignore

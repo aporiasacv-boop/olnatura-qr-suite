@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6",
+    "@types/uuid": "^10.0.0"
+  }
+}

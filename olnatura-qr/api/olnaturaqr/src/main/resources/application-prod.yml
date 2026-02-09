@@ -1,0 +1,15 @@
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-exception: false
+    include-binding-errors: never
+
+#Azure Application Insights configuration
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:}
+  auth:
+    cookie:
+      secure: true
+      same-site: "None"
