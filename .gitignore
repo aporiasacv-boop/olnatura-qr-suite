@@ -1,0 +1,23 @@
+# --- Global ---
+.DS_Store
+Thumbs.db
+
+# --- Backend (Spring Boot / Gradle) ---
+olnatura-qr/api/**/build/
+olnatura-qr/api/**/.gradle/
+olnatura-qr/api/**/out/
+
+# --- Frontend ---
+olnatura-qr/frontend/node_modules/
+olnatura-qr/frontend/dist/
+
+# --- Android ---
+OlnaturaQR/.gradle/
+OlnaturaQR/build/
+OlnaturaQR/**/build/
+OlnaturaQR/local.properties
+OlnaturaQR/.idea/
+*.iml
+
+# --- Logs ---
+*.log
