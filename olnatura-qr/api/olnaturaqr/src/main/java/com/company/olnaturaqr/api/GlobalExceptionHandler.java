@@ -2,6 +2,7 @@ package com.company.olnaturaqr.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,7 +22,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public void handleResponseStatus(ResponseStatusException ex, HttpServletResponse response) throws IOException {
         int status = ex.getStatusCode().value();
-        String message = ex.getReason() != null ? ex.getReason() : ex.getStatus().getReasonPhrase();
+
+        HttpStatus httpStatus = HttpStatus.resolve(status);
+        String reasonPhrase = (httpStatus != null) ? httpStatus.getReasonPhrase() : "Error";
+
+        String message = (ex.getReason() != null && !ex.getReason().isBlank())
+                ? ex.getReason()
+                : reasonPhrase;
+
         String code = statusToCode(status);
         writeError(response, status, message, code);
     }
