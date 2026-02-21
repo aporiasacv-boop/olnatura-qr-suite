@@ -1,62 +1,75 @@
 package com.olnatura.qr.ui.screen.report
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.olnatura.qr.ui.theme.OlnaturaColors
+import com.olnatura.qr.ui.components.OlnTopBar
+import com.olnatura.qr.ui.components.PillButton
+import com.olnatura.qr.ui.theme.OlnCream
+import com.olnatura.qr.ui.theme.OlnGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportProblemScreen(vm: ReportProblemViewModel, lote: String, onBack: () -> Unit) {
-    val s by vm.state.collectAsState()
-    val ctx = LocalContext.current
-
+fun ReportProblemScreen(
+    vm: ReportProblemViewModel,
+    lote: String,
+    onDone: () -> Unit
+) {
     val motivos = listOf(
-        "Etiqueta ilegible",
-        "Datos no coinciden",
-        "Producto no encontrado",
+        "QR ilegible",
+        "Producto no coincide",
+        "Datos incompletos",
+        "Producto vencido",
         "Otro"
     )
+
     var expanded by remember { mutableStateOf(false) }
+    var motivo by remember { mutableStateOf<String?>(null) }
+    var comentario by remember { mutableStateOf("") }
+    val canSend = motivo != null
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Reportar problema") },
-                navigationIcon = {
-                    TextButton(onClick = onBack) { Text("←", color = MaterialTheme.colorScheme.onPrimary) }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = OlnaturaColors.Green,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
+        topBar = { OlnTopBar("Reportar problema", onBack = onDone) },
+        containerColor = OlnCream
     ) { padding ->
         Column(
-            Modifier.padding(padding).padding(18.dp).fillMaxSize(),
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text("¿Cuál es el problema?", style = MaterialTheme.typography.titleLarge)
 
-            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
                 OutlinedTextField(
-                    value = if (s.motivo.isBlank()) "Selecciona un motivo" else s.motivo,
+                    value = motivo ?: "",
                     onValueChange = {},
                     readOnly = true,
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp)
+                    label = { Text("Selecciona un motivo") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
                 )
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    motivos.forEach { m ->
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    motivos.forEach { item ->
                         DropdownMenuItem(
-                            text = { Text(m) },
-                            onClick = { vm.setMotivo(m); expanded = false }
+                            text = { Text(item) },
+                            onClick = {
+                                motivo = item
+                                expanded = false
+                            }
                         )
                     }
                 }
@@ -65,24 +78,26 @@ fun ReportProblemScreen(vm: ReportProblemViewModel, lote: String, onBack: () -> 
             Text("Comentarios", style = MaterialTheme.typography.titleMedium)
 
             OutlinedTextField(
-                value = s.comentario,
-                onValueChange = vm::setComentario,
+                value = comentario,
+                onValueChange = { comentario = it },
                 placeholder = { Text("Añade un comentario adicional.") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 4,
-                shape = RoundedCornerShape(18.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(170.dp),
+                shape = RoundedCornerShape(16.dp)
             )
 
-            Button(
+            Spacer(Modifier.weight(1f))
+
+            PillButton(
+                text = "Enviar",
+                enabled = canSend,
                 onClick = {
-                    Toast.makeText(ctx, "Enviado", Toast.LENGTH_SHORT).show()
-                    onBack()
+                    // Aquí luego llamas vm.submit(lote, motivo, comentario)
+                    onDone()
                 },
-                enabled = s.motivo.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = OlnaturaColors.Green),
-                shape = RoundedCornerShape(28.dp)
-            ) { Text("Enviar", style = MaterialTheme.typography.titleMedium) }
+                containerColor = OlnGreen
+            )
         }
     }
 }
