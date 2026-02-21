@@ -74,12 +74,25 @@ class ResultViewModel(
             qrRepo.getQr(lote)
         } catch (e: Exception) {
             val http = e as? HttpException
-            if (http?.code() == 404) {
-                _state.update { it.copy(loading = false, notFound = true) }
-                return@launch
+            when (http?.code()) {
+                401, 403 -> {
+                    _state.update { it.copy(loading = false, gate = GateState.Unauthorized) }
+                    return@launch
+                }
+                404 -> {
+                    _state.update { it.copy(loading = false, notFound = true) }
+                    return@launch
+                }
+                else -> {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            error = (e.message ?: "No se pudo consultar el lote").take(120)
+                        )
+                    }
+                    return@launch
+                }
             }
-            _state.update { it.copy(loading = false, error = "No se pudo consultar el lote") }
-            return@launch
         }
 
         _state.update { it.copy(qr = qr) }

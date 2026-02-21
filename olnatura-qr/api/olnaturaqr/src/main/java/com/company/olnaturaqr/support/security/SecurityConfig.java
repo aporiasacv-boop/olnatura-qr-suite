@@ -58,7 +58,7 @@ public class SecurityConfig {
             .requestMatchers("/actuator/**").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-         // Landing pública del QR (sin login)
+         // Landing pública del QR (sin login) - HTML para cámara genérica
             .requestMatchers(HttpMethod.GET, "/qr/**").permitAll()
 
          // Auth
@@ -67,13 +67,19 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/v1/auth/request-access").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
 
-        // QR / Scan
+        // QR / Scan - requiere cookie de sesión
             .requestMatchers(HttpMethod.GET, "/api/v1/qr/**").authenticated()
             .requestMatchers(HttpMethod.POST, "/api/v1/scan/**").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/v1/scan/**").authenticated()
 
             .anyRequest().authenticated()
             )
+
+            .exceptionHandling(ex -> {
+                var entryPoint = new JsonErrorEntryPoint();
+                ex.authenticationEntryPoint(entryPoint);
+                ex.accessDeniedHandler(entryPoint);
+            })
 
             .addFilterBefore(
                 new JwtCookieAuthFilter(jwtTokenProvider, userRepository, cookieProps),

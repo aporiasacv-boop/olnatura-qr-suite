@@ -14,9 +14,15 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        // API base URL: cambia para dev/prod (ej. http://10.0.2.2:3001/ para emulador)
+        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://10.0.2.2:3001/"}\"")
     }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"

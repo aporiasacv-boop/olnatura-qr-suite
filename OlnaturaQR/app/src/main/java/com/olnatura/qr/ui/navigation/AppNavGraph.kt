@@ -50,13 +50,16 @@ fun AppNavGraph(
 
         composable(Route.Result.path) { backStack ->
             val lote = backStack.arguments?.getString("lote").orEmpty()
-            val vm = remember(lote) { resultVmFactory() } // evita recreación
+            val vm = remember(lote) { resultVmFactory() }
 
             ResultScreen(
                 vm = vm,
                 lote = lote,
                 onReport = { nav.navigate(Route.Report.create(it)) },
-                onShare = onShare
+                onShare = onShare,
+                onGoToLogin = {
+                    nav.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } }
+                }
             )
         }
 

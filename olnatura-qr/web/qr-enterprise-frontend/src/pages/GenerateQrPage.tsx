@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import * as QRCode from "qrcode";
 import { Button, Card, Input, Text, makeStyles, shorthands } from "@fluentui/react-components";
+import { generateQrWithLogo } from "../utils/qrWithLogo";
 
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "14px", maxWidth: "560px" },
@@ -43,23 +43,21 @@ export default function GenerateQrPage() {
     }
 
     try {
-      // Contenido del QR (simple y durable)
-      // Si luego quieres, puedes cambiar a una URL pública tipo: https://tu-dominio/qr/<lote>
+      // Contenido del QR: lote puro (también acepta URL si se implementa opción)
       const payload = v;
 
-      const dataUrl = await QRCode.toDataURL(payload, {
-        errorCorrectionLevel: "M",
-        margin: 2,
-        width: 800, // se ve nítido al descargar
-        color: {
-          dark: "#0B0B0B",
-          light: "#FFFFFF",
-        },
+      const dataUrl = await generateQrWithLogo(payload, {
+        errorCorrectionLevel: "H",
+        margin: 4,
+        width: 800,
+        logoUrl: "/logo-olnatura.png",
+        logoSizeRatio: 0.22,
       });
 
       setPngDataUrl(dataUrl);
-    } catch (e: any) {
-      setError(e?.message ?? "No se pudo generar el QR.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "No se pudo generar el QR.";
+      setError(msg);
     } finally {
       setBusy(false);
     }
@@ -77,16 +75,22 @@ export default function GenerateQrPage() {
 
   return (
     <div className={s.wrap}>
-      <Text size={600} weight="semibold">Generar QR (PNG)</Text>
+      <Text size={600} weight="semibold">
+        Generar QR (PNG)
+      </Text>
       <Text size={300} style={{ opacity: 0.75 }}>
-        Solo ADMIN/ALMACÉN. El QR contiene el LOTE.
+        Solo ADMIN/ALMACÉN. El QR contiene el LOTE. Logo centrado, nivel H para buena escaneabilidad.
       </Text>
 
       <Card>
         <div style={{ padding: 16, display: "grid", gap: 12 }}>
           <div className={s.row}>
             <Text>Lote</Text>
-            <Input value={lote} onChange={(_, d) => setLote(d.value)} placeholder="Ej: LOTE-TEST-001" />
+            <Input
+              value={lote}
+              onChange={(_, d) => setLote(d.value)}
+              placeholder="Ej: LOTE-TEST-001"
+            />
           </div>
 
           <div className={s.actions}>

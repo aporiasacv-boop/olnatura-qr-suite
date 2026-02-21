@@ -1,117 +1,79 @@
 package com.olnatura.qr.ui.screen.result
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.olnatura.qr.ui.components.OlnaturaCard
-import com.olnatura.qr.ui.theme.OlnaturaColors
+import com.olnatura.qr.ui.components.LabelValueRow
+import com.olnatura.qr.ui.components.OlnTopBar
+import com.olnatura.qr.ui.components.PillButton
+import com.olnatura.qr.ui.components.StatusBanner
+import com.olnatura.qr.ui.components.statusColors
+import com.olnatura.qr.ui.theme.OlnCard
+import com.olnatura.qr.ui.theme.OlnCream
+import com.olnatura.qr.ui.theme.OlnGreen
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun ResultScreen(
     vm: ResultViewModel,
     lote: String,
     onReport: (String) -> Unit,
-    onShare: (String, String) -> Unit
+    onShare: (String, String) -> Unit,
+    onGoToLogin: () -> Unit
 ) {
-    val s by vm.state.collectAsState()
+    val state by vm.state.collectAsState()
 
-    LaunchedEffect(lote) { vm.load(lote) }
+    LaunchedEffect(lote) {
+        vm.load(lote)
+    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Materia prima verificada") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = OlnaturaColors.Green,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
+        topBar = { OlnTopBar(title = "Materia prima verificada", onBack = null) },
+        containerColor = OlnCream
     ) { padding ->
-        Surface(Modifier.fillMaxSize()) {
+        Surface(
+            color = OlnCream,
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
             Column(
-                Modifier.padding(padding).padding(18.dp).fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                modifier = Modifier
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                if (s.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-
-                // GATE: NO logeado => solo mensaje, sin datos, sin compartir
-                if (s.gate is GateState.Unauthorized) {
-                    OlnaturaCard {
-                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text("Acceso restringido", style = MaterialTheme.typography.titleLarge)
-                            Text(
-                                "Espera autorización para ver la información. Un administrador debe darte de alta.",
-                                style = MaterialTheme.typography.bodyLarge
+                when (state.gate) {
+                    is GateState.Checking -> {
+                        if (state.loading) {
+                            Text("Cargando…")
+                        }
+                    }
+                    is GateState.Unauthorized -> {
+                        UnauthorizedContent(onGoToLogin = onGoToLogin)
+                    }
+                    is GateState.Authorized -> {
+                        when {
+                            state.notFound -> NotFoundContent(lote = lote)
+                            state.error != null -> ErrorContent(
+                                message = state.error!!,
+                                onRetry = { vm.load(lote) }
+                            )
+                            state.qr != null -> SuccessContent(
+                                lote = lote,
+                                qr = state.qr!!,
+                                todayCount = state.todayCount,
+                                onReport = onReport,
+                                onShare = onShare
                             )
                         }
-                    }
-                    return@Column
-                }
-
-                if (s.notFound) {
-                    OlnaturaCard {
-                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("No encontrado", style = MaterialTheme.typography.titleLarge)
-                            Text("El lote “$lote” no existe en el sistema.", style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
-                    return@Column
-                }
-
-                if (s.error != null) {
-                    OlnaturaCard {
-                        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                            Text("Error", style = MaterialTheme.typography.titleLarge)
-                            Spacer(Modifier.height(6.dp))
-                            Text(s.error!!, style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
-                }
-
-                val qr = s.qr
-                if (qr != null && s.gate is GateState.Authorized) {
-                    val label = qr.label
-                    val status = qr.dynamic?.status ?: "—" // permitido mostrar SOLO status
-
-                    OlnaturaCard {
-                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(label.nombre ?: "—", style = MaterialTheme.typography.titleLarge)
-                            InfoRow("Lote", label.lote ?: "—")
-                            InfoRow("Código", label.codigo ?: "—")
-                            InfoRow("Escaneado hoy", "V: ${s.todayCount}")
-                            InfoRow("Status", status)
-                            InfoRow("Lote en el que se usará", "—")
-                        }
-                    }
-
-                    Surface(
-                        color = OlnaturaColors.GreenLight,
-                        shape = RoundedCornerShape(18.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(Modifier.fillMaxWidth().padding(14.dp)) {
-                            Text("✓ Producto verificado", style = MaterialTheme.typography.titleMedium)
-                        }
-                    }
-
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Button(
-                            onClick = { onShare(label.lote ?: lote, status) },
-                            modifier = Modifier.weight(1f).height(54.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = OlnaturaColors.Green),
-                            shape = RoundedCornerShape(24.dp)
-                        ) { Text("Compartir", style = MaterialTheme.typography.titleMedium) }
-
-                        OutlinedButton(
-                            onClick = { onReport(label.lote ?: lote) },
-                            modifier = Modifier.weight(1f).height(54.dp),
-                            shape = RoundedCornerShape(24.dp)
-                        ) { Text("Reportar problema", style = MaterialTheme.typography.titleMedium) }
                     }
                 }
             }
@@ -120,9 +82,114 @@ fun ResultScreen(
 }
 
 @Composable
-private fun InfoRow(title: String, value: String) {
-    Column {
-        Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
-        Text(value, style = MaterialTheme.typography.titleMedium)
+private fun UnauthorizedContent(onGoToLogin: () -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = OlnCard),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Pide autorización para ver el contenido")
+            PillButton(
+                text = "Ir a inicio de sesión",
+                onClick = onGoToLogin,
+                containerColor = OlnGreen,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotFoundContent(lote: String) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = OlnCard),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Text("Lote no encontrado: $lote")
+            Text("Verifica el identificador e intenta de nuevo.", modifier = Modifier.padding(top = 8.dp))
+        }
+    }
+}
+
+@Composable
+private fun ErrorContent(message: String, onRetry: () -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = OlnCard),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(message)
+            PillButton(text = "Reintentar", onClick = onRetry, containerColor = OlnGreen)
+        }
+    }
+}
+
+@Composable
+private fun SuccessContent(
+    lote: String,
+    qr: com.olnatura.qr.data.model.QrResponse,
+    todayCount: Int,
+    onReport: (String) -> Unit,
+    onShare: (String, String) -> Unit
+) {
+    val label = qr.label
+    val dynamic = qr.dynamic
+    val status = dynamic?.status ?: "DESCONOCIDO"
+    val (bgColor, textColor) = statusColors(status)
+
+    fun str(v: String?) = v?.takeIf { it.isNotBlank() } ?: "—"
+    fun int(v: Int?) = v?.toString() ?: "—"
+
+    val envaseText = "${int(label?.envaseNum)} / ${int(label?.envaseTotal)}"
+    val cantidadUom = if (!str(dynamic?.uom).equals("—")) {
+        "${dynamic?.cantidad ?: "—"} ${str(dynamic?.uom)}"
+    } else str(dynamic?.cantidad?.toString())
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = OlnCard),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(18.dp)) {
+            LabelValueRow("Nombre", str(label?.nombre))
+            LabelValueRow("Lote", str(label?.lote).ifBlank { lote })
+            LabelValueRow("Código", str(label?.codigo))
+            LabelValueRow("Escaneado hoy", "V: $todayCount")
+            LabelValueRow("Ubicación", str(dynamic?.ubicacion))
+            LabelValueRow("Existencia", cantidadUom)
+            LabelValueRow("Fecha de entrada", str(label?.fechaEntrada))
+            LabelValueRow("Fecha de caducidad", str(label?.caducidad), showDivider = false)
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+    StatusBanner(
+        text = status,
+        bgColor = bgColor,
+        textColor = textColor,
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    Spacer(Modifier.height(18.dp))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        PillButton(
+            text = "Compartir",
+            onClick = { onShare(lote, status) },
+            containerColor = OlnGreen,
+            modifier = Modifier.weight(1f)
+        )
+        PillButton(
+            text = "Reportar",
+            onClick = { onReport(lote) },
+            containerColor = OlnGreen,
+            modifier = Modifier.weight(1f)
+        )
     }
 }

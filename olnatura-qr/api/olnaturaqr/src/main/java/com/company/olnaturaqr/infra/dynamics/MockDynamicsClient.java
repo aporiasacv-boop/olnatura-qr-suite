@@ -16,9 +16,9 @@ public class MockDynamicsClient {
             String fuente
     ) {}
 
-    private final Map<String, DynamicCard> fake = Map.of(
-            "260112-MES003456",
-            new DynamicCard("CUARENTENA", 50.0, "kg", "Almacén principal", "MOCK_DYNAMICS")
+    private final Map<String, DynamicCard> fake = Map.ofEntries(
+            Map.entry("260112-MES003456", new DynamicCard("CUARENTENA", 50.0, "kg", "Almacén principal", "MOCK_DYNAMICS")),
+            Map.entry("LOTE-TEST-001", new DynamicCard("LIBERADO", 100.0, "kg", "Almacén A", "MOCK_DYNAMICS"))
     );
 
     public Optional<DynamicCard> fetchByLote(String lote) {

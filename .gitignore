@@ -10,6 +10,8 @@ olnatura-qr/api/**/out/
 # --- Frontend ---
 olnatura-qr/frontend/node_modules/
 olnatura-qr/frontend/dist/
+olnatura-qr/web/**/node_modules/
+olnatura-qr/web/**/dist/
 
 # --- Android ---
 OlnaturaQR/.gradle/

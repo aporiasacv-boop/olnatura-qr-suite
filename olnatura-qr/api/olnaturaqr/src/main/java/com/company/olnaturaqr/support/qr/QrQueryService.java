@@ -30,7 +30,7 @@ public class QrQueryService {
         }
 
         if (lote.length() > 120) {
-        throw new ResponseStatusException(BAD_REQUEST, "Lote demasiado largo");
+            throw new ResponseStatusException(BAD_REQUEST, "Lote demasiado largo");
         }
 
         QrLabel label = qrLabelRepository.findByLote(lote)
