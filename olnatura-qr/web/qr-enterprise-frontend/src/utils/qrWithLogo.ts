@@ -1,6 +1,7 @@
 /**
  * Genera un QR con logo centrado (overlay).
- * SRP: solo la generación del QR con logo; el nivel H permite ~30% de datos para el logo.
+ * - Error correction H (tolerancia para el hueco del logo).
+ * - Badge visible: fondo blanco + borde verde + sombra (para que el logo claro SÍ se note).
  */
 
 import * as QRCode from "qrcode";
@@ -10,8 +11,14 @@ export type QrWithLogoOptions = {
   margin?: number;
   width?: number;
   color?: { dark: string; light: string };
-  logoUrl?: string;
-  logoSizeRatio?: number; // 0.2 = 20% del ancho del QR
+
+  logoUrl?: string;        // default: "/logo-olnatura.png" en /public
+  logoSizeRatio?: number;  // tamaño del logo vs QR (ej 0.22)
+  badgeSizeRatio?: number; // tamaño del badge (debe ser un poco mayor que logo)
+  badgeRadiusRatio?: number; // redondez del badge (0.18 ~ buen look)
+  badgeBorderWidth?: number; // borde visible
+  badgeShadow?: boolean;   // sombra suave
+  debug?: boolean;         // logs
 };
 
 const DEFAULTS: Required<Omit<QrWithLogoOptions, "logoUrl">> = {
@@ -19,81 +26,159 @@ const DEFAULTS: Required<Omit<QrWithLogoOptions, "logoUrl">> = {
   margin: 4,
   width: 800,
   color: { dark: "#0B0B0B", light: "#FFFFFF" },
-  logoSizeRatio: 0.22,
+
+  logoSizeRatio: 0.20,
+  badgeSizeRatio: 0.26,
+  badgeRadiusRatio: 0.18,
+  badgeBorderWidth: 6,
+  badgeShadow: true,
+  debug: false,
 };
 
-/**
- * Genera un QR como data URL (PNG) con logo centrado.
- * Si logoUrl falla, genera QR sin logo.
- */
 export async function generateQrWithLogo(
   payload: string,
   opts: QrWithLogoOptions = {}
 ): Promise<string> {
-  const { errorCorrectionLevel, margin, width, color, logoSizeRatio } = {
-    ...DEFAULTS,
-    ...opts,
-  };
+  const merged = { ...DEFAULTS, ...opts };
+  const { errorCorrectionLevel, margin, width, color, debug } = merged;
 
-  const dataUrl = await QRCode.toDataURL(payload, {
+  const qrDataUrl = await QRCode.toDataURL(payload, {
     errorCorrectionLevel,
     margin,
     width,
     color,
   });
 
-  const logoUrl = opts.logoUrl ?? "/logo-olnatura.png";
+  const preferredLogo = opts.logoUrl ?? "/logo-olnatura.png";
+  const fallbackLogo = "/vite.svg";
+
   try {
-    return await drawLogoOverlay(dataUrl, logoUrl, logoSizeRatio);
-  } catch {
-    return dataUrl;
+    return await drawLogoOverlay(qrDataUrl, preferredLogo, fallbackLogo, merged);
+  } catch (e) {
+    if (debug) console.warn("[qrWithLogo] overlay falló, fallback sin logo:", e);
+    return qrDataUrl;
   }
 }
 
-function drawLogoOverlay(
+async function drawLogoOverlay(
   qrDataUrl: string,
-  logoUrl: string,
-  logoSizeRatio: number
+  preferredLogo: string,
+  fallbackLogo: string,
+  opts: Required<Omit<QrWithLogoOptions, "logoUrl">>
 ): Promise<string> {
+  const { debug } = opts;
+
+  const qrImg = await loadImage(qrDataUrl);
+  let logoImg: HTMLImageElement;
+  try {
+    logoImg = await loadImage(preferredLogo);
+    if (debug) console.log("[qrWithLogo] logo cargado:", preferredLogo);
+  } catch (e) {
+    if (debug) console.warn("[qrWithLogo] logo principal falló, usando fallback:", preferredLogo, e);
+    logoImg = await loadImage(fallbackLogo);
+  }
+
+  const size = qrImg.naturalWidth || qrImg.width;
+  if (!size) throw new Error("QR image invalid size");
+
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas not supported");
+
+  // 1) Dibuja QR
+  ctx.drawImage(qrImg, 0, 0, size, size);
+
+  // 2) Badge + logo (centrado)
+  const badgeSize = Math.round(size * opts.badgeSizeRatio);
+  const logoSize = Math.round(size * opts.logoSizeRatio);
+
+  const cx = size / 2;
+  const cy = size / 2;
+
+  const bx = Math.round(cx - badgeSize / 2);
+  const by = Math.round(cy - badgeSize / 2);
+
+  // Badge: sombra
+  if (opts.badgeShadow) {
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.20)";
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 6;
+    drawRoundedRect(ctx, bx, by, badgeSize, badgeSize, Math.round(badgeSize * opts.badgeRadiusRatio));
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+    ctx.restore();
+  } else {
+    drawRoundedRect(ctx, bx, by, badgeSize, badgeSize, Math.round(badgeSize * opts.badgeRadiusRatio));
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+  }
+
+  // Borde verde (para que se note siempre)
+  drawRoundedRect(ctx, bx, by, badgeSize, badgeSize, Math.round(badgeSize * opts.badgeRadiusRatio));
+  ctx.lineWidth = opts.badgeBorderWidth;
+  ctx.strokeStyle = "#1F7A3A"; // verde Olnatura-ish
+  ctx.stroke();
+
+  // Dibuja logo “contain” dentro del badge
+  const lx = Math.round(cx - logoSize / 2);
+  const ly = Math.round(cy - logoSize / 2);
+
+  // Algunos logos traen transparencia y se ven muy claros:
+  // aumenta un poco el contraste pintando primero un blanco puro (ya lo hicimos con badge)
+  ctx.drawImage(logoImg, lx, ly, logoSize, logoSize);
+
+  if (debug) {
+    console.log("[qrWithLogo] OK overlay", {
+      qr: size,
+      badgeSize,
+      logoSize,
+    });
+  }
+
+  return canvas.toDataURL("image/png");
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      reject(new Error("Canvas not supported"));
-      return;
-    }
+    const img = new Image();
 
-    const qrImg = new Image();
-    qrImg.crossOrigin = "anonymous";
-
-    qrImg.onload = () => {
-      const size = qrImg.width;
-      canvas.width = size;
-      canvas.height = size;
-      ctx.drawImage(qrImg, 0, 0);
-
-      const logoImg = new Image();
-      logoImg.crossOrigin = "anonymous";
-
-      logoImg.onload = () => {
-        const logoSize = Math.round(size * logoSizeRatio);
-        const x = (size - logoSize) / 2;
-        const y = (size - logoSize) / 2;
-
-        // Fondo blanco bajo el logo para mejor contraste
-        ctx.fillStyle = "#FFFFFF";
-        const pad = 4;
-        ctx.fillRect(x - pad, y - pad, logoSize + pad * 2, logoSize + pad * 2);
-
-        ctx.drawImage(logoImg, x, y, logoSize, logoSize);
-        resolve(canvas.toDataURL("image/png"));
-      };
-
-      logoImg.onerror = () => reject(new Error("Logo load failed"));
-      logoImg.src = logoUrl;
+    img.onload = () => {
+      const anyImg = img as any;
+      if (typeof anyImg.decode === "function") {
+        anyImg.decode().then(() => resolve(img)).catch(() => resolve(img));
+      } else {
+        resolve(img);
+      }
     };
 
-    qrImg.onerror = () => reject(new Error("QR image load failed"));
-    qrImg.src = qrDataUrl;
+    img.onerror = () => reject(new Error(`Image load failed: ${src}`));
+    img.src = src;
   });
+}
+
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  const radius = Math.max(0, Math.min(r, Math.floor(Math.min(w, h) / 2)));
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
 }
