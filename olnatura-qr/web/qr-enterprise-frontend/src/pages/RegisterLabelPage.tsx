@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Card, Text, Input, Button } from "@fluentui/react-components";
 import QRCode from "qrcode";
 import { useAuth } from "../auth/AuthContext";
+import { generateQrWithLogo } from "../utils/qrWithLogo";
 
 type FormState = {
   tipoMaterial: string;
@@ -71,11 +72,19 @@ export default function RegisterLabelPage() {
 
     try {
       setBusy(true);
-      const dataUrl = await QRCode.toDataURL(payload, {
-        errorCorrectionLevel: "M",
+
+      // ✅ Mantén el mismo payload, pero genera con logo centrado
+      const logoPath = `${import.meta.env.BASE_URL}logo-olnatura.png`;
+
+      const dataUrl = await generateQrWithLogo(payload, {
+        errorCorrectionLevel: "H",
         margin: 2,
         width: 640,
+        logoUrl: logoPath,
+        logoSizeRatio: 0.22,
+        debug: true,
       });
+
       setQrDataUrl(dataUrl);
     } catch (e) {
       setErr("No se pudo generar el QR.");

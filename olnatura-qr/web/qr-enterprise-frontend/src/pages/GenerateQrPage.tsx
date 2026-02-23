@@ -43,15 +43,18 @@ export default function GenerateQrPage() {
     }
 
     try {
-      // Contenido del QR: lote puro (también acepta URL si se implementa opción)
       const payload = v;
+
+      // Respetar BASE_URL (por si algún día se publica bajo subruta)
+      const logoPath = `${import.meta.env.BASE_URL}logo-olnatura.png`;
 
       const dataUrl = await generateQrWithLogo(payload, {
         errorCorrectionLevel: "H",
         margin: 4,
         width: 800,
-        logoUrl: "/logo-olnatura.png",
+        logoUrl: logoPath,
         logoSizeRatio: 0.22,
+        debug: true,
       });
 
       setPngDataUrl(dataUrl);

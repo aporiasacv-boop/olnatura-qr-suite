@@ -16,7 +16,7 @@ android {
         versionName = "1.0"
 
         // API base URL: cambia para dev/prod (ej. http://10.0.2.2:3001/ para emulador)
-        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://10.0.2.2:3001/"}\"")
+        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://192.168.100.10:3001/"}\"")
     }
 
     buildFeatures {
