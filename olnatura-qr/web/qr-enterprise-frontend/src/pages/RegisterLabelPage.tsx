@@ -3,6 +3,7 @@ import { Card, Text, Input, Button } from "@fluentui/react-components";
 import QRCode from "qrcode";
 import { useAuth } from "../auth/AuthContext";
 import { generateQrWithLogo } from "../utils/qrWithLogo";
+import { renderLabelToPng } from "../utils/labelToPng";
 
 type FormState = {
   tipoMaterial: string;
@@ -94,21 +95,46 @@ export default function RegisterLabelPage() {
     }
   };
 
-  const onDownloadPng = () => {
-    setErr(null);
-    if (!qrDataUrl) {
-      setErr("Primero genera el QR.");
-      return;
-    }
+  const onDownloadPng = async () => {
+  setErr(null);
 
-    const lote = form.lote.trim() || "qr";
+  if (!qrDataUrl) {
+    setErr("Primero genera el QR.");
+    return;
+  }
+
+  try {
+    setBusy(true);
+
+    const labelPng = await renderLabelToPng(
+      {
+        tipoMaterial: form.tipoMaterial.trim(),
+        nombre: form.nombre.trim(),
+        codigo: form.codigo.trim(),
+        lote: form.lote.trim(),
+        fechaEntrada: form.fechaEntrada.trim(),
+        caducidad: form.caducidad.trim(),
+        // si todavía no tienes reanálisis separado, lo dejamos vacío
+        reanalisis: "",
+        envaseNum: form.envaseNum ? Number(form.envaseNum) : undefined,
+        envaseTotal: form.envaseTotal ? Number(form.envaseTotal) : undefined,
+      },
+      qrDataUrl
+    );
+
+    const lote = form.lote.trim() || "etiqueta";
     const a = document.createElement("a");
-    a.href = qrDataUrl;
-    a.download = `QR_${lote}.png`;
+    a.href = labelPng;
+    a.download = `ETIQUETA_${lote}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-  };
+  } catch (e) {
+    setErr("No se pudo generar la etiqueta imprimible.");
+  } finally {
+    setBusy(false);
+  }
+};
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
