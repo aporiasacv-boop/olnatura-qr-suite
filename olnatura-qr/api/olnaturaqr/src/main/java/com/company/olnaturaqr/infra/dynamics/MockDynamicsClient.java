@@ -1,7 +1,6 @@
 package com.company.olnaturaqr.infra.dynamics;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.company.olnaturaqr.support.qr.LoteExtractor;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -11,7 +10,7 @@ import java.util.Optional;
 public class MockDynamicsClient {
 
     public record DynamicCard(
-            String status,     // LIBERADO | CUARENTENA | PENDIENTE | RECHAZADO
+            String status,
             double cantidad,
             String uom,
             String ubicacion,
@@ -19,41 +18,16 @@ public class MockDynamicsClient {
     ) {}
 
     private final Map<String, DynamicCard> fake = Map.ofEntries(
-
             Map.entry("260112-MES003456",
-                    new DynamicCard("CUARENTENA", 50.0, "kg",
-                            "Almacén principal", "MOCK_DYNAMICS")),
-
+                    new DynamicCard("CUARENTENA", 50.0, "kg", "Almacén principal", "MOCK_DYNAMICS")),
             Map.entry("LOTE-TEST-001",
-                    new DynamicCard("LIBERADO", 100.0, "kg",
-                            "Almacén A", "MOCK_DYNAMICS")),
-
-            Map.entry("251201-MEM0005643",
-                    new DynamicCard("LIBERADO", 20.0, "kg",
-                            "Almacén secundario", "MOCK_DYNAMICS"))
+                    new DynamicCard("LIBERADO", 100.0, "kg", "Almacén A", "MOCK_DYNAMICS")),
+            Map.entry("251201-MEM0003454",
+                    new DynamicCard("LIBERADO", 20.0, "kg", "Almacén secundario", "MOCK_DYNAMICS"))
     );
 
     public Optional<DynamicCard> fetchByLote(String raw) {
-
-        if (raw == null || raw.isBlank()) {
-            return Optional.empty();
-        }
-
-        String lote = raw.trim();
-
-        // 🔍 Si viene JSON, extraer campo "lote"
-        if (lote.startsWith("{")) {
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode node = mapper.readTree(lote);
-                if (node.has("lote")) {
-                    lote = node.get("lote").asText();
-                }
-            } catch (Exception ignored) {
-                // Si falla el parseo, se intentará buscar el raw tal cual
-            }
-        }
-
-        return Optional.ofNullable(fake.get(lote.trim()));
+        return LoteExtractor.extract(raw)
+                .flatMap(l -> Optional.ofNullable(fake.get(l)));
     }
 }

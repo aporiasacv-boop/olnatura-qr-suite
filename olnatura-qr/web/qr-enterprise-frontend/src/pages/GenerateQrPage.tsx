@@ -1,9 +1,20 @@
 import { useMemo, useState } from "react";
 import { Button, Card, Input, Text, makeStyles, shorthands } from "@fluentui/react-components";
+import { api, ApiError } from "../api/client";
+
+function logAudit(actionType: string, lote: string | null) {
+  api("/audit/log", {
+    method: "POST",
+    body: { actionType, lote: lote || undefined },
+    toast: false,
+  }).catch(() => {});
+}
+import type { QrResponse } from "../api/types";
 import { generateQrWithLogo } from "../utils/qrWithLogo";
+import { renderLabelToPng } from "../utils/labelToPng";
 
 const useStyles = makeStyles({
-  wrap: { display: "grid", gap: "14px", maxWidth: "560px" },
+  wrap: { display: "grid", gap: "14px", maxWidth: "600px" },
   row: { display: "grid", gap: "6px" },
   preview: {
     display: "grid",
@@ -12,55 +23,87 @@ const useStyles = makeStyles({
     borderRadius: "12px",
     ...shorthands.padding("16px"),
     boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+    border: "1px solid #E5E7EB",
   },
-  img: { width: "320px", height: "320px", objectFit: "contain" },
+  img: { maxWidth: "100%", height: "auto", objectFit: "contain" },
   actions: { display: "flex", gap: "10px", flexWrap: "wrap" },
+  labelText: { fontSize: "12px", color: "#6B7280" },
+  labelValue: { fontSize: "14px", fontWeight: 600 },
 });
 
 export default function GenerateQrPage() {
   const s = useStyles();
-
   const [lote, setLote] = useState("");
+  const [labelData, setLabelData] = useState<QrResponse["label"] | null>(null);
   const [pngDataUrl, setPngDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileName = useMemo(() => {
     const safe = (lote || "QR").trim().replace(/[^\w\-]+/g, "_");
-    return `QR_${safe}.png`;
+    return `Etiqueta_${safe}.png`;
   }, [lote]);
 
-  async function generate() {
-    setBusy(true);
-    setError(null);
-    setPngDataUrl(null);
+  const v = (lote || "").trim();
 
-    const v = (lote || "").trim();
+  async function generate() {
     if (!v) {
-      setBusy(false);
       setError("Escribe un lote.");
       return;
     }
+    setBusy(true);
+    setError(null);
+    setPngDataUrl(null);
+    setLabelData(null);
 
     try {
-      const payload = v;
+      const qrResponse = await api<QrResponse>(`/qr/${encodeURIComponent(v)}`, { toast: false });
+      const label = qrResponse?.label;
+      if (!label) {
+        setError("No se encontró etiqueta para este lote.");
+        setBusy(false);
+        return;
+      }
 
-      // Respetar BASE_URL (por si algún día se publica bajo subruta)
+      setLabelData(label);
+
+      const payload = String(label.lote ?? v);
       const logoPath = `${import.meta.env.BASE_URL}logo-olnatura.png`;
 
-      const dataUrl = await generateQrWithLogo(payload, {
+      const qrWithLogo = await generateQrWithLogo(payload, {
         errorCorrectionLevel: "H",
         margin: 4,
         width: 800,
         logoUrl: logoPath,
         logoSizeRatio: 0.22,
-        debug: true,
       });
 
-      setPngDataUrl(dataUrl);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "No se pudo generar el QR.";
-      setError(msg);
+      const fullLabelPng = await renderLabelToPng(
+        {
+          tipoMaterial: label.tipoMaterial,
+          nombre: label.nombre,
+          codigo: label.codigo,
+          lote: label.lote,
+          fechaEntrada: label.fechaEntrada,
+          caducidad: label.caducidad,
+          reanalisis: label.reanalisis,
+          envaseNum: label.envaseNum,
+          envaseTotal: label.envaseTotal,
+        },
+        qrWithLogo
+      );
+
+      setPngDataUrl(fullLabelPng);
+      logAudit("GENERATE_LABEL", v);
+    } catch (e) {
+      const ae = e as ApiError;
+      setError(
+        ae?.status === 404
+          ? "Lote no encontrado. Verifica el identificador."
+          : ae?.status === 401 || ae?.status === 403
+            ? "No tienes acceso. Inicia sesión."
+            : (e as Error)?.message ?? "No se pudo generar la etiqueta."
+      );
     } finally {
       setBusy(false);
     }
@@ -68,6 +111,7 @@ export default function GenerateQrPage() {
 
   function download() {
     if (!pngDataUrl) return;
+    logAudit("DOWNLOAD_LABEL", v);
     const a = document.createElement("a");
     a.href = pngDataUrl;
     a.download = fileName;
@@ -76,13 +120,29 @@ export default function GenerateQrPage() {
     a.remove();
   }
 
+  function printLabel() {
+    if (!pngDataUrl) return;
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(`
+      <!DOCTYPE html><html><head><title>Etiqueta</title></head>
+      <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;">
+        <img src="${pngDataUrl}" alt="Etiqueta" style="max-width:100%;height:auto;" />
+      </body></html>
+    `);
+    w.document.close();
+    w.focus();
+    w.print();
+    w.close();
+  }
+
   return (
     <div className={s.wrap}>
       <Text size={600} weight="semibold">
-        Generar QR (PNG)
+        Generar etiqueta imprimible
       </Text>
       <Text size={300} style={{ opacity: 0.75 }}>
-        Solo ADMIN/ALMACÉN. El QR contiene el LOTE. Logo centrado, nivel H para buena escaneabilidad.
+        Solo ADMIN/ALMACÉN. Busca por lote y genera la etiqueta con datos estáticos y QR con logo. El estatus no se imprime.
       </Text>
 
       <Card>
@@ -92,17 +152,19 @@ export default function GenerateQrPage() {
             <Input
               value={lote}
               onChange={(_, d) => setLote(d.value)}
-              placeholder="Ej: LOTE-TEST-001"
+              placeholder="Ej: 251201-MEM0003454"
             />
           </div>
 
           <div className={s.actions}>
-            <Button appearance="primary" onClick={generate} disabled={busy}>
-              {busy ? "Generando…" : "Generar"}
+            <Button appearance="primary" onClick={generate} disabled={busy || !v}>
+              {busy ? "Generando…" : "Generar etiqueta"}
             </Button>
-
             <Button onClick={download} disabled={!pngDataUrl}>
               Descargar PNG
+            </Button>
+            <Button appearance="secondary" onClick={printLabel} disabled={!pngDataUrl}>
+              Imprimir
             </Button>
           </div>
 
@@ -110,7 +172,7 @@ export default function GenerateQrPage() {
 
           <div className={s.preview}>
             {pngDataUrl ? (
-              <img src={pngDataUrl} alt="QR preview" className={s.img} />
+              <img src={pngDataUrl} alt="Etiqueta preview" className={s.img} />
             ) : (
               <Text style={{ opacity: 0.6 }}>Vista previa aquí</Text>
             )}

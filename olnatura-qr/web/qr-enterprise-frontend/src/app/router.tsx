@@ -8,6 +8,7 @@ import NotFoundPage from "../pages/NotFoundPage";
 
 import RequestAccessPage from "../pages/RequestAccessPage";
 import AdminApprovalPage from "../pages/AdminApprovalPage";
+import AdminAuditPage from "../pages/AdminAuditPage";
 
 import BatchLookupPage from "../pages/BatchLookupPage";
 import ScanHistoryPage from "../pages/ScanHistoryPage";
@@ -49,7 +50,7 @@ export const router = createBrowserRouter([
       {
         path: "generate-qr",
         element: (
-          <RequireRole anyOf={["ADMIN", "ALMACEN"]}>
+          <RequireRole anyOf={["ADMIN", "ALMACEN", "INSPECCION"]}>
             <GenerateQrPage />
           </RequireRole>
         ),
@@ -69,6 +70,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAdmin>
             <AdminApprovalPage />
+          </RequireAdmin>
+        ),
+      },
+      {
+        path: "admin/audit",
+        element: (
+          <RequireAdmin>
+            <AdminAuditPage />
           </RequireAdmin>
         ),
       },

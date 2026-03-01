@@ -14,6 +14,7 @@ import com.olnatura.qr.data.repo.QrRepository
 import com.olnatura.qr.data.repo.ScanRepository
 import com.olnatura.qr.ui.navigation.AppNavGraph
 import com.olnatura.qr.ui.screen.login.LoginViewModel
+import com.olnatura.qr.ui.screen.requestaccess.RequestAccessViewModel
 import com.olnatura.qr.ui.screen.report.ReportProblemViewModel
 import com.olnatura.qr.ui.screen.result.ResultViewModel
 import com.olnatura.qr.ui.screen.scanner.ScannerViewModel
@@ -42,6 +43,7 @@ class MainActivity : ComponentActivity() {
 
         // VMs (simples, sin DI)
         val loginVm = LoginViewModel(authRepo)
+        val requestAccessVm = RequestAccessViewModel(authRepo)
         val scannerVm = ScannerViewModel()
         val reportVm = ReportProblemViewModel()
 
@@ -54,6 +56,7 @@ class MainActivity : ComponentActivity() {
                 AppNavGraph(
                     sessionManager = sessionManager,
                     loginVm = loginVm,
+                    requestAccessVm = requestAccessVm,
                     scannerVm = scannerVm,
                     resultVmFactory = { ResultViewModel(authRepo, qrRepo, scanRepo) },
                     reportVm = reportVm,

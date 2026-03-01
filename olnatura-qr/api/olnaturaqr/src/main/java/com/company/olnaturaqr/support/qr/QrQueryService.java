@@ -1,6 +1,7 @@
 package com.company.olnaturaqr.support.qr;
 
 import com.company.olnaturaqr.api.QrDto;
+import com.company.olnaturaqr.support.qr.LoteExtractor;
 import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.infra.dynamics.MockDynamicsClient;
 import com.company.olnaturaqr.repository.QrLabelRepository;
@@ -23,16 +24,17 @@ public class QrQueryService {
 
     @Transactional(readOnly = true)
     public QrDto.Response getByLote(String loteRaw) {
-       String lote = (loteRaw == null) ? "" : loteRaw.trim();
+        String normalized = LoteExtractor.extract(loteRaw)
+                .orElse(loteRaw != null ? loteRaw.trim() : "");
 
-        if (lote.isBlank()) {
-        throw new ResponseStatusException(BAD_REQUEST, "Lote requerido");
+        if (normalized.isBlank()) {
+            throw new ResponseStatusException(BAD_REQUEST, "Lote requerido");
         }
-
-        if (lote.length() > 120) {
+        if (normalized.length() > 120) {
             throw new ResponseStatusException(BAD_REQUEST, "Lote demasiado largo");
         }
 
+        String lote = normalized;
         QrLabel label = qrLabelRepository.findByLote(lote)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + lote));
 
@@ -48,10 +50,19 @@ public class QrQueryService {
                 label.getEnvaseTotal()
         );
 
+        String statusOverride = normalizeStatus(label.getStatusDinamico());
+        boolean useDbStatus = statusOverride != null && !"DESCONOCIDO".equals(statusOverride);
+
         var dyn = dynamics.fetchByLote(lote)
-                .map(d -> new QrDto.Dynamic(d.status(), d.cantidad(), d.uom(), d.ubicacion(), d.fuente()))
+                .map(d -> new QrDto.Dynamic(
+                        useDbStatus ? statusOverride : d.status(),
+                        d.cantidad(),
+                        d.uom(),
+                        d.ubicacion(),
+                        d.fuente()
+                ))
                 .orElseGet(() -> new QrDto.Dynamic(
-                        normalizeStatus(label.getStatusDinamico()),
+                        statusOverride,
                         null,
                         null,
                         null,

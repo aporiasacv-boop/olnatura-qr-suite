@@ -6,6 +6,7 @@ import com.company.olnaturaqr.repository.RoleRepository;
 import com.company.olnaturaqr.repository.UserRepository;
 import com.company.olnaturaqr.support.config.AuthCookieProperties;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
+import com.company.olnaturaqr.support.audit.AuditService;
 import com.company.olnaturaqr.support.security.CookieWriter;
 import com.company.olnaturaqr.support.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -26,19 +28,22 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthCookieProperties cookieProps;
+    private final AuditService auditService;
 
     public AuthController(
             UserRepository userRepository,
             RoleRepository roleRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenProvider jwtTokenProvider,
-            AuthCookieProperties cookieProps
+            AuthCookieProperties cookieProps,
+            AuditService auditService
     ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.cookieProps = cookieProps;
+        this.auditService = auditService;
     }
 
     @PostMapping("/login")
@@ -156,6 +161,10 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
     u.setEnabled(false); // pendiente de aprobación por admin
 
     User saved = userRepository.save(u);
+
+    auditService.logUnauthenticated("ACCESS_REQUEST", null,
+            Map.of("username", username, "email", email, "roleRequested", roleName, "userId", saved.getId().toString()),
+            null);
 
     return ResponseEntity.status(HttpStatus.CREATED)
             .body(new UserDto.RequestAccessResponse(saved.getId().toString(), "PENDING"));

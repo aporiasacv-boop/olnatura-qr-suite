@@ -2,6 +2,15 @@ package com.olnatura.qr.data.model
 
 data class LoginRequest(val username: String, val password: String)
 
+data class RequestAccessRequest(
+    val username: String,
+    val email: String,
+    val password: String,
+    val roleRequested: String
+)
+
+data class RequestAccessResponse(val requestId: String, val status: String)
+
 data class MeResponse(
     val id: String,
     val username: String,

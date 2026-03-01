@@ -15,6 +15,9 @@ interface OlnaturaApi {
     @POST("api/v1/auth/logout")
     suspend fun logout(): Response<Unit>
 
+    @POST("api/v1/auth/request-access")
+    suspend fun requestAccess(@Body body: RequestAccessRequest): Response<RequestAccessResponse>
+
     @GET("api/v1/qr/{lote}")
     suspend fun getQr(@Path("lote") lote: String): QrResponse
 

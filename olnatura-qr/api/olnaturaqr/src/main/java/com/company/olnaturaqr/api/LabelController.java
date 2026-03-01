@@ -2,9 +2,12 @@ package com.company.olnaturaqr.api;
 
 import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.repository.QrLabelRepository;
+import com.company.olnaturaqr.support.audit.AuditService;
+import com.company.olnaturaqr.support.security.AuthPrincipal;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -21,9 +24,11 @@ import static org.springframework.http.HttpStatus.*;
 public class LabelController {
 
     private final QrLabelRepository repo;
+    private final AuditService auditService;
 
-    public LabelController(QrLabelRepository repo) {
+    public LabelController(QrLabelRepository repo, AuditService auditService) {
         this.repo = repo;
+        this.auditService = auditService;
     }
 
     // ADMIN o ALMACEN pueden crear
@@ -85,10 +90,10 @@ public class LabelController {
         ));
     }
 
-    // Solo ADMIN puede cambiar status
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','INSPECCION')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<LabelDto.StatusResponse> updateStatus(
+            @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable UUID id,
             @RequestBody LabelDto.StatusRequest req
     ) {
@@ -108,6 +113,34 @@ public class LabelController {
         q.setStatusDinamico(st);
         repo.save(q);
 
+        auditService.log(principal, "CHANGE_STATUS", q.getLote(),
+                java.util.Map.of("status", st, "labelId", id.toString()), null);
+
+        return ResponseEntity.ok(new LabelDto.StatusResponse(q.getId(), q.getStatusDinamico()));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','INSPECCION')")
+    @PatchMapping("/by-lote/{lote}/status")
+    public ResponseEntity<LabelDto.StatusResponse> updateStatusByLote(
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @PathVariable String lote,
+            @RequestBody LabelDto.StatusRequest req
+    ) {
+        if (req == null || isBlank(req.status())) {
+            throw new ResponseStatusException(BAD_REQUEST, "status es requerido");
+        }
+        String st = req.status().trim().toUpperCase(Locale.ROOT);
+        if (!isValidStatus(st)) {
+            throw new ResponseStatusException(BAD_REQUEST, "Status inválido: " + st);
+        }
+        QrLabel q = repo.findByLote(lote.trim()).orElseThrow(() ->
+                new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada para lote: " + lote));
+        q.setStatusDinamico(st);
+        repo.save(q);
+
+        auditService.log(principal, "CHANGE_STATUS", q.getLote(),
+                java.util.Map.of("status", st, "labelId", q.getId().toString()), null);
+
         return ResponseEntity.ok(new LabelDto.StatusResponse(q.getId(), q.getStatusDinamico()));
     }
 
@@ -121,7 +154,8 @@ public class LabelController {
     }
 
     private static boolean isValidStatus(String st) {
-        return st.equals("PENDING") || st.equals("CUARENTENA") || st.equals("APROBADO") || st.equals("RECHAZADO");
+        return st.equals("PENDING") || st.equals("CUARENTENA") || st.equals("APROBADO")
+                || st.equals("RECHAZADO") || st.equals("LIBERADO") || st.equals("DESCONOCIDO");
     }
 
     private static boolean isBlank(String s) { return s == null || s.trim().isEmpty(); }

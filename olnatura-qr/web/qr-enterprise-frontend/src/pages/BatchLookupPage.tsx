@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Button, Card, Input, Text } from "@fluentui/react-components";
+import { Button, Card, Input, Text, Select, Option } from "@fluentui/react-components";
 import { api, ApiError } from "../api/client";
 import type { QrResponse, ScanEvent } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
@@ -35,8 +35,10 @@ function readDynamic(data: QrResponse | null, key: string, fallback = "—") {
 }
 
 // Page component
+const STATUS_OPTIONS = ["LIBERADO", "APROBADO", "CUARENTENA", "RECHAZADO", "PENDIENTE"] as const;
+
 export default function BatchLookupPage() {
-  const { can } = useAuth();
+  const { can, hasRole } = useAuth();
   const toasts = useToasts();
 
   const [lote, setLote] = useState("");
@@ -45,8 +47,11 @@ export default function BatchLookupPage() {
 
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "ok">("idle");
   const [err, setErr] = useState<{ title: string; detail?: string } | null>(null);
+  const [newStatus, setNewStatus] = useState<string>("");
+  const [statusBusy, setStatusBusy] = useState(false);
 
   const loteTrim = useMemo(() => lote.trim(), [lote]);
+  const canChangeStatus = hasRole("INSPECCION") || hasRole("ADMIN");
 
   // Load batch data
   const load = async () => {
@@ -80,6 +85,29 @@ export default function BatchLookupPage() {
       });
 
       setStatus("error");
+    }
+  };
+
+  const changeStatus = async () => {
+    if (!loteTrim || !newStatus || statusBusy) return;
+    setStatusBusy(true);
+    try {
+      await api<void>(`/label/by-lote/${encodeURIComponent(loteTrim)}/status`, {
+        method: "PATCH",
+        body: { status: newStatus },
+      });
+      toasts.push({ intent: "success", title: "Estatus actualizado", message: `Nuevo estatus: ${newStatus}` });
+      await load();
+    } catch (e) {
+      const ae = e as ApiError;
+      toasts.push({
+        intent: "error",
+        title: "No se pudo actualizar",
+        message: ae?.message ?? "Intenta de nuevo.",
+        error: ae,
+      });
+    } finally {
+      setStatusBusy(false);
     }
   };
 
@@ -209,9 +237,31 @@ export default function BatchLookupPage() {
               <Text weight="semibold">Estado dinámico</Text>
 
               <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   <Text>Estado</Text>
                   <StatusTag status={dynamicStatus} />
+                  {canChangeStatus && (
+                    <>
+                      <Select
+                        value={newStatus}
+                        onChange={(_, d) => setNewStatus(d.optionValue ?? "")}
+                        placeholder="Cambiar a…"
+                        style={{ minWidth: 140 }}
+                      >
+                        {STATUS_OPTIONS.map((s) => (
+                          <Option key={s} value={s}>{s}</Option>
+                        ))}
+                      </Select>
+                      <Button
+                        appearance="primary"
+                        size="small"
+                        onClick={() => void changeStatus()}
+                        disabled={!newStatus || statusBusy}
+                      >
+                        {statusBusy ? "…" : "Aplicar"}
+                      </Button>
+                    </>
+                  )}
                 </div>
 
                 <Field label="Ubicación" value={readDynamic(data, "ubicacion")} />

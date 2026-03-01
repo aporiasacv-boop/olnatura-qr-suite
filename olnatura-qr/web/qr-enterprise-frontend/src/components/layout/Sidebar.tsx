@@ -61,7 +61,7 @@ const useStyles = makeStyles({
 
 export default function Sidebar() {
   const s = useStyles();
-  const { state, can } = useAuth();
+  const { state, can, hasRole } = useAuth();
 
   const userLabel = state.status === "authenticated" ? `${state.user.username}` : "—";
   return (
@@ -91,10 +91,24 @@ export default function Sidebar() {
           Scan History
         </NavLink>
 
-        {can("ADMIN") && (
-          <NavLink to="/register-label" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-            Registrar etiqueta
+        {(hasRole("ADMIN") || hasRole("ALMACEN") || hasRole("INSPECCION")) && (
+          <NavLink to="/generate-qr" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+            Etiquetas
           </NavLink>
+        )}
+
+        {hasRole("ADMIN") && (
+          <>
+            <NavLink to="/register-label" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+              Registrar etiqueta
+            </NavLink>
+            <NavLink to="/admin/approval" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+              Aprobar usuarios
+            </NavLink>
+            <NavLink to="/admin/audit" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+              Historial
+            </NavLink>
+          </>
         )}
       </nav>
 

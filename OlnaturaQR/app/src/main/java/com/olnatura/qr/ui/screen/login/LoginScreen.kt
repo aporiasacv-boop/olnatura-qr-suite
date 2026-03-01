@@ -10,7 +10,11 @@ import androidx.compose.ui.unit.dp
 import com.olnatura.qr.ui.theme.OlnaturaColors
 
 @Composable
-fun LoginScreen(vm: LoginViewModel, onLoggedIn: () -> Unit) {
+fun LoginScreen(
+    vm: LoginViewModel,
+    onRequestAccess: () -> Unit = {},
+    onLoggedIn: () -> Unit
+) {
     val s by vm.state.collectAsState()
 
     Surface(Modifier.fillMaxSize()) {
@@ -66,6 +70,11 @@ fun LoginScreen(vm: LoginViewModel, onLoggedIn: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = OlnaturaColors.Green)
             ) {
                 Text(if (s.loading) "Iniciando..." else "Iniciar sesión", style = MaterialTheme.typography.titleMedium)
+            }
+
+            Spacer(Modifier.height(12.dp))
+            TextButton(onClick = onRequestAccess, modifier = Modifier.fillMaxWidth()) {
+                Text("Solicitar acceso")
             }
         }
     }

@@ -9,6 +9,8 @@ import androidx.navigation.compose.rememberNavController
 import com.olnatura.qr.core.session.SessionManager
 import com.olnatura.qr.ui.screen.login.LoginScreen
 import com.olnatura.qr.ui.screen.login.LoginViewModel
+import com.olnatura.qr.ui.screen.requestaccess.RequestAccessScreen
+import com.olnatura.qr.ui.screen.requestaccess.RequestAccessViewModel
 import com.olnatura.qr.ui.screen.report.ReportProblemScreen
 import com.olnatura.qr.ui.screen.report.ReportProblemViewModel
 import com.olnatura.qr.ui.screen.result.ResultScreen
@@ -20,6 +22,7 @@ import com.olnatura.qr.ui.screen.scanner.ScannerViewModel
 fun AppNavGraph(
     sessionManager: SessionManager,
     loginVm: LoginViewModel,
+    requestAccessVm: RequestAccessViewModel,
     scannerVm: ScannerViewModel,
     resultVmFactory: () -> ResultViewModel,
     reportVm: ReportProblemViewModel,
@@ -35,11 +38,21 @@ fun AppNavGraph(
 
     NavHost(navController = nav, startDestination = Route.Login.path) {
         composable(Route.Login.path) {
-            LoginScreen(vm = loginVm) {
+            LoginScreen(
+                vm = loginVm,
+                onRequestAccess = { nav.navigate(Route.RequestAccess.path) }
+            ) {
                 nav.navigate(Route.Scanner.path) {
                     popUpTo(Route.Login.path) { inclusive = true }
                 }
             }
+        }
+
+        composable(Route.RequestAccess.path) {
+            RequestAccessScreen(
+                vm = requestAccessVm,
+                onBackToLogin = { nav.popBackStack() }
+            )
         }
 
         composable(Route.Scanner.path) {

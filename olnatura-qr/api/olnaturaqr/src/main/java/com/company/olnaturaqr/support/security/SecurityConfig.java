@@ -67,6 +67,10 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/v1/auth/request-access").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
 
+        // Audit log (autenticado)
+            .requestMatchers(HttpMethod.POST, "/api/v1/audit/**").authenticated()
+            .requestMatchers(HttpMethod.GET, "/api/v1/audit").authenticated()
+
         // QR / Scan - requiere cookie de sesión
             .requestMatchers(HttpMethod.GET, "/api/v1/qr/**").authenticated()
             .requestMatchers(HttpMethod.POST, "/api/v1/scan/**").authenticated()
