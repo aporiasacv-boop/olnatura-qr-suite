@@ -130,7 +130,7 @@ export default function AdminApprovalPage() {
       <div className={s.headerRow}>
         <div>
           <Text weight="semibold" size={600}>
-            Admin Approval
+            Aprobar usuarios
           </Text>
           <div className={s.muted}>
             <Text size={300}>
@@ -161,14 +161,14 @@ export default function AdminApprovalPage() {
               </Button>
             </div>
           ) : (
-            <Table aria-label="Access requests">
+            <Table aria-label="Solicitudes de acceso">
               <TableHeader>
                 <TableRow>
                   <TableHeaderCell>ID</TableHeaderCell>
-                  <TableHeaderCell>Username</TableHeaderCell>
-                  <TableHeaderCell>Email</TableHeaderCell>
-                  <TableHeaderCell>Role</TableHeaderCell>
-                  <TableHeaderCell>Created</TableHeaderCell>
+                  <TableHeaderCell>Usuario</TableHeaderCell>
+                  <TableHeaderCell>Correo</TableHeaderCell>
+                  <TableHeaderCell>Rol</TableHeaderCell>
+                  <TableHeaderCell>Creado</TableHeaderCell>
                   <TableHeaderCell>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>

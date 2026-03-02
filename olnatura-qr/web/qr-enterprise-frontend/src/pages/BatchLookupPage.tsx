@@ -169,7 +169,7 @@ export default function BatchLookupPage() {
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <div>
-        <Text weight="semibold" size={700}>Batch Lookup</Text>
+        <Text weight="semibold" size={700}>Consulta por lote</Text>
         <div style={{ color: "#6B6B6B", marginTop: 4 }}>
           Consulta por lote. Visualiza datos fijos y estado dinámico.
         </div>
@@ -228,7 +228,7 @@ export default function BatchLookupPage() {
             </div>
 
             <div style={{ marginTop: 14, color: "#6B6B6B", fontSize: 12 }}>
-              Descargar etiqueta (PNG): <span style={{ color: "#242424" }}>UI placeholder</span>
+              Descargar etiqueta (PNG): disponible desde la pantalla de registrar etiqueta o generar etiqueta.
             </div>
           </Card>
 

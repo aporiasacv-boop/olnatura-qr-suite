@@ -67,7 +67,7 @@ export default function ScanHistoryPage() {
     <div style={{ display: "grid", gap: 14 }}>
       <div>
         <Text weight="semibold" size={700}>
-          Scan History
+          Historial de escaneos
         </Text>
         <div style={{ color: "#6B6B6B", marginTop: 4 }}>
           Filtra por lote para revisar trazabilidad.

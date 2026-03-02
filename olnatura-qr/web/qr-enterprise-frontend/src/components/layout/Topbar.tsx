@@ -25,14 +25,14 @@ export default function Topbar() {
 
   return (
     <header className={s.root}>
-      <Text weight="semibold">Enterprise Internal Dashboard</Text>
+      <Text weight="semibold">Panel interno Olnatura</Text>
       <div className={s.right}>
         <div>
           <div><Text weight="semibold">{username}</Text></div>
           <div className={s.meta}><Text size={200}>{roles}</Text></div>
         </div>
         <Button appearance="secondary" onClick={() => void logout()}>
-          Sign out
+          Cerrar sesión
         </Button>
       </div>
     </header>

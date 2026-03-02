@@ -50,7 +50,7 @@ fun RequestAccessScreen(
                             onClick = onBackToLogin,
                             colors = ButtonDefaults.buttonColors(containerColor = OlnaturaColors.Green)
                         ) {
-                            Text("Volver al login")
+                            Text("Volver al inicio de sesión")
                         }
                     }
                 }
@@ -125,7 +125,7 @@ fun RequestAccessScreen(
             }
             Spacer(Modifier.height(12.dp))
             TextButton(onClick = onBackToLogin, modifier = Modifier.fillMaxWidth()) {
-                Text("Volver al login")
+                Text("Volver al inicio de sesión")
             }
         }
     }

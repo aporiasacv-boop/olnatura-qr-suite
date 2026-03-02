@@ -17,7 +17,8 @@ import java.util.Map;
  */
 public class JsonErrorEntryPoint implements AuthenticationEntryPoint, AccessDeniedHandler {
 
-    private static final String DEFAULT_MESSAGE = "No perteneces a Olnatura";
+    private static final String UNAUTHORIZED_MESSAGE = "No autenticado. Inicia sesión.";
+    private static final String FORBIDDEN_MESSAGE = "No tienes permiso para acceder a este recurso.";
     private static final String UNAUTHORIZED_CODE = "UNAUTHORIZED";
     private static final String FORBIDDEN_CODE = "FORBIDDEN";
 
@@ -29,7 +30,7 @@ public class JsonErrorEntryPoint implements AuthenticationEntryPoint, AccessDeni
             HttpServletResponse response,
             AuthenticationException authException
     ) throws IOException, ServletException {
-        respond(response, HttpServletResponse.SC_UNAUTHORIZED, DEFAULT_MESSAGE, UNAUTHORIZED_CODE);
+        respond(request, response, HttpServletResponse.SC_UNAUTHORIZED, UNAUTHORIZED_MESSAGE, UNAUTHORIZED_CODE);
     }
 
     @Override
@@ -38,17 +39,21 @@ public class JsonErrorEntryPoint implements AuthenticationEntryPoint, AccessDeni
             HttpServletResponse response,
             org.springframework.security.access.AccessDeniedException accessDeniedException
     ) throws IOException, ServletException {
-        respond(response, HttpServletResponse.SC_FORBIDDEN, DEFAULT_MESSAGE, FORBIDDEN_CODE);
+        respond(request, response, HttpServletResponse.SC_FORBIDDEN, FORBIDDEN_MESSAGE, FORBIDDEN_CODE);
     }
 
-    private void respond(HttpServletResponse response, int status, String message, String code) throws IOException {
+    private void respond(HttpServletRequest request, HttpServletResponse response, int status, String message, String code) throws IOException {
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
+        String path = (request != null && request.getRequestURI() != null) ? request.getRequestURI() : "";
         Map<String, Object> body = Map.of(
-                "message", message,
-                "code", code
+                "timestamp", java.time.Instant.now().toString(),
+                "path", path,
+                "status", status,
+                "error", code,
+                "message", message
         );
         objectMapper.writeValue(response.getOutputStream(), body);
     }

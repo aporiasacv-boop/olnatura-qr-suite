@@ -3,17 +3,41 @@
  * NO incluye estatus (es dinámico).
  */
 
+export type FechaTipo = "CADUCIDAD" | "REANALISIS";
+
 export type LabelData = {
   tipoMaterial?: string;
   nombre?: string;
   codigo?: string;
   lote?: string;
   fechaEntrada?: string;
+  /** Tipo de fecha a mostrar: solo uno visible/imprimible */
+  fechaTipo?: FechaTipo;
+  /** Valor de la fecha (usado según fechaTipo) */
+  fechaValor?: string;
+  /** @deprecated Legacy: si no hay fechaTipo/fechaValor, se usa para inferir */
   caducidad?: string;
+  /** @deprecated Legacy: si no hay fechaTipo/fechaValor, se usa para inferir */
   reanalisis?: string;
   envaseNum?: number;
   envaseTotal?: number;
 };
+
+function resolveFechaRow(label: LabelData): { fechaLabel: string; fechaValor: string } {
+  if (label.fechaTipo === "CADUCIDAD") {
+    return { fechaLabel: "Caducidad", fechaValor: label.fechaValor ?? label.caducidad ?? "" };
+  }
+  if (label.fechaTipo === "REANALISIS") {
+    return { fechaLabel: "Reanálisis", fechaValor: label.fechaValor ?? label.reanalisis ?? "" };
+  }
+  if (label.caducidad?.trim()) {
+    return { fechaLabel: "Caducidad", fechaValor: label.caducidad };
+  }
+  if (label.reanalisis?.trim()) {
+    return { fechaLabel: "Reanálisis", fechaValor: label.reanalisis };
+  }
+  return { fechaLabel: "Caducidad", fechaValor: "" };
+}
 
 function row(
   ctx: CanvasRenderingContext2D,
@@ -41,8 +65,9 @@ export async function renderLabelToPng(
   const qrSize = 200;
   const pad = 24;
   const lineH = 32;
+  const rowCount = 7;
   const w = 500;
-  const h = pad * 2 + 8 * lineH + qrSize + pad;
+  const h = pad * 2 + rowCount * lineH + qrSize + pad;
 
   const canvas = document.createElement("canvas");
   canvas.width = w;
@@ -70,9 +95,8 @@ export async function renderLabelToPng(
   y += lineH;
   row(ctx, x, y, "Fecha de entrada", String(label.fechaEntrada ?? ""));
   y += lineH;
-  row(ctx, x, y, "Caducidad", String(label.caducidad ?? ""));
-  y += lineH;
-  row(ctx, x, y, "Reanálisis", String(label.reanalisis ?? ""));
+  const { fechaLabel, fechaValor } = resolveFechaRow(label);
+  row(ctx, x, y, fechaLabel, String(fechaValor ?? "—"));
   y += lineH;
   row(ctx, x, y, "Envase", `${label.envaseNum ?? "—"} / ${label.envaseTotal ?? "—"}`);
   y += lineH + pad;
