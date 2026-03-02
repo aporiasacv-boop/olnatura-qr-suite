@@ -122,7 +122,7 @@ export default function RequestAccessPage() {
               </Text>
               <div className={s.actions}>
                 <Button appearance="primary" onClick={() => nav("/login", { replace: true })}>
-                  Volver a Login
+                  Volver al inicio de sesión
                 </Button>
               </div>
             </div>
@@ -136,29 +136,29 @@ export default function RequestAccessPage() {
     <div className={s.root}>
       <Card className={s.card}>
         <CardHeader
-          header={<Text weight="semibold" size={600}>Request Access</Text>}
+          header={<Text weight="semibold" size={600}>Solicitar acceso</Text>}
           description={<Text size={300} className={s.muted}>Solicita acceso al sistema interno</Text>}
         />
         <CardPreview>
           <div className={s.inner}>
             <form onSubmit={onSubmit} style={{ display: "grid", rowGap: "12px" }}>
               <div className={s.row}>
-                <Text>Username</Text>
-                <Input value={username} onChange={(_, d) => setUsername(d.value)} />
+                <Text>Usuario</Text>
+                <Input value={username} onChange={(_, d) => setUsername(d.value)} placeholder="Usuario" />
               </div>
 
               <div className={s.row}>
-                <Text>Email</Text>
-                <Input value={email} onChange={(_, d) => setEmail(d.value)} />
+                <Text>Correo electrónico</Text>
+                <Input value={email} onChange={(_, d) => setEmail(d.value)} placeholder="correo@ejemplo.com" />
               </div>
 
               <div className={s.row}>
-                <Text>Password</Text>
+                <Text>Contraseña</Text>
                 <Input type="password" value={password} onChange={(_, d) => setPassword(d.value)} />
               </div>
 
               <div className={s.row}>
-                <Text>Role requested</Text>
+                <Text>Rol solicitado</Text>
                 <Dropdown
                   placeholder="Selecciona un rol"
                   selectedOptions={roleRequested ? [roleRequested] : []}

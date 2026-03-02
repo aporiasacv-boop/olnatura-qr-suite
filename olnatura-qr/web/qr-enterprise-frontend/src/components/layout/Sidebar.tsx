@@ -70,25 +70,25 @@ export default function Sidebar() {
         <div className={s.logoRow}>
           <img className={s.logo} src="/logo-olnatura.png" alt="Logo" />
           <div>
-            <Text className={s.title}>Inventory System</Text>
-            <div className={s.subtitle}>QR Traceability</div>
+            <Text className={s.title}>Sistema Olnatura</Text>
+            <div className={s.subtitle}>Trazabilidad QR</div>
           </div>
         </div>
       </div>
 
       <nav className={s.nav}>
         <NavLink to="/" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-          Dashboard
+          Panel principal
         </NavLink>
 
         {can("LOOKUP") && (
           <NavLink to="/lookup" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-            Batch Lookup
+            Consulta por lote
           </NavLink>
         )}
 
         <NavLink to="/scan-history" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-          Scan History
+          Historial de escaneos
         </NavLink>
 
         {(hasRole("ADMIN") || hasRole("ALMACEN") || hasRole("INSPECCION")) && (
@@ -97,11 +97,13 @@ export default function Sidebar() {
           </NavLink>
         )}
 
+        {(hasRole("ADMIN") || hasRole("ALMACEN")) && (
+          <NavLink to="/register-label" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+            Registrar etiqueta
+          </NavLink>
+        )}
         {hasRole("ADMIN") && (
           <>
-            <NavLink to="/register-label" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-              Registrar etiqueta
-            </NavLink>
             <NavLink to="/admin/approval" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
               Aprobar usuarios
             </NavLink>

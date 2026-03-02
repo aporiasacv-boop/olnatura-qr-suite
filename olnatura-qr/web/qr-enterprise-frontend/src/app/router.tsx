@@ -59,9 +59,9 @@ export const router = createBrowserRouter([
       {
         path: "register-label",
         element: (
-          <RequireAdmin>
+          <RequireRole anyOf={["ADMIN", "ALMACEN"]}>
             <RegisterLabelPage />
-          </RequireAdmin>
+          </RequireRole>
         ),
       },
 

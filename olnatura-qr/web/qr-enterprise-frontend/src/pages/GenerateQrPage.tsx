@@ -11,7 +11,7 @@ function logAudit(actionType: string, lote: string | null) {
 }
 import type { QrResponse } from "../api/types";
 import { generateQrWithLogo } from "../utils/qrWithLogo";
-import { renderLabelToPng } from "../utils/labelToPng";
+import { renderLabelToPng, type FechaTipo } from "../utils/labelToPng";
 
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "14px", maxWidth: "600px" },
@@ -78,6 +78,8 @@ export default function GenerateQrPage() {
         logoSizeRatio: 0.22,
       });
 
+      const fechaTipo: FechaTipo = (label as any).fechaTipo ?? (label.reanalisis?.trim() && !label.caducidad?.trim() ? "REANALISIS" : "CADUCIDAD");
+      const fechaValor = (label as any).fechaValor ?? (fechaTipo === "CADUCIDAD" ? label.caducidad : label.reanalisis);
       const fullLabelPng = await renderLabelToPng(
         {
           tipoMaterial: label.tipoMaterial,
@@ -85,6 +87,8 @@ export default function GenerateQrPage() {
           codigo: label.codigo,
           lote: label.lote,
           fechaEntrada: label.fechaEntrada,
+          fechaTipo,
+          fechaValor,
           caducidad: label.caducidad,
           reanalisis: label.reanalisis,
           envaseNum: label.envaseNum,

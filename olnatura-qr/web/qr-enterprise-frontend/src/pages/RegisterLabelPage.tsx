@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
-import { Card, Text, Input, Button } from "@fluentui/react-components";
-import QRCode from "qrcode";
+import { Card, Text, Input, Button, Radio, RadioGroup } from "@fluentui/react-components";
 import { useAuth } from "../auth/AuthContext";
 import { generateQrWithLogo } from "../utils/qrWithLogo";
-import { renderLabelToPng } from "../utils/labelToPng";
+import { renderLabelToPng, type FechaTipo } from "../utils/labelToPng";
 
 type FormState = {
   tipoMaterial: string;
@@ -11,7 +10,8 @@ type FormState = {
   codigo: string;
   lote: string;
   fechaEntrada: string;
-  caducidad: string;
+  fechaTipo: FechaTipo;
+  fechaValor: string;
   envaseNum: string;
   envaseTotal: string;
 };
@@ -30,7 +30,8 @@ export default function RegisterLabelPage() {
     codigo: "",
     lote: "",
     fechaEntrada: "",
-    caducidad: "",
+    fechaTipo: "CADUCIDAD",
+    fechaValor: "",
     envaseNum: "",
     envaseTotal: "",
   });
@@ -113,9 +114,8 @@ export default function RegisterLabelPage() {
         codigo: form.codigo.trim(),
         lote: form.lote.trim(),
         fechaEntrada: form.fechaEntrada.trim(),
-        caducidad: form.caducidad.trim(),
-        // si todavía no tienes reanálisis separado, lo dejamos vacío
-        reanalisis: "",
+        fechaTipo: form.fechaTipo,
+        fechaValor: form.fechaValor.trim(),
         envaseNum: form.envaseNum ? Number(form.envaseNum) : undefined,
         envaseTotal: form.envaseTotal ? Number(form.envaseTotal) : undefined,
       },
@@ -144,7 +144,7 @@ export default function RegisterLabelPage() {
         </Text>
 
         <div style={{ color: "#6B6B6B", marginTop: 4 }}>
-          UI lista. Generación de QR es local (frontend). Endpoint de registro aún pendiente.
+          Genera QR y etiqueta imprimible. La generación es local.
         </div>
 
         {!canQr ? (
@@ -189,11 +189,22 @@ export default function RegisterLabelPage() {
           value={form.fechaEntrada}
           onChange={(v) => setForm((s) => ({ ...s, fechaEntrada: v }))}
         />
+        <div style={{ display: "grid", gap: 6 }}>
+          <Text>Fecha (tipo)</Text>
+          <RadioGroup
+            value={form.fechaTipo}
+            onChange={(_, d) => setForm((s) => ({ ...s, fechaTipo: d.value as FechaTipo }))}
+            layout="horizontal"
+          >
+            <Radio value="CADUCIDAD" label="Caducidad" />
+            <Radio value="REANALISIS" label="Reanálisis" />
+          </RadioGroup>
+        </div>
         <Field
-          label="Caducidad/Reanálisis"
+          label={form.fechaTipo === "CADUCIDAD" ? "Caducidad (YYYY-MM-DD)" : "Reanálisis (YYYY-MM-DD)"}
           placeholder="YYYY-MM-DD"
-          value={form.caducidad}
-          onChange={(v) => setForm((s) => ({ ...s, caducidad: v }))}
+          value={form.fechaValor}
+          onChange={(v) => setForm((s) => ({ ...s, fechaValor: v }))}
         />
         <Field
           label="Envase Num"
@@ -224,7 +235,7 @@ export default function RegisterLabelPage() {
 
         {qrDataUrl ? (
           <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
-            <Text weight="semibold">Preview</Text>
+            <Text weight="semibold">Vista previa</Text>
             <div
               style={{
                 display: "grid",

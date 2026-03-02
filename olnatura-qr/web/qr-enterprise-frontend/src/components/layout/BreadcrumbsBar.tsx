@@ -7,10 +7,14 @@ import {
 import { useNavigate } from "react-router-dom";
 
 function labelFor(seg: string) {
-  if (!seg) return "Home";
-  if (seg === "lookup") return "Batch Lookup";
-  if (seg === "scan-history") return "Scan History";
+  if (!seg) return "Inicio";
+  if (seg === "lookup") return "Consulta por lote";
+  if (seg === "scan-history") return "Historial de escaneos";
   if (seg === "register-label") return "Registrar etiqueta";
+  if (seg === "generate-qr") return "Etiquetas";
+  if (seg === "admin") return "Administración";
+  if (seg === "approval") return "Aprobar usuarios";
+  if (seg === "audit") return "Historial";
   return seg;
 }
 
@@ -29,7 +33,7 @@ export default function BreadcrumbsBar({ path }: { path: string }) {
     >
       <Breadcrumb>
         <BreadcrumbItem>
-          <BreadcrumbButton onClick={() => navigate("/")}>Home</BreadcrumbButton>
+          <BreadcrumbButton onClick={() => navigate("/")}>Inicio</BreadcrumbButton>
         </BreadcrumbItem>
 
         {parts.map((p) => {

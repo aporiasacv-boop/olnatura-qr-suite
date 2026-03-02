@@ -99,10 +99,10 @@ export default function LoginPage() {
           <CardHeader
             header={
               <Text weight="semibold" size={600}>
-                Inventory System
+                Sistema Olnatura
               </Text>
             }
-            description={<Text size={300}>QR Traceability Platform</Text>}
+            description={<Text size={300}>Plataforma de trazabilidad QR</Text>}
           />
           <CardPreview>
             <div className={s.inner}>
@@ -117,21 +117,21 @@ export default function LoginPage() {
 
               <form onSubmit={onSubmit} style={{ display: "grid", rowGap: "12px" }}>
                 <div className={s.row}>
-                  <Text>Username</Text>
+                  <Text>Usuario</Text>
                   <Input
                     value={username}
                     onChange={(_, d) => setUsername(d.value)}
-                    placeholder="Enter username"
+                    placeholder="Ingresa tu usuario"
                   />
                 </div>
 
                 <div className={s.row}>
-                  <Text>Password</Text>
+                  <Text>Contraseña</Text>
                   <Input
                     type="password"
                     value={password}
                     onChange={(_, d) => setPassword(d.value)}
-                    placeholder="Enter password"
+                    placeholder="Ingresa tu contraseña"
                   />
                 </div>
 
@@ -142,11 +142,11 @@ export default function LoginPage() {
                   type="submit"
                   disabled={busy || !username || !password}
                 >
-                  {busy ? "Signing in…" : "Sign in"}
+                  {busy ? "Iniciando sesión…" : "Iniciar sesión"}
                 </Button>
 
                 <div className={s.meta}>
-                  <Text>© 2026 OLNATURA. All rights reserved.</Text>
+                  <Text>© 2026 OLNATURA. Todos los derechos reservados.</Text>
                 </div>
               </form>
             </div>

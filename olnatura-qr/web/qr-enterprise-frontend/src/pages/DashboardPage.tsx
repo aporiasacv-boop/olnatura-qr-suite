@@ -21,12 +21,12 @@ const useStyles = makeStyles({
 export default function DashboardPage() {
   const s = useStyles();
   const nav = useNavigate();
-  const { can } = useAuth();
+  const { can, hasRole } = useAuth();
 
   return (
     <div style={{ display: "grid", rowGap: "14px" }}>
       <div>
-        <Text weight="semibold" size={700}>Dashboard</Text>
+        <Text weight="semibold" size={700}>Panel principal</Text>
         <div style={{ color: "#6B6B6B", marginTop: 4 }}>
           Acciones rápidas para operación y trazabilidad.
         </div>
@@ -46,7 +46,7 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {can("ADMIN") && (
+        {(hasRole("ADMIN") || hasRole("ALMACEN")) && (
           <Card
             className={s.card}
             onClick={() => nav("/register-label")}
@@ -55,7 +55,7 @@ export default function DashboardPage() {
             onKeyDown={(e) => e.key === "Enter" && nav("/register-label")}
           >
             <Text weight="semibold" className={s.title}>Registrar etiqueta</Text>
-            <div className={s.desc}>UI placeholder. Endpoint aún no disponible.</div>
+            <div className={s.desc}>Registrar nueva etiqueta en el sistema.</div>
           </Card>
         )}
 
@@ -66,7 +66,7 @@ export default function DashboardPage() {
           tabIndex={0}
           onKeyDown={(e) => e.key === "Enter" && nav("/scan-history")}
         >
-          <Text weight="semibold" className={s.title}>Historial de scans</Text>
+          <Text weight="semibold" className={s.title}>Historial de escaneos</Text>
           <div className={s.desc}>Revisa eventos por lote (filtro).</div>
         </Card>
       </div>
