@@ -1,8 +1,15 @@
 package com.company.olnaturaqr.api;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class QrDto {
+
+    public record Permissions(
+            boolean canChangeStatus,
+            boolean canRegisterScan,
+            boolean canCreateLabel
+    ) {}
 
     public record Label(
             String tipoMaterial,
@@ -24,5 +31,11 @@ public class QrDto {
             String fuente
     ) {}
 
-    public record Response(Label label, Dynamic dynamic) {}
+    /** label and dynamic unchanged; optional fields for web client (Android ignores). */
+    public record Response(
+            Label label,
+            Dynamic dynamic,
+            List<String> availableTransitions,
+            Permissions permissions
+    ) {}
 }

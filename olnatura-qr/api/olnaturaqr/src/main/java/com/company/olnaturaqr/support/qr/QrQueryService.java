@@ -1,13 +1,18 @@
 package com.company.olnaturaqr.support.qr;
 
 import com.company.olnaturaqr.api.QrDto;
-import com.company.olnaturaqr.support.qr.LoteExtractor;
 import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.infra.dynamics.MockDynamicsClient;
 import com.company.olnaturaqr.repository.QrLabelRepository;
+import com.company.olnaturaqr.support.security.AuthPrincipal;
+import com.company.olnaturaqr.support.workflow.WorkflowTransitions;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Collections;
+import java.util.List;
+
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -23,7 +28,7 @@ public class QrQueryService {
     }
 
     @Transactional(readOnly = true)
-    public QrDto.Response getByLote(String loteRaw) {
+    public QrDto.Response getByLote(String loteRaw, AuthPrincipal principal) {
         String normalized = LoteExtractor.extract(loteRaw)
                 .orElse(loteRaw != null ? loteRaw.trim() : "");
 
@@ -69,7 +74,24 @@ public class QrQueryService {
                         "DB_ONLY"
                 ));
 
-        return new QrDto.Response(dtoLabel, dyn);
+        String currentStatus = dyn.status();
+        List<String> transitions = principal != null
+                ? WorkflowTransitions.allowedFrom(currentStatus)
+                : Collections.emptyList();
+        QrDto.Permissions perms = buildPermissions(principal);
+
+        return new QrDto.Response(dtoLabel, dyn, transitions, perms);
+    }
+
+    private QrDto.Permissions buildPermissions(AuthPrincipal principal) {
+        if (principal == null || principal.roles() == null) {
+            return new QrDto.Permissions(false, false, false);
+        }
+        var roles = principal.roles();
+        boolean canChangeStatus = roles.contains("ADMIN") || roles.contains("INSPECCION");
+        boolean canCreateLabel = roles.contains("ADMIN") || roles.contains("ALMACEN");
+        boolean canRegisterScan = roles.contains("ADMIN") || roles.contains("INSPECCION") || roles.contains("ALMACEN");
+        return new QrDto.Permissions(canChangeStatus, canRegisterScan, canCreateLabel);
     }
 
     private String normalizeStatus(String s) {

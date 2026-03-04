@@ -1,6 +1,8 @@
 package com.company.olnaturaqr.api;
 
 import com.company.olnaturaqr.support.qr.QrQueryService;
+import com.company.olnaturaqr.support.security.AuthPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,7 +17,10 @@ public class QrController {
     }
 
     @GetMapping("/{lote}")
-    public QrDto.Response getByLote(@PathVariable String lote) {
-        return qrQueryService.getByLote(lote);
+    public QrDto.Response getByLote(
+            @PathVariable String lote,
+            @AuthenticationPrincipal AuthPrincipal principal
+    ) {
+        return qrQueryService.getByLote(lote, principal);
     }
 }
