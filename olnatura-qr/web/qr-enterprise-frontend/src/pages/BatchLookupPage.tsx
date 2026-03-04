@@ -75,6 +75,7 @@ export default function BatchLookupPage() {
     setScans(null);
 
     try {
+      console.log("Lot being requested:", loteTrim);
       const qr = await api<QrResponse>(`/qr/${encodeURIComponent(loteTrim)}`);
       setData(qr);
 
@@ -201,9 +202,12 @@ export default function BatchLookupPage() {
         <div style={{ flex: 1, display: "grid", gap: 6 }}>
           <Text>Lote</Text>
           <Input
+            id="lote"
+            name="lote"
+            type="text"
             value={lote}
-            onChange={(_, d) => setLote(d.value)}
-            placeholder="Ej. LOT-2026-001-A"
+            onChange={(_, d) => setLote(d.value ?? "")}
+            placeholder="Ej. 251201-MEM0003454"
           />
         </div>
 

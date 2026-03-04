@@ -15,8 +15,10 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         // API base URL: cambia para dev/prod (ej. http://10.0.2.2:3001/ para emulador)
-        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://192.168.100.10:3001/"}\"")
+        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://192.168.41.172:3001/"}\"")
     }
 
     buildFeatures {
@@ -65,4 +67,11 @@ dependencies {
     implementation("androidx.camera:camera-view:1.4.1")
 
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

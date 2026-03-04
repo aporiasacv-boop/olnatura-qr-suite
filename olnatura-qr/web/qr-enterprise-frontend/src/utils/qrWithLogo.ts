@@ -121,7 +121,7 @@ async function drawLogoOverlay(
   // Borde verde (para que se note siempre)
   drawRoundedRect(ctx, bx, by, badgeSize, badgeSize, Math.round(badgeSize * opts.badgeRadiusRatio));
   ctx.lineWidth = opts.badgeBorderWidth;
-  ctx.strokeStyle = "#1F7A3A"; // verde Olnatura-ish
+  ctx.strokeStyle = "#4d8a52"; // verde Olnatura-ish
   ctx.stroke();
 
   // Dibuja logo “contain” dentro del badge

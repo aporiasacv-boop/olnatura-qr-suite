@@ -61,22 +61,22 @@ cd OlnaturaQR
 ./gradlew assembleDebug
 ```
 
-- **Emulador**: `BASE_URL` por defecto `http://10.0.2.2:3001/`
+- **Emulador**: `BASE_URL` por defecto `http://192.168.41.172:3001/`
 - **Dispositivo físico**: usa la IP de tu máquina:
   ```bash
-  ./gradlew assembleDebug -PAPI_BASE_URL=http://192.168.x.x:3001/
+  ./gradlew assembleDebug -PAPI_BASE_URL=http://192.168.41.172:3001/
   ```
 
 O edita `app/build.gradle.kts` y cambia el valor por defecto de `API_BASE_URL`.
 
 ## Endpoints
 
-| Ruta | Auth | Descripción |
-|------|------|-------------|
-| `GET /qr/{lote}` | No | Landing público (HTML) |
-| `GET /api/v1/qr/{lote}` | Sí | Datos del lote + estado dinámico |
-| `POST /api/v1/auth/login` | No | Login (cookie HttpOnly) |
-| `GET /api/v1/auth/me` | Sí | Usuario actual |
+| Ruta                      | Auth | Descripción                      |
+| ------------------------- | ---- | -------------------------------- |
+| `GET /qr/{lote}`          | No   | Landing público (HTML)           |
+| `GET /api/v1/qr/{lote}`   | Sí   | Datos del lote + estado dinámico |
+| `POST /api/v1/auth/login` | No   | Login (cookie HttpOnly)          |
+| `GET /api/v1/auth/me`     | Sí   | Usuario actual                   |
 
 Sin sesión, `GET /api/v1/qr/{lote}` responde `401` con body `{ "message": "No perteneces a Olnatura", "code": "UNAUTHORIZED" }`.
 

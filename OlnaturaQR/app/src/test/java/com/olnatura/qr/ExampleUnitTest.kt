@@ -1,7 +1,6 @@
 package com.olnatura.qr
 
 import org.junit.Test
-
 import org.junit.Assert.*
 
 /**

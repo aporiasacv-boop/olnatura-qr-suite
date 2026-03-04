@@ -78,7 +78,7 @@ export async function renderLabelToPng(
   // Fondo blanco + borde verde
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = "#1E7A4A";
+  ctx.strokeStyle = "#45a350";
   ctx.lineWidth = 3;
   ctx.strokeRect(2, 2, w - 4, h - 4);
 

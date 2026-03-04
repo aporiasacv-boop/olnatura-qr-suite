@@ -6,8 +6,8 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val OlnaturaGreen = Color(0xFF6E8F3B)      // verde como tu captura (aprox)
-private val OlnaturaGreenLight = Color(0xFFDAEDC2) // banner claro
+private val OlnaturaGreen = Color(0xFF6E8F3B)      
+private val OlnaturaGreenLight = Color(0xFFDAEDC2)
 private val Background = Color(0xFFF4F7F2)
 
 private val scheme = lightColorScheme(
