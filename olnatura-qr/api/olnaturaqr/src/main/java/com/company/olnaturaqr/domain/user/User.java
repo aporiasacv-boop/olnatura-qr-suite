@@ -3,7 +3,6 @@ package com.company.olnaturaqr.domain.user;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
-import com.company.olnaturaqr.domain.user.Role;
 
 @Entity
 @Table(name = "users")
@@ -35,22 +34,51 @@ public class User {
 
   // ----- getters/setters -----
 
-  public UUID getId() { return id; }
+  public UUID getId() {
+    return id;
+  }
 
-  public String getUsername() { return username; }
-  public void setUsername(String username) { this.username = username; }
+  public String getUsername() {
+    return username;
+  }
 
-  public String getEmail() { return email; }
-  public void setEmail(String email) { this.email = email; }
+  public void setUsername(String username) {
+    this.username = username;
+  }
 
-  public String getPasswordHash() { return passwordHash; }
-  public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+  public String getEmail() {
+    return email;
+  }
 
-  public boolean isEnabled() { return enabled; }
-  public void setEnabled(boolean enabled) { this.enabled = enabled; }
+  public void setEmail(String email) {
+    this.email = email;
+  }
 
-  public Instant getCreatedAt() { return createdAt; }
+  public String getPasswordHash() {
+    return passwordHash;
+  }
 
-  public Role getRole() { return role; }
-  public void setRole(Role role) { this.role = role; }
+  public void setPasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public Role getRole() {
+    return role;
+  }
+
+  public void setRole(Role role) {
+    this.role = role;
+  }
 }

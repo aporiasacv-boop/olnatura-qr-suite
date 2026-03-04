@@ -6,22 +6,22 @@ import java.util.List;
 
 /**
  * Allowed next states from current status.
- * Kept simple: all-to-all transitions (all valid statuses allowed from any state).
+ * Kept simple: all-to-all transitions (all valid statuses allowed from any
+ * state).
  * Easy to adjust for stricter workflow rules later.
  */
 public final class WorkflowTransitions {
 
-    private static final List<String> ALL =
-            Arrays.asList(
-                    WorkflowStatus.PENDING,
-                    WorkflowStatus.APROBADO,
-                    WorkflowStatus.LIBERADO,
-                    WorkflowStatus.RECHAZADO,
-                    WorkflowStatus.CUARENTENA,
-                    WorkflowStatus.DESCONOCIDO
-            );
+    private static final List<String> ALL = Arrays.asList(
+            WorkflowStatus.PENDING,
+            WorkflowStatus.APROBADO,
+            WorkflowStatus.LIBERADO,
+            WorkflowStatus.RECHAZADO,
+            WorkflowStatus.CUARENTENA,
+            WorkflowStatus.DESCONOCIDO);
 
-    private WorkflowTransitions() {}
+    private WorkflowTransitions() {
+    }
 
     /**
      * Returns list of allowed next statuses from current.
@@ -29,6 +29,9 @@ public final class WorkflowTransitions {
      */
     public static List<String> allowedFrom(String currentStatus) {
         String normalized = WorkflowStatus.normalize(currentStatus);
+        if (normalized.equals(WorkflowStatus.DESCONOCIDO)) {
+            return Collections.emptyList();
+        }
         return Collections.unmodifiableList(ALL);
     }
 }

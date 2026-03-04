@@ -1,0 +1,35 @@
+# Demo mode: Postgres + API in Docker. Frontend can run locally (npm run dev) and call API at localhost:3001.
+# Usage (from repo root): docker compose -f olnatura-qr/infra/docker/docker-compose.demo.yml up --build
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: olnatura_qr
+      POSTGRES_USER: olnatura
+      POSTGRES_PASSWORD: olnatura123
+    ports:
+      - "5432:5432"
+    volumes:
+      - olnatura_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U olnatura -d olnatura_qr"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ../../api/olnaturaqr
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: dev-secret-change-me-please-dev-secret-change-me
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  olnatura_pgdata:

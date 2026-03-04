@@ -1,17 +1,22 @@
 # --- Global ---
 .DS_Store
 Thumbs.db
+.env
+*.env.local
+!.env.example
 
 # --- Backend (Spring Boot / Gradle) ---
-olnatura-qr/api/**/build/
-olnatura-qr/api/**/.gradle/
+build/
+.gradle/
+**/build/
+**/.gradle/
 olnatura-qr/api/**/out/
 
 # --- Frontend ---
-olnatura-qr/frontend/node_modules/
-olnatura-qr/frontend/dist/
-olnatura-qr/web/**/node_modules/
-olnatura-qr/web/**/dist/
+node_modules/
+dist/
+**/node_modules/
+**/dist/
 
 # --- Android ---
 OlnaturaQR/.gradle/

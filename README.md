@@ -9,16 +9,86 @@ olnatura-qr-suite/
 ├── olnatura-qr/api/olnaturaqr    # Backend Spring Boot + Postgres + Flyway
 ├── olnatura-qr/web/qr-enterprise-frontend  # Vite + React + Fluent UI
 ├── OlnaturaQR/                   # Android (Kotlin + Jetpack Compose)
+├── scripts/                      # Helper scripts (demo-up, dev-api, dev-web)
 └── README.md
 ```
 
 ## Requisitos
 
-- **Backend**: Java 21, Gradle, Postgres
-- **Web**: Node 18+
+- **Demo (Docker)**: Docker + Docker Compose
+- **Local dev**: Java 21, Gradle, Postgres, Node 18+
 - **Android**: Android Studio, SDK 35
 
-## Cómo correr todo
+---
+
+## Quickstart
+
+### Demo (one-command run)
+
+From the **repo root**:
+
+**Windows (PowerShell):**
+```powershell
+.\scripts\demo-up.ps1
+```
+
+**Linux / macOS / Git Bash:**
+```bash
+./scripts/demo-up.sh
+```
+
+- **API:** http://localhost:3001  
+- **Demo users:** `admin` / `Admin123!` · `inp` / `Inp123!` · `alm` / `Alm123!` (ADMIN, INSPECCION, ALMACEN)
+
+To use the web UI with the demo API, in another terminal run `.\scripts\dev-web.ps1` or `./scripts/dev-web.sh` (first time: `cd olnatura-qr/web/qr-enterprise-frontend && npm install && cp .env.example .env`).
+
+To stop and remove containers and DB volume:
+```powershell
+.\scripts\demo-down.ps1
+```
+```bash
+./scripts/demo-down.sh
+```
+
+### Dev (local backend + frontend)
+
+1. **Postgres** on port 5432 (e.g. Docker Desktop or `docker run -d --name olnatura-pg -e POSTGRES_USER=olnatura -e POSTGRES_PASSWORD=olnatura123 -e POSTGRES_DB=olnatura_qr -p 5432:5432 postgres:16`).
+2. **API** (from repo root):
+   - Windows: `.\scripts\dev-api.ps1`
+   - Bash: `./scripts/dev-api.sh`
+   - Or: `cd olnatura-qr/api/olnaturaqr && ./gradlew bootRun` (Windows: `.\gradlew.bat bootRun`)
+3. **Web** (first time: `cd olnatura-qr/web/qr-enterprise-frontend && npm install && cp .env.example .env`):
+   - Windows: `.\scripts\dev-web.ps1`
+   - Bash: `./scripts/dev-web.sh`
+
+- **API:** http://localhost:3001 · **Web:** http://localhost:5173
+
+---
+
+## Troubleshooting
+
+- **Ports in use (5432, 3001, 5173)**  
+  Stop whatever is using the port, or change the port in config:
+  - Postgres: 5432 (docker compose or `application.yml` datasource)
+  - API: 3001 (`server.port` in `application.yml`)
+  - Web: 5173 (Vite default in `qr-enterprise-frontend`)
+
+- **Reset demo DB (clean volume)**  
+  Tear down demo stack and remove the Postgres volume:
+  ```powershell
+  .\scripts\demo-down.ps1
+  ```
+  ```bash
+  ./scripts/demo-down.sh
+  ```
+  (`-v` removes the named volume `olnatura_pgdata`; next `demo-up` will run Flyway from scratch.)
+
+- **Secrets**  
+  No real secrets are committed. `JWT_SECRET` in `docker-compose.demo.yml` is a dev-only value; override via env in production.
+
+---
+
+## Cómo correr todo (referencia)
 
 ### 1. Base de datos (Postgres)
 
@@ -36,8 +106,10 @@ cd olnatura-qr/api/olnaturaqr
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
 
+En Windows: `.\gradlew.bat bootRun`
+
 - Puerto: **3001**
-- Admin bootstrap (dev): `admin` / `Admin123!`
+- Demo users (tras migración V6): `admin`/`Admin123!`, `inp`/`Inp123!`, `alm`/`Alm123!`
 - Demo lote: `260112-MES003456`
 
 ### 3. Web
@@ -89,6 +161,6 @@ Sin sesión, `GET /api/v1/qr/{lote}` responde `401` con body `{ "message": "No p
 
 ## Configuración
 
-- **Backend**: `application.yml`, `application-dev.yml`
-- **Web**: `VITE_API_BASE_URL` en `.env`
+- **Backend**: `application.yml`, `application-dev.yml`, `application-docker.yml` (perfil Docker)
+- **Web**: `VITE_API_BASE_URL` en `.env` (copiar desde `olnatura-qr/web/qr-enterprise-frontend/.env.example`; `.env` está en `.gitignore`, sin secretos en el ejemplo)
 - **Android**: `API_BASE_URL` en `build.gradle.kts` o `Constants.kt`

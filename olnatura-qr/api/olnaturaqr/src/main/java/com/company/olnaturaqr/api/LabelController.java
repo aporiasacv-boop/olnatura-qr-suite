@@ -14,7 +14,6 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -87,8 +86,7 @@ public class LabelController {
                 saved.getId(),
                 saved.getStatusDinamico(),
                 qrUrl,
-                LabelDto.LabelView.from(saved)
-        ));
+                LabelDto.LabelView.from(saved)));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','INSPECCION')")
@@ -96,8 +94,7 @@ public class LabelController {
     public ResponseEntity<LabelDto.StatusResponse> updateStatus(
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable UUID id,
-            @RequestBody LabelDto.StatusRequest req
-    ) {
+            @RequestBody LabelDto.StatusRequest req) {
         if (req == null || isBlank(req.status())) {
             throw new ResponseStatusException(BAD_REQUEST, "status es requerido");
         }
@@ -107,9 +104,8 @@ public class LabelController {
             throw new ResponseStatusException(BAD_REQUEST, "Status inválido: " + st);
         }
 
-        QrLabel q = repo.findById(id).orElseThrow(() ->
-                new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + id)
-        );
+        QrLabel q = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + id));
 
         q.setStatusDinamico(st);
         repo.save(q);
@@ -125,8 +121,7 @@ public class LabelController {
     public ResponseEntity<LabelDto.StatusResponse> updateStatusByLote(
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable String lote,
-            @RequestBody LabelDto.StatusRequest req
-    ) {
+            @RequestBody LabelDto.StatusRequest req) {
         if (req == null || isBlank(req.status())) {
             throw new ResponseStatusException(BAD_REQUEST, "status es requerido");
         }
@@ -134,8 +129,8 @@ public class LabelController {
         if (!WorkflowStatus.isValid(st)) {
             throw new ResponseStatusException(BAD_REQUEST, "Status inválido: " + st);
         }
-        QrLabel q = repo.findByLote(lote.trim()).orElseThrow(() ->
-                new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada para lote: " + lote));
+        QrLabel q = repo.findByLote(lote.trim())
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada para lote: " + lote));
         q.setStatusDinamico(st);
         repo.save(q);
 
@@ -148,11 +143,12 @@ public class LabelController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<LabelDto.LabelView> getById(@PathVariable UUID id) {
-        QrLabel q = repo.findById(id).orElseThrow(() ->
-                new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + id)
-        );
+        QrLabel q = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + id));
         return ResponseEntity.ok(LabelDto.LabelView.from(q));
     }
 
-    private static boolean isBlank(String s) { return s == null || s.trim().isEmpty(); }
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }
 }

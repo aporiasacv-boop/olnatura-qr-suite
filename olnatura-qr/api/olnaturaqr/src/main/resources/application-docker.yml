@@ -1,0 +1,30 @@
+# Profile: docker — used when API runs inside Docker (e.g. docker-compose.demo)
+# DB host must be the compose service name "postgres", not localhost.
+server:
+  port: 3001
+  address: 0.0.0.0
+
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/olnatura_qr
+    username: olnatura
+    password: olnatura123
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  cors:
+    allowed-origins: "http://localhost:5173,http://localhost:3000"
+  auth:
+    cookie:
+      name: "qr_session"
+      max-age-seconds: 86400
+      secure: false
+      same-site: "Lax"

@@ -9,8 +9,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.UUID;
-
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
@@ -29,8 +27,7 @@ public class ScanController {
     public ResponseEntity<ScanDto.Response> create(
             @PathVariable String lote,
             @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
-            @AuthenticationPrincipal AuthPrincipal principal
-    ) {
+            @AuthenticationPrincipal AuthPrincipal principal) {
         String normalized = (lote == null) ? "" : lote.trim();
         if (normalized.isBlank()) {
             throw new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + lote);
@@ -56,8 +53,7 @@ public class ScanController {
                 saved.getLote(),
                 saved.getScannedBy(),
                 saved.getDeviceId(),
-                saved.getCreatedAt()
-        ));
+                saved.getCreatedAt()));
     }
 
     @GetMapping("/{lote}")
@@ -71,9 +67,7 @@ public class ScanController {
                                 ev.getLote(),
                                 ev.getScannedBy(),
                                 ev.getDeviceId(),
-                                ev.getCreatedAt()
-                        ))
-                        .toList()
-        );
+                                ev.getCreatedAt()))
+                        .toList());
     }
 }
