@@ -36,7 +36,15 @@ export type AccessRequestItem = {
 
 export type ScanEvent = Record<string, any>;
 
+export type QrPermissions = {
+  canChangeStatus: boolean;
+  canRegisterScan: boolean;
+  canCreateLabel: boolean;
+};
+
 export type QrResponse = {
   label: Record<string, any>;
   dynamic: Record<string, any>;
+  availableTransitions?: string[];
+  permissions?: QrPermissions;
 } & Record<string, any>;

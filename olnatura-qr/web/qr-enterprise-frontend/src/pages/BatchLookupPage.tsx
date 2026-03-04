@@ -51,7 +51,7 @@ function statusToDisplayLabel(backendValue: string): string {
 }
 
 export default function BatchLookupPage() {
-  const { can, hasRole } = useAuth();
+  const { can } = useAuth();
   const toasts = useToasts();
 
   const [lote, setLote] = useState("");
@@ -64,7 +64,6 @@ export default function BatchLookupPage() {
   const [statusBusy, setStatusBusy] = useState(false);
 
   const loteTrim = useMemo(() => lote.trim(), [lote]);
-  const canChangeStatus = hasRole("INSPECCION") || hasRole("ADMIN");
 
   // Load batch data
   const load = async () => {
@@ -181,6 +180,12 @@ export default function BatchLookupPage() {
   })();
 
   const dynamicStatus = (data as any)?.dynamic?.status ?? "—";
+  const canChangeStatus = data?.permissions?.canChangeStatus ?? false;
+  const canRegisterScan = data?.permissions?.canRegisterScan ?? can("SCAN");
+  const transitions = data?.availableTransitions ?? [];
+  const dropdownOptions = transitions.length > 0
+    ? STATUS_OPTIONS.filter((o) => transitions.includes(o.value))
+    : [...STATUS_OPTIONS];
 
   // Render
   return (
@@ -210,7 +215,7 @@ export default function BatchLookupPage() {
           Buscar
         </Button>
 
-        {can("SCAN") && (
+        {canRegisterScan && (
           <Button
             appearance="secondary"
             onClick={() => void registerScan()}
@@ -257,7 +262,7 @@ export default function BatchLookupPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   <Text>Estado</Text>
                   <StatusTag status={statusToDisplayLabel(dynamicStatus)} />
-                  {canChangeStatus && (
+                  {dropdownOptions.length > 0 ? (
                     <>
                       <Dropdown
                         placeholder="Cambiar a…"
@@ -265,9 +270,10 @@ export default function BatchLookupPage() {
                         onOptionSelect={(_, d) =>
                           setNewStatus((d.optionValue ?? "") as string)
                         }
+                        disabled={!canChangeStatus}
                         style={{ minWidth: 140 }}
                       >
-                        {STATUS_OPTIONS.map((o) => (
+                        {dropdownOptions.map((o) => (
                           <Option key={o.value} value={o.value}>
                             {o.label}
                           </Option>
@@ -277,11 +283,17 @@ export default function BatchLookupPage() {
                         appearance="primary"
                         size="small"
                         onClick={() => void changeStatus()}
-                        disabled={!newStatus || statusBusy}
+                        disabled={!canChangeStatus || !newStatus || statusBusy}
                       >
                         {statusBusy ? "…" : "Aplicar"}
                       </Button>
                     </>
+                  ) : (
+                    !canChangeStatus ? null : (
+                      <Text style={{ color: "#6B6B6B", fontSize: 12 }}>
+                        Sin opciones disponibles
+                      </Text>
+                    )
                   )}
                 </div>
 
