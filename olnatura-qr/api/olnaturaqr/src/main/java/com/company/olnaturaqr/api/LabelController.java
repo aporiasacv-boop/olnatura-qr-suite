@@ -1,6 +1,7 @@
 package com.company.olnaturaqr.api;
 
 import com.company.olnaturaqr.domain.qr.QrLabel;
+import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
@@ -102,7 +103,7 @@ public class LabelController {
         }
 
         String st = req.status().trim().toUpperCase(Locale.ROOT);
-        if (!isValidStatus(st)) {
+        if (!WorkflowStatus.isValid(st)) {
             throw new ResponseStatusException(BAD_REQUEST, "Status inválido: " + st);
         }
 
@@ -130,7 +131,7 @@ public class LabelController {
             throw new ResponseStatusException(BAD_REQUEST, "status es requerido");
         }
         String st = req.status().trim().toUpperCase(Locale.ROOT);
-        if (!isValidStatus(st)) {
+        if (!WorkflowStatus.isValid(st)) {
             throw new ResponseStatusException(BAD_REQUEST, "Status inválido: " + st);
         }
         QrLabel q = repo.findByLote(lote.trim()).orElseThrow(() ->
@@ -151,11 +152,6 @@ public class LabelController {
                 new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + id)
         );
         return ResponseEntity.ok(LabelDto.LabelView.from(q));
-    }
-
-    private static boolean isValidStatus(String st) {
-        return st.equals("PENDING") || st.equals("CUARENTENA") || st.equals("APROBADO")
-                || st.equals("RECHAZADO") || st.equals("LIBERADO") || st.equals("DESCONOCIDO");
     }
 
     private static boolean isBlank(String s) { return s == null || s.trim().isEmpty(); }
