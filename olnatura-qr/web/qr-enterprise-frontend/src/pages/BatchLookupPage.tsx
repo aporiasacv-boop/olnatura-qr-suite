@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Button, Card, Input, Text, Select, Option } from "@fluentui/react-components";
+import { Button, Card, Dropdown, Input, Option, Text } from "@fluentui/react-components";
 import { api, ApiError } from "../api/client";
 import type { QrResponse, ScanEvent } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
@@ -34,8 +34,21 @@ function readDynamic(data: QrResponse | null, key: string, fallback = "—") {
   return asText((data as any)?.dynamic?.[key], fallback);
 }
 
-// Page component
-const STATUS_OPTIONS = ["LIBERADO", "APROBADO", "CUARENTENA", "RECHAZADO", "PENDIENTE"] as const;
+// Status mapping: display label (Spanish) <-> backend value (English)
+// PATCH requests must send backend values.
+const STATUS_OPTIONS = [
+  { value: "PENDING", label: "PENDIENTE" },
+  { value: "LIBERADO", label: "LIBERADO" },
+  { value: "APROBADO", label: "APROBADO" },
+  { value: "CUARENTENA", label: "CUARENTENA" },
+  { value: "RECHAZADO", label: "RECHAZADO" },
+  { value: "DESCONOCIDO", label: "DESCONOCIDO" },
+] as const;
+
+function statusToDisplayLabel(backendValue: string): string {
+  const opt = STATUS_OPTIONS.find((o) => o.value === (backendValue ?? "").trim().toUpperCase());
+  return opt ? opt.label : (backendValue ?? "—");
+}
 
 export default function BatchLookupPage() {
   const { can, hasRole } = useAuth();
@@ -96,7 +109,11 @@ export default function BatchLookupPage() {
         method: "PATCH",
         body: { status: newStatus },
       });
-      toasts.push({ intent: "success", title: "Estatus actualizado", message: `Nuevo estatus: ${newStatus}` });
+      toasts.push({
+        intent: "success",
+        title: "Estatus actualizado",
+        message: `Nuevo estatus: ${statusToDisplayLabel(newStatus)}`,
+      });
       await load();
     } catch (e) {
       const ae = e as ApiError;
@@ -239,19 +256,23 @@ export default function BatchLookupPage() {
               <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   <Text>Estado</Text>
-                  <StatusTag status={dynamicStatus} />
+                  <StatusTag status={statusToDisplayLabel(dynamicStatus)} />
                   {canChangeStatus && (
                     <>
-                      <Select
-                        value={newStatus}
-                        onChange={(_, d) => setNewStatus(d.optionValue ?? "")}
+                      <Dropdown
                         placeholder="Cambiar a…"
+                        selectedOptions={newStatus ? [newStatus] : []}
+                        onOptionSelect={(_, d) =>
+                          setNewStatus((d.optionValue ?? "") as string)
+                        }
                         style={{ minWidth: 140 }}
                       >
-                        {STATUS_OPTIONS.map((s) => (
-                          <Option key={s} value={s}>{s}</Option>
+                        {STATUS_OPTIONS.map((o) => (
+                          <Option key={o.value} value={o.value}>
+                            {o.label}
+                          </Option>
                         ))}
-                      </Select>
+                      </Dropdown>
                       <Button
                         appearance="primary"
                         size="small"
