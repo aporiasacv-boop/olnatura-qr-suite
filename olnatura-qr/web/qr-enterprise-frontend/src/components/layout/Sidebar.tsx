@@ -27,6 +27,15 @@ const useStyles = makeStyles({
     ...shorthands.padding("12px", "8px"),
     rowGap: "2px",
   },
+  sectionLabel: {
+    marginTop: "10px",
+    marginBottom: "4px",
+    paddingInline: "12px",
+    color: brand.muted,
+    fontSize: "11px",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
 
   link: {
     display: "flex",
@@ -77,6 +86,7 @@ export default function Sidebar() {
       </div>
 
       <nav className={s.nav}>
+        <div className={s.sectionLabel}>Operación</div>
         <NavLink to="/" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
           Panel principal
         </NavLink>
@@ -91,9 +101,10 @@ export default function Sidebar() {
           Historial de escaneos
         </NavLink>
 
+        <div className={s.sectionLabel}>Etiquetas</div>
         {(hasRole("ADMIN") || hasRole("ALMACEN") || hasRole("INSPECCION")) && (
           <NavLink to="/generate-qr" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-            Etiquetas
+            Generar etiqueta
           </NavLink>
         )}
 
@@ -104,11 +115,12 @@ export default function Sidebar() {
         )}
         {hasRole("ADMIN") && (
           <>
+            <div className={s.sectionLabel}>Administración</div>
             <NavLink to="/admin/approval" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
               Aprobar usuarios
             </NavLink>
             <NavLink to="/admin/audit" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-              Historial
+              Auditoría
             </NavLink>
           </>
         )}

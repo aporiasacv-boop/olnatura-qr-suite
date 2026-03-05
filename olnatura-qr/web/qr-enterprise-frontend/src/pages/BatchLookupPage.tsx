@@ -1,6 +1,21 @@
-import React, { useMemo, useState } from "react";
-import { Button, Card, Dropdown, Input, Option, Text } from "@fluentui/react-components";
-import { api, ApiError } from "../api/client";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Button,
+  Card,
+  Dropdown,
+  Input,
+  Option,
+  Text,
+  Tooltip,
+  Dialog,
+  DialogSurface,
+  DialogBody,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Link,
+} from "@fluentui/react-components";
+import { API_BASE, api, ApiError } from "../api/client";
 import type { QrResponse, ScanEvent } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { useToasts } from "../components/ui/toasts";
@@ -34,6 +49,38 @@ function readDynamic(data: QrResponse | null, key: string, fallback = "—") {
   return asText((data as any)?.dynamic?.[key], fallback);
 }
 
+async function downloadZpl(data: QrResponse | null, loteInput: string) {
+  const label: any = (data as any)?.label ?? {};
+  const loteFromLabel = typeof label.lote === "string" ? label.lote.trim() : "";
+  const lote = loteFromLabel || loteInput.trim();
+  if (!lote) return;
+
+  const base = API_BASE.replace(/\/+$/, "");
+  const url = `${base}/api/v1/label/${encodeURIComponent(lote)}/zpl`;
+
+  try {
+    const res = await fetch(url, { method: "GET", credentials: "include" });
+    if (!res.ok) {
+      // Best-effort: let caller surface a toast if needed
+      console.error("ZPL download failed", res.status, await res.text());
+      return;
+    }
+    const text = await res.text();
+    const blob = new Blob([text], { type: "text/plain" });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeLote = (lote || "label").replace(/[\\s/\\\\]+/g, "_");
+    a.href = href;
+    a.download = `label-${safeLote}.zpl`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(href);
+  } catch (err) {
+    console.error("ZPL download error", err);
+  }
+}
+
 // Status mapping: display label (Spanish) <-> backend value (English)
 // PATCH requests must send backend values.
 const STATUS_OPTIONS = [
@@ -50,8 +97,17 @@ function statusToDisplayLabel(backendValue: string): string {
   return opt ? opt.label : (backendValue ?? "—");
 }
 
+const DEV_METRICS = import.meta.env.DEV;
+const STORAGE_KEY = "qr_suite_metrics_v1";
+
+type LoteMetrics = {
+  lookupAt: number;
+  firstZplAt: number | null;
+  zplCount: number;
+};
+
 export default function BatchLookupPage() {
-  const { can } = useAuth();
+  const { can, hasRole } = useAuth();
   const toasts = useToasts();
 
   const [lote, setLote] = useState("");
@@ -62,8 +118,39 @@ export default function BatchLookupPage() {
   const [err, setErr] = useState<{ title: string; detail?: string } | null>(null);
   const [newStatus, setNewStatus] = useState<string>("");
   const [statusBusy, setStatusBusy] = useState(false);
+  const [zplHelpOpen, setZplHelpOpen] = useState(false);
+
+  const [sessionMetrics, setSessionMetrics] = useState<Map<string, LoteMetrics>>(() => {
+    if (!DEV_METRICS) return new Map();
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return new Map();
+      const parsed = JSON.parse(raw);
+      const arr = Array.isArray(parsed) ? parsed : [];
+      const entries = arr
+        .filter((e): e is [string, unknown] => Array.isArray(e) && e.length === 2 && typeof e[0] === "string")
+        .map(([k, v]) => {
+          const o = v && typeof v === "object" ? (v as Record<string, unknown>) : {};
+          return [k, {
+            lookupAt: typeof o.lookupAt === "number" ? o.lookupAt : 0,
+            firstZplAt: typeof o.firstZplAt === "number" ? o.firstZplAt : null,
+            zplCount: typeof o.zplCount === "number" ? o.zplCount : 0,
+          }] as [string, LoteMetrics];
+        });
+      return new Map(entries);
+    } catch {
+      return new Map();
+    }
+  });
 
   const loteTrim = useMemo(() => lote.trim(), [lote]);
+
+  useEffect(() => {
+    if (!DEV_METRICS) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(sessionMetrics.entries())));
+    } catch { /* ignore */ }
+  }, [sessionMetrics]);
 
   // Load batch data
   const load = async () => {
@@ -75,7 +162,6 @@ export default function BatchLookupPage() {
     setScans(null);
 
     try {
-      console.log("Lot being requested:", loteTrim);
       const qr = await api<QrResponse>(`/qr/${encodeURIComponent(loteTrim)}`);
       setData(qr);
 
@@ -83,6 +169,16 @@ export default function BatchLookupPage() {
       setScans(Array.isArray(ev) ? ev : []);
 
       setStatus("ok");
+
+      if (DEV_METRICS) {
+        const lookupAt = Date.now();
+        setSessionMetrics((prev) => {
+          const next = new Map(prev);
+          next.set(loteTrim, { lookupAt, firstZplAt: null, zplCount: 0 });
+          return next;
+        });
+        console.log("[ZPL Metrics] lookup recorded", { lote: loteTrim, lookupAt: new Date(lookupAt).toISOString() });
+      }
     } catch (e) {
       const ae = e as ApiError;
 
@@ -183,10 +279,83 @@ export default function BatchLookupPage() {
   const dynamicStatus = (data as any)?.dynamic?.status ?? "—";
   const canChangeStatus = data?.permissions?.canChangeStatus ?? false;
   const canRegisterScan = data?.permissions?.canRegisterScan ?? can("SCAN");
+  const canDownloadZpl = data?.permissions?.canCreateLabel ?? (hasRole("ADMIN") || hasRole("ALMACEN"));
   const transitions = data?.availableTransitions ?? [];
   const dropdownOptions = transitions.length > 0
     ? STATUS_OPTIONS.filter((o) => transitions.includes(o.value))
     : [...STATUS_OPTIONS];
+
+  const dynamicFuenteRaw = (data as any)?.dynamic?.fuente ?? "";
+  const fuenteNormalized =
+    typeof dynamicFuenteRaw === "string" ? dynamicFuenteRaw.trim().toUpperCase() : "";
+  const fuenteTooltip =
+    fuenteNormalized === "MOCK_DYNAMICS"
+      ? "Datos demo para pruebas."
+      : fuenteNormalized === "DB_ONLY"
+      ? "Status desde base local (sin Dynamics)."
+      : undefined;
+
+  const handleZplDownload = async () => {
+    if (!loteTrim) return;
+
+    if (DEV_METRICS) {
+      setSessionMetrics((prev) => {
+        const next = new Map(prev);
+        const cur = next.get(loteTrim) ?? { lookupAt: 0, firstZplAt: null, zplCount: 0 };
+        const isFirst = cur.firstZplAt === null;
+        const firstZplAt = cur.firstZplAt ?? Date.now();
+        const newCount = cur.zplCount + 1;
+        next.set(loteTrim, { ...cur, firstZplAt, zplCount: newCount });
+        if (isFirst) console.log("[ZPL Metrics] first ZPL click", { lote: loteTrim, firstZplAt: new Date(firstZplAt).toISOString() });
+        else if (newCount > 1) console.log("[ZPL Metrics] reprint detected", { lote: loteTrim, zplDownloadCount: newCount });
+        return next;
+      });
+    }
+
+    await downloadZpl(data, loteTrim);
+  };
+
+  const clearSessionMetrics = () => {
+    setSessionMetrics(new Map());
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+  };
+
+  const exportSessionMetrics = () => {
+    const arr = Array.from(sessionMetrics.entries()).map(([loteKey, m]) => ({
+      lote: loteKey,
+      lookupAt: m.lookupAt ? new Date(m.lookupAt).toISOString() : null,
+      firstZplAt: m.firstZplAt ? new Date(m.firstZplAt).toISOString() : null,
+      zplCount: m.zplCount,
+    }));
+    const blob = new Blob([JSON.stringify(arr, null, 2)], { type: "application/json" });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = "qr_metrics_session.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(href);
+  };
+
+  const handleCopy = async (label: string, value: string) => {
+    const v = (value ?? "").toString().trim();
+    if (!v) return;
+    try {
+      await navigator.clipboard.writeText(v);
+      toasts.push({
+        intent: "success",
+        title: "Copiado",
+        message: `${label} copiado al portapapeles.`,
+      });
+    } catch {
+      toasts.push({
+        intent: "error",
+        title: "No se pudo copiar",
+        message: "Intenta de nuevo o copia manualmente.",
+      });
+    }
+  };
 
   // Render
   return (
@@ -245,8 +414,16 @@ export default function BatchLookupPage() {
             <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <Field label="Tipo material" value={readLabel(data, "tipoMaterial")} />
               <Field label="Nombre" value={readLabel(data, "nombre")} />
-              <Field label="Código" value={readLabel(data, "codigo")} />
-              <Field label="Lote" value={readLabel(data, "lote")} />
+              <CopyField
+                label="Código"
+                value={readLabel(data, "codigo")}
+                onCopy={handleCopy}
+              />
+              <CopyField
+                label="Lote"
+                value={readLabel(data, "lote")}
+                onCopy={handleCopy}
+              />
               <Field label="Fecha entrada" value={readLabel(data, "fechaEntrada")} />
               <Field label="Caducidad" value={readLabel(data, "caducidad")} />
               <Field label="Reanálisis" value={readLabel(data, "reanalisis")} />
@@ -256,6 +433,22 @@ export default function BatchLookupPage() {
             <div style={{ marginTop: 14, color: "#6B6B6B", fontSize: 12 }}>
               Descargar etiqueta (PNG): disponible desde la pantalla de registrar etiqueta o generar etiqueta.
             </div>
+
+            {canDownloadZpl && (
+              <div style={{ marginTop: 10 }}>
+                <Button
+                  appearance="secondary"
+                  size="small"
+                  onClick={() => void handleZplDownload()}
+                >
+                  Descargar ZPL
+                </Button>
+                <Text style={{ display: "block", marginTop: 4, color: "#6B6B6B", fontSize: 12 }}>
+                  Archivo ZPL para impresora Zebra. No se abre como documento.{" "}
+                  <Link onClick={() => setZplHelpOpen(true)}>Cómo imprimir</Link>
+                </Text>
+              </div>
+            )}
           </Card>
 
           <div style={{ display: "grid", gap: 14 }}>
@@ -303,7 +496,11 @@ export default function BatchLookupPage() {
 
                 <Field label="Ubicación" value={readDynamic(data, "ubicacion")} />
                 <Field label="Cantidad" value={dynamicCantidad} />
-                <Field label="Fuente" value={readDynamic(data, "fuente")} />
+                <Field
+                  label="Fuente"
+                  value={readDynamic(data, "fuente")}
+                  tooltip={fuenteTooltip}
+                />
               </div>
             </Card>
 
@@ -324,16 +521,125 @@ export default function BatchLookupPage() {
       {status === "idle" && (
         <EmptyState title="Listo para consultar" hint="Ingresa un lote y presiona Buscar." />
       )}
+
+      {DEV_METRICS && loteTrim && (() => {
+        const m = sessionMetrics.get(loteTrim);
+        const fmt = (ts: number) => new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+        const timeToFirstLabelSeconds = m?.firstZplAt && m?.lookupAt ? Math.round((m.firstZplAt - m.lookupAt) / 1000) : null;
+        const reprints = m ? Math.max(0, m.zplCount - 1) : 0;
+        return (
+          <Card style={{ padding: 12, background: "#F8F9FA", border: "1px dashed #CCC" }}>
+            <Text weight="semibold" size={500}>Session metrics (dev)</Text>
+            {m ? (
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4, fontSize: 13 }}>
+                <div>Lookup: {fmt(m.lookupAt)}</div>
+                <div>First label: {m.firstZplAt ? fmt(m.firstZplAt) : "—"}</div>
+                <div>Time to label: {timeToFirstLabelSeconds !== null ? `${timeToFirstLabelSeconds} s` : "—"}</div>
+                <div>ZPL downloads: {m.zplCount}</div>
+                <div>Reprints: {reprints}</div>
+              </div>
+            ) : (
+              <Text style={{ marginTop: 8, color: "#6B6B6B", fontSize: 12 }}>No metrics yet. Perform a lookup and download ZPL.</Text>
+            )}
+            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+              <Button appearance="subtle" size="small" onClick={clearSessionMetrics}>
+                Clear session metrics
+              </Button>
+              <Button appearance="subtle" size="small" onClick={exportSessionMetrics}>
+                Export metrics (JSON)
+              </Button>
+            </div>
+          </Card>
+        );
+      })()}
+
+      <Dialog open={zplHelpOpen} onOpenChange={(_, data) => setZplHelpOpen(data.open)}>
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>Cómo imprimir archivos ZPL</DialogTitle>
+            <DialogContent>
+              <ul style={{ paddingLeft: 18, margin: "8px 0 0 0" }}>
+                <li>Descarga el archivo .zpl y guárdalo en tu equipo.</li>
+                <li>
+                  En equipos con impresora Zebra, envía el archivo al puerto de la impresora
+                  (por ejemplo, arrastrando el archivo a la impresora o usando utilidades de Zebra).
+                </li>
+                <li>
+                  No intentes abrir el archivo como documento; es código de comandos para la
+                  impresora.
+                </li>
+              </ul>
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="primary" onClick={() => setZplHelpOpen(false)}>
+                Cerrar
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
     </div>
   );
 }
 
 // Sub-components
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
+function Field({
+  label,
+  value,
+  tooltip,
+}: {
+  label: string;
+  value: React.ReactNode;
+  tooltip?: string;
+}) {
+  const labelNode = tooltip ? (
+    <Tooltip content={tooltip} relationship="label">
+      <span>{label}</span>
+    </Tooltip>
+  ) : (
+    label
+  );
+
   return (
     <div style={{ border: "1px solid #E6E6E6", borderRadius: 10, padding: 10 }}>
-      <div style={{ color: "#6B6B6B", fontSize: 12 }}>{label}</div>
+      <div style={{ color: "#6B6B6B", fontSize: 12 }}>{labelNode}</div>
       <div style={{ marginTop: 4, fontWeight: 600 }}>{value}</div>
+    </div>
+  );
+}
+
+function CopyField({
+  label,
+  value,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  onCopy: (label: string, value: string) => void;
+}) {
+  const display = value ?? "—";
+  return (
+    <div style={{ border: "1px solid #E6E6E6", borderRadius: 10, padding: 10 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          color: "#6B6B6B",
+          fontSize: 12,
+        }}
+      >
+        <span>{label}</span>
+        <Button
+          appearance="subtle"
+          size="small"
+          onClick={() => onCopy(label, display)}
+        >
+          Copiar
+        </Button>
+      </div>
+      <div style={{ marginTop: 4, fontWeight: 600, wordBreak: "break-all" }}>{display}</div>
     </div>
   );
 }

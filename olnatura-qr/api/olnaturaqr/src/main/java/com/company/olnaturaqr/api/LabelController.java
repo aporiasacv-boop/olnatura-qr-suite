@@ -148,6 +148,52 @@ public class LabelController {
         return ResponseEntity.ok(LabelDto.LabelView.from(q));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN')")
+    @GetMapping("/{id}/zpl")
+    public ResponseEntity<String> downloadZpl(
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @PathVariable String id
+    ) {
+        QrLabel q;
+        try {
+            UUID uuid = UUID.fromString(id);
+            q = repo.findById(uuid)
+                    .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + id));
+        } catch (IllegalArgumentException ex) {
+            q = repo.findByLote(id.trim())
+                    .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada para lote: " + id));
+        }
+
+        String lote = q.getLote();
+
+        String zpl =
+                "^XA\n" +
+                "^FO50,50^ADN,36,20^FDMaterial: " + safe(q.getNombre()) + "^FS\n" +
+                "^FO50,100^FDCode: " + safe(q.getCodigo()) + "^FS\n" +
+                "^FO50,150^FDLote: " + safe(lote) + "^FS\n" +
+                "^FO50,200^FDEnvase: " + q.getEnvaseNum() + "/" + q.getEnvaseTotal() + "^FS\n" +
+                "^FO50,260^BQN,2,6\n" +
+                "^FDQA," + safe(lote) + "^FS\n" +
+                "^XZ\n";
+
+        auditService.log(principal, "PRINT_LABEL", lote,
+                java.util.Map.of(
+                        "labelId", q.getId().toString(),
+                        "lote", lote,
+                        "mode", "ZPL_DOWNLOAD"
+                ),
+                null);
+
+        return ResponseEntity
+                .ok()
+                .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                .body(zpl);
+    }
+
+    private String safe(String v) {
+        return v == null ? "" : v.trim();
+    }
+
     private static boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
     }
