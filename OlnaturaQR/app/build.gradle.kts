@@ -18,7 +18,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // API base URL: cambia para dev/prod (ej. http://10.0.2.2:3001/ para emulador)
-        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://192.168.41.172:3001/"}\"")
+        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://localhost:3001/"}\"")
     }
 
     buildFeatures {

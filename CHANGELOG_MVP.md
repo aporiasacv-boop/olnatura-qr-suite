@@ -3,15 +3,18 @@
 ## 1. Archivos modificados/creados
 
 ### Backend (`olnatura-qr/api/olnaturaqr/`)
+
 - **Nuevos:** `support/qr/LoteExtractor.java`, `domain/audit/AuditEvent.java`, `repository/AuditEventRepository.java`, `support/audit/AuditService.java`, `api/AuditController.java`, `api/AdminController.java`
 - **Modificados:** `support/qr/QrQueryService.java`, `infra/dynamics/MockDynamicsClient.java`, `api/AuthController.java`, `api/LabelController.java`, `OlnaturaQrApplication.java` (+@EnableMethodSecurity), `support/security/SecurityConfig.java`
 - **Migraciones:** `V4__add_mock_lote_251201.sql`, `V5__audit_events.sql`
 
 ### Web (`olnatura-qr/web/qr-enterprise-frontend/`)
+
 - **Nuevos:** `utils/labelToPng.ts`, `pages/AdminAuditPage.tsx`
 - **Modificados:** `pages/GenerateQrPage.tsx`, `pages/BatchLookupPage.tsx`, `app/router.tsx`, `components/layout/Sidebar.tsx`
 
 ### Android (`OlnaturaQR/`)
+
 - **Nuevos:** `ui/screen/requestaccess/RequestAccessScreen.kt`, `ui/screen/requestaccess/RequestAccessViewModel.kt`
 - **Modificados:** `data/network/OlnaturaApi.kt`, `data/model/Models.kt`, `data/repo/AuthRepository.kt`, `ui/navigation/Routes.kt`, `ui/navigation/AppNavGraph.kt`, `ui/screen/login/LoginScreen.kt`, `MainActivity.kt`
 
@@ -38,12 +41,14 @@
 ## 4. Pasos de prueba (copy/paste)
 
 ### Backend
+
 ```bash
 cd olnatura-qr/api/olnaturaqr
 ./gradlew bootRun --args="--spring.profiles.active=dev"
 ```
 
 ### Web
+
 ```bash
 cd olnatura-qr/web/qr-enterprise-frontend
 npm install
@@ -51,9 +56,10 @@ npm run dev
 ```
 
 ### APK (dispositivo físico)
+
 ```bash
 cd OlnaturaQR
-./gradlew assembleDebug -PAPI_BASE_URL=http://192.168.100.10:3001/
+./gradlew assembleDebug -PAPI_BASE_URL=http://:3001/
 # Instalar el APK desde app/build/outputs/apk/debug/
 ```
 

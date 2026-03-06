@@ -28,24 +28,28 @@ olnatura-qr-suite/
 From the **repo root**:
 
 **Windows (PowerShell):**
+
 ```powershell
 .\scripts\demo-up.ps1
 ```
 
 **Linux / macOS / Git Bash:**
+
 ```bash
 ./scripts/demo-up.sh
 ```
 
-- **API:** http://localhost:3001  
+- **API:** http://localhost:3001
 - **Demo users:** `admin` / `Admin123!` · `inp` / `Inp123!` · `alm` / `Alm123!` (ADMIN, INSPECCION, ALMACEN)
 
 To use the web UI with the demo API, in another terminal run `.\scripts\dev-web.ps1` or `./scripts/dev-web.sh` (first time: `cd olnatura-qr/web/qr-enterprise-frontend && npm install && cp .env.example .env`).
 
 To stop and remove containers and DB volume:
+
 ```powershell
 .\scripts\demo-down.ps1
 ```
+
 ```bash
 ./scripts/demo-down.sh
 ```
@@ -75,12 +79,15 @@ To stop and remove containers and DB volume:
 
 - **Reset demo DB (clean volume)**  
   Tear down demo stack and remove the Postgres volume:
+
   ```powershell
   .\scripts\demo-down.ps1
   ```
+
   ```bash
   ./scripts/demo-down.sh
   ```
+
   (`-v` removes the named volume `olnatura_pgdata`; next `demo-up` will run Flyway from scratch.)
 
 - **Secrets**  
@@ -133,10 +140,10 @@ cd OlnaturaQR
 ./gradlew assembleDebug
 ```
 
-- **Emulador**: `BASE_URL` por defecto `http://192.168.41.172:3001/`
+- **Emulador**: `BASE_URL` por defecto `http://:3001/`
 - **Dispositivo físico**: usa la IP de tu máquina:
   ```bash
-  ./gradlew assembleDebug -PAPI_BASE_URL=http://192.168.41.172:3001/
+  ./gradlew assembleDebug -PAPI_BASE_URL=http://:3001/
   ```
 
 O edita `app/build.gradle.kts` y cambia el valor por defecto de `API_BASE_URL`.
