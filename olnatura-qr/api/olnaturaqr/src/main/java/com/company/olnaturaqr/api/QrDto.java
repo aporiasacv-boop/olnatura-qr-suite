@@ -16,6 +16,7 @@ public class QrDto {
             String nombre,
             String codigo,
             String lote,
+            String publicToken,
             LocalDate fechaEntrada,
             LocalDate caducidad,
             LocalDate reanalisis,

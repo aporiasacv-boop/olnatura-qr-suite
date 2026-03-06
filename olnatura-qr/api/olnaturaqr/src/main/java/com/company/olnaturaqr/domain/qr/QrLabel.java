@@ -25,6 +25,9 @@ public class QrLabel {
     @Column(name = "lote", nullable = false, unique = true, length = 120)
     private String lote;
 
+    @Column(name = "public_token", nullable = false, unique = true, length = 64)
+    private String publicToken;
+
     @Column(name = "fecha_entrada", nullable = false)
     private LocalDate fechaEntrada;
 
@@ -59,6 +62,9 @@ public class QrLabel {
 
     public String getLote() { return lote; }
     public void setLote(String lote) { this.lote = lote; }
+
+    public String getPublicToken() { return publicToken; }
+    public void setPublicToken(String publicToken) { this.publicToken = publicToken; }
 
     public LocalDate getFechaEntrada() { return fechaEntrada; }
     public void setFechaEntrada(LocalDate fechaEntrada) { this.fechaEntrada = fechaEntrada; }

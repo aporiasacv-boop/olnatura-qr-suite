@@ -17,19 +17,33 @@ public final class LoteExtractor {
      * @param raw Contenido crudo (JSON, URL con path, o lote directo)
      * @return Lote normalizado o empty si no se pudo extraer
      */
+    /** Canonical format for new QR codes. */
+    private static final String PREFIX = "OLNQR:1:";
+
+    /**
+     * Extracts identifier (lote or token) from raw QR content.
+     * Supports: OLNQR:1:&lt;token&gt;, JSON, URL, plain text.
+     */
     public static Optional<String> extract(String raw) {
         if (raw == null || raw.isBlank()) return Optional.empty();
         String t = raw.trim();
 
-        // JSON: {"lote":"..."} o {"batch":"..."}
+        // Canonical: OLNQR:1:<public_token>
+        if (t.startsWith(PREFIX)) {
+            String token = t.substring(PREFIX.length()).trim();
+            if (!token.isBlank() && token.length() <= 64) return Optional.of(token);
+            return Optional.empty();
+        }
+
+        // Legacy: JSON
         Optional<String> fromJson = extractFromJson(t);
         if (fromJson.isPresent()) return fromJson;
 
-        // URL: .../qr/LOTE o .../api/v1/qr/LOTE
+        // Legacy: URL
         Optional<String> fromUrl = extractFromUrl(t);
         if (fromUrl.isPresent()) return fromUrl;
 
-        // Texto plano
+        // Legacy: plain lote or token
         if (t.length() >= 1 && t.length() <= 120) return Optional.of(t);
         return Optional.empty();
     }

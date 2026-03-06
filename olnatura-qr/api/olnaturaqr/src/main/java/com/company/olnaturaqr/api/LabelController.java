@@ -63,19 +63,19 @@ public class LabelController {
         q.setEnvaseNum(req.envaseNum());
         q.setEnvaseTotal(req.envaseTotal());
 
-        // ✅ Estado inicial fijo
+        // Estado inicial fijo
         q.setStatusDinamico("PENDING");
         q.setCreatedAt(Instant.now());
+        q.setPublicToken(java.util.UUID.randomUUID().toString().replace("-", ""));
 
         QrLabel saved;
         try {
             saved = repo.save(q);
         } catch (DataIntegrityViolationException ex) {
-            // Por unique(lote)
+            // Por unique(lote) o unique(public_token)
             throw new ResponseStatusException(CONFLICT, "Ya existe una etiqueta con ese lote: " + lote);
         }
 
-        // URL pública que irá dentro del QR
         String qrUrl = ServletUriComponentsBuilder
                 .fromCurrentContextPath()
                 .path("/qr/{id}")
@@ -86,6 +86,7 @@ public class LabelController {
                 saved.getId(),
                 saved.getStatusDinamico(),
                 qrUrl,
+                saved.getPublicToken(),
                 LabelDto.LabelView.from(saved)));
     }
 
@@ -129,8 +130,7 @@ public class LabelController {
         if (!WorkflowStatus.isValid(st)) {
             throw new ResponseStatusException(BAD_REQUEST, "Status inválido: " + st);
         }
-        QrLabel q = repo.findByLote(lote.trim())
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada para lote: " + lote));
+        QrLabel q = resolveLabel(lote == null ? "" : lote.trim());
         q.setStatusDinamico(st);
         repo.save(q);
 
@@ -154,17 +154,11 @@ public class LabelController {
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable String id
     ) {
-        QrLabel q;
-        try {
-            UUID uuid = UUID.fromString(id);
-            q = repo.findById(uuid)
-                    .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + id));
-        } catch (IllegalArgumentException ex) {
-            q = repo.findByLote(id.trim())
-                    .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada para lote: " + id));
-        }
+        String key = id == null ? "" : id.trim();
+        QrLabel q = resolveLabel(key);
 
         String lote = q.getLote();
+        String qrPayload = "OLNQR:1:" + safe(q.getPublicToken());
 
         String zpl =
                 "^XA\n" +
@@ -173,7 +167,7 @@ public class LabelController {
                 "^FO50,150^FDLote: " + safe(lote) + "^FS\n" +
                 "^FO50,200^FDEnvase: " + q.getEnvaseNum() + "/" + q.getEnvaseTotal() + "^FS\n" +
                 "^FO50,260^BQN,2,6\n" +
-                "^FDQA," + safe(lote) + "^FS\n" +
+                "^FDQA," + qrPayload + "^FS\n" +
                 "^XZ\n";
 
         auditService.log(principal, "PRINT_LABEL", lote,
@@ -188,6 +182,21 @@ public class LabelController {
                 .ok()
                 .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
                 .body(zpl);
+    }
+
+    private QrLabel resolveLabel(String key) {
+        if (key.isBlank()) {
+            throw new ResponseStatusException(NOT_FOUND, "Identificador vacío");
+        }
+        try {
+            UUID uuid = UUID.fromString(key);
+            return repo.findById(uuid)
+                    .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + key));
+        } catch (IllegalArgumentException ignored) {
+        }
+        return repo.findByPublicToken(key)
+                .or(() -> repo.findByLote(key))
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada para: " + key));
     }
 
     private String safe(String v) {

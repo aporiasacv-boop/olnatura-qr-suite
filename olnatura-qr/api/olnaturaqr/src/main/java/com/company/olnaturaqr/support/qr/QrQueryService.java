@@ -29,25 +29,27 @@ public class QrQueryService {
 
     @Transactional(readOnly = true)
     public QrDto.Response getByLote(String loteRaw, AuthPrincipal principal) {
-        String normalized = LoteExtractor.extract(loteRaw)
+        String identifier = LoteExtractor.extract(loteRaw)
                 .orElse(loteRaw != null ? loteRaw.trim() : "");
 
-        if (normalized.isBlank()) {
-            throw new ResponseStatusException(BAD_REQUEST, "Lote requerido");
+        if (identifier.isBlank()) {
+            throw new ResponseStatusException(BAD_REQUEST, "Identificador requerido");
         }
-        if (normalized.length() > 120) {
-            throw new ResponseStatusException(BAD_REQUEST, "Lote demasiado largo");
+        if (identifier.length() > 120) {
+            throw new ResponseStatusException(BAD_REQUEST, "Identificador demasiado largo");
         }
 
-        String lote = normalized;
-        QrLabel label = qrLabelRepository.findByLote(lote)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + lote));
+        QrLabel label = qrLabelRepository.findByPublicToken(identifier)
+                .or(() -> qrLabelRepository.findByLote(identifier))
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + identifier));
 
+        String lote = label.getLote();
         var dtoLabel = new QrDto.Label(
                 label.getTipoMaterial(),
                 label.getNombre(),
                 label.getCodigo(),
                 label.getLote(),
+                label.getPublicToken(),
                 label.getFechaEntrada(),
                 label.getCaducidad(),
                 label.getReanalisis(),

@@ -1,8 +1,10 @@
 package com.company.olnaturaqr.api;
 
+import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.domain.scan.ScanEvent;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.repository.ScanEventRepository;
+import com.company.olnaturaqr.support.qr.LoteExtractor;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,17 +30,10 @@ public class ScanController {
             @PathVariable String lote,
             @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
             @AuthenticationPrincipal AuthPrincipal principal) {
-        String normalized = (lote == null) ? "" : lote.trim();
-        if (normalized.isBlank()) {
-            throw new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + lote);
-        }
-
-        // valida que exista el lote
-        qrLabelRepository.findByLote(normalized)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + normalized));
+        String actualLote = resolveToLote(lote);
 
         ScanEvent ev = new ScanEvent();
-        ev.setLote(normalized);
+        ev.setLote(actualLote);
         ev.setDeviceId(deviceId);
 
         // cookie JWT
@@ -58,9 +53,9 @@ public class ScanController {
 
     @GetMapping("/{lote}")
     public ResponseEntity<?> list(@PathVariable String lote) {
-        String normalized = (lote == null) ? "" : lote.trim();
+        String actualLote = resolveToLote(lote);
         return ResponseEntity.ok(
-                scanEventRepository.findTop50ByLoteOrderByCreatedAtDesc(normalized)
+                scanEventRepository.findTop50ByLoteOrderByCreatedAtDesc(actualLote)
                         .stream()
                         .map(ev -> new ScanDto.Response(
                                 ev.getId(),
@@ -69,5 +64,16 @@ public class ScanController {
                                 ev.getDeviceId(),
                                 ev.getCreatedAt()))
                         .toList());
+    }
+
+    private String resolveToLote(String raw) {
+        String identifier = LoteExtractor.extract(raw).orElse(raw != null ? raw.trim() : "");
+        if (identifier.isBlank()) {
+            throw new ResponseStatusException(NOT_FOUND, "Identificador vacío");
+        }
+        QrLabel label = qrLabelRepository.findByPublicToken(identifier)
+                .or(() -> qrLabelRepository.findByLote(identifier))
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + identifier));
+        return label.getLote();
     }
 }

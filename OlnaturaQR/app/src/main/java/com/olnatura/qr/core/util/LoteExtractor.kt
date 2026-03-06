@@ -3,27 +3,35 @@ package com.olnatura.qr.core.util
 import android.net.Uri
 import org.json.JSONObject
 
+private const val PREFIX = "OLNQR:1:"
+
 /**
- * Extrae el identificador de lote del contenido escaneado del QR.
- * Soporta: JSON con campo "lote", URL con path /qr/{lote}, texto plano.
+ * Extrae el identificador (lote o token) del contenido escaneado del QR.
+ * Soporta: OLNQR:1:&lt;token&gt;, JSON, URL con path /qr/{lote}, texto plano.
  */
 object LoteExtractor {
 
     /**
      * @param raw Contenido crudo del QR (texto, JSON, URL).
-     * @return Lote extraído o null si no se pudo extraer.
+     * @return Identificador extraído (token o lote) o null.
      */
     fun extract(raw: String?): String? {
         val t = raw?.trim() ?: return null
         if (t.isBlank()) return null
 
-        // 1. JSON: {"lote":"LOTE-001"} o {"batch":"...","lote":"LOTE-001"}
+        // 1. Canonical: OLNQR:1:<public_token>
+        if (t.startsWith(PREFIX)) {
+            val token = t.removePrefix(PREFIX).trim()
+            return token.takeIf { it.isNotBlank() && it.length <= 64 }
+        }
+
+        // 2. Legacy: JSON
         extractFromJson(t)?.let { return it }
 
-        // 2. URL: .../qr/LOTE-001 o .../api/v1/qr/LOTE-001
+        // 3. Legacy: URL
         extractFromUrl(t)?.let { return it }
 
-        // 3. Texto plano
+        // 4. Legacy: texto plano
         return t.takeIf { it.length in 1..128 }
     }
 

@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
 import { Card, Text, Input, Button, Radio, RadioGroup } from "@fluentui/react-components";
 import { useAuth } from "../auth/AuthContext";
+import { api, ApiError } from "../api/client";
 import { generateQrWithLogo } from "../utils/qrWithLogo";
 import { renderLabelToPng, type FechaTipo } from "../utils/labelToPng";
+
+const QR_PREFIX = "OLNQR:1:";
 
 type FormState = {
   tipoMaterial: string;
@@ -14,6 +17,14 @@ type FormState = {
   fechaValor: string;
   envaseNum: string;
   envaseTotal: string;
+};
+
+type CreateResponse = {
+  id: string;
+  status: string;
+  qrUrl: string;
+  publicToken: string;
+  label: Record<string, any>;
 };
 
 export default function RegisterLabelPage() {
@@ -38,103 +49,110 @@ export default function RegisterLabelPage() {
 
   const [busy, setBusy] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [createResp, setCreateResp] = useState<CreateResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const loteOk = form.lote.trim().length > 0;
-  const canGenerate = canQr && loteOk && !busy;
+  const fechaEntradaOk = /^\d{4}-\d{2}-\d{2}$/.test(form.fechaEntrada.trim());
+  const envaseNum = parseInt(form.envaseNum, 10) || 0;
+  const envaseTotal = parseInt(form.envaseTotal, 10) || 0;
+  const envaseOk = envaseNum > 0 && envaseTotal > 0 && envaseNum <= envaseTotal;
+  const canRegister = canQr && loteOk && fechaEntradaOk && envaseOk && !busy;
 
-  const payload = useMemo(() => {
-    // Esto es lo que “vive” dentro del QR. Lo puedes ajustar al contrato final.
-    // Por ahora: incluye lote + algunos campos útiles.
-    return JSON.stringify(
-      {
-        lote: form.lote.trim(),
-        codigo: form.codigo.trim() || null,
-        nombre: form.nombre.trim() || null,
-        envaseNum: form.envaseNum.trim() || null,
-        envaseTotal: form.envaseTotal.trim() || null,
-        ts: new Date().toISOString(),
-      },
-      null,
-      0
-    );
-  }, [form]);
-
-  const onGenerateQr = async () => {
+  const onRegisterAndGenerate = async () => {
     setErr(null);
+    setCreateResp(null);
+    setQrDataUrl(null);
 
     if (!canQr) {
-      setErr("No autorizado. Solo ADMIN y ALMACÉN pueden generar QR.");
+      setErr("No autorizado. Solo ADMIN y ALMACÉN pueden registrar.");
       return;
     }
     if (!loteOk) {
-      setErr("Captura un lote para generar el QR.");
+      setErr("Captura un lote.");
+      return;
+    }
+    if (!fechaEntradaOk) {
+      setErr("Fecha de entrada requerida (YYYY-MM-DD).");
+      return;
+    }
+    if (!envaseOk) {
+      setErr("Envase Num/Total deben ser > 0 y envaseNum ≤ envaseTotal.");
       return;
     }
 
     try {
       setBusy(true);
-
-      // ✅ Mantén el mismo payload, pero genera con logo centrado
+      const caducidad = form.fechaTipo === "CADUCIDAD" && form.fechaValor.trim() ? form.fechaValor.trim() : null;
+      const reanalisis = form.fechaTipo === "REANALISIS" && form.fechaValor.trim() ? form.fechaValor.trim() : null;
+      const body = {
+        tipoMaterial: form.tipoMaterial.trim() || "MP",
+        nombre: form.nombre.trim() || form.lote.trim(),
+        codigo: form.codigo.trim() || form.lote.trim(),
+        lote: form.lote.trim(),
+        fechaEntrada: form.fechaEntrada.trim(),
+        caducidad,
+        reanalisis,
+        envaseNum,
+        envaseTotal,
+      };
+      const res = await api<CreateResponse>("/label", { method: "POST", body });
+      setCreateResp(res);
+      const payload = QR_PREFIX + res.publicToken;
       const logoPath = `${import.meta.env.BASE_URL}logo-olnatura.png`;
-
       const dataUrl = await generateQrWithLogo(payload, {
         errorCorrectionLevel: "H",
         margin: 2,
         width: 640,
         logoUrl: logoPath,
         logoSizeRatio: 0.22,
-        debug: true,
       });
-
       setQrDataUrl(dataUrl);
     } catch (e) {
-      setErr("No se pudo generar el QR.");
+      const ae = e as ApiError;
+      setErr(ae?.message ?? "No se pudo registrar la etiqueta.");
       setQrDataUrl(null);
+      setCreateResp(null);
     } finally {
       setBusy(false);
     }
   };
 
   const onDownloadPng = async () => {
-  setErr(null);
-
-  if (!qrDataUrl) {
-    setErr("Primero genera el QR.");
-    return;
-  }
-
-  try {
-    setBusy(true);
-
-    const labelPng = await renderLabelToPng(
-      {
-        tipoMaterial: form.tipoMaterial.trim(),
-        nombre: form.nombre.trim(),
-        codigo: form.codigo.trim(),
-        lote: form.lote.trim(),
-        fechaEntrada: form.fechaEntrada.trim(),
-        fechaTipo: form.fechaTipo,
-        fechaValor: form.fechaValor.trim(),
-        envaseNum: form.envaseNum ? Number(form.envaseNum) : undefined,
-        envaseTotal: form.envaseTotal ? Number(form.envaseTotal) : undefined,
-      },
-      qrDataUrl
-    );
-
-    const lote = form.lote.trim() || "etiqueta";
-    const a = document.createElement("a");
-    a.href = labelPng;
-    a.download = `ETIQUETA_${lote}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } catch (e) {
-    setErr("No se pudo generar la etiqueta imprimible.");
-  } finally {
-    setBusy(false);
-  }
-};
+    setErr(null);
+    if (!qrDataUrl) {
+      setErr("Primero registra y genera el QR.");
+      return;
+    }
+    try {
+      setBusy(true);
+      const labelPng = await renderLabelToPng(
+        {
+          tipoMaterial: form.tipoMaterial.trim(),
+          nombre: form.nombre.trim(),
+          codigo: form.codigo.trim(),
+          lote: form.lote.trim(),
+          fechaEntrada: form.fechaEntrada.trim(),
+          fechaTipo: form.fechaTipo,
+          fechaValor: form.fechaValor.trim(),
+          envaseNum: form.envaseNum ? Number(form.envaseNum) : undefined,
+          envaseTotal: form.envaseTotal ? Number(form.envaseTotal) : undefined,
+        },
+        qrDataUrl
+      );
+      const lote = form.lote.trim() || "etiqueta";
+      const a = document.createElement("a");
+      a.href = labelPng;
+      a.download = `ETIQUETA_${lote}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      setErr("No se pudo generar la etiqueta imprimible.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
@@ -144,7 +162,7 @@ export default function RegisterLabelPage() {
         </Text>
 
         <div style={{ color: "#6B6B6B", marginTop: 4 }}>
-          Genera QR y etiqueta imprimible. La generación es local.
+          Registra la etiqueta en el sistema, genera QR con token y etiqueta imprimible.
         </div>
 
         {!canQr ? (
@@ -220,8 +238,8 @@ export default function RegisterLabelPage() {
         />
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Button appearance="primary" onClick={onGenerateQr} disabled={!canGenerate}>
-            {busy ? "Generando…" : "Generar QR"}
+          <Button appearance="primary" onClick={onRegisterAndGenerate} disabled={!canRegister}>
+            {busy ? "Registrando…" : "Registrar y generar QR"}
           </Button>
 
           <Button
@@ -253,7 +271,7 @@ export default function RegisterLabelPage() {
               />
             </div>
             <div style={{ color: "#6B6B6B", fontSize: 12 }}>
-              Contenido codificado: lote + metadata básica (modo demo). Luego lo alineamos al payload final.
+              Formato: OLNQR:1:&lt;token&gt;. La etiqueta queda persistida en el sistema.
             </div>
           </div>
         ) : null}

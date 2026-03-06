@@ -67,7 +67,9 @@ export default function GenerateQrPage() {
 
       setLabelData(label);
 
-      const payload = String(label.lote ?? v);
+      const payload = label.publicToken
+        ? `OLNQR:1:${label.publicToken}`
+        : String(label.lote ?? v);
       const logoPath = `${import.meta.env.BASE_URL}logo-olnatura.png`;
 
       const qrWithLogo = await generateQrWithLogo(payload, {

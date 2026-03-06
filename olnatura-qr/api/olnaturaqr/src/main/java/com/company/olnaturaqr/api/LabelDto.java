@@ -26,6 +26,7 @@ public class LabelDto {
             String nombre,
             String codigo,
             String lote,
+            String publicToken,
             LocalDate fechaEntrada,
             LocalDate caducidad,
             LocalDate reanalisis,
@@ -41,6 +42,7 @@ public class LabelDto {
                     q.getNombre(),
                     q.getCodigo(),
                     q.getLote(),
+                    q.getPublicToken(),
                     q.getFechaEntrada(),
                     q.getCaducidad(),
                     q.getReanalisis(),
@@ -56,6 +58,7 @@ public class LabelDto {
             UUID id,
             String status,
             String qrUrl,
+            String publicToken,
             LabelView label
     ) {}
 

@@ -81,6 +81,37 @@ async function downloadZpl(data: QrResponse | null, loteInput: string) {
   }
 }
 
+async function downloadAuditPdf(
+  loteInput: string,
+  onError: (msg: string) => void
+) {
+  const lote = (loteInput ?? "").trim();
+  if (!lote) return;
+
+  const base = API_BASE.replace(/\/+$/, "");
+  const url = `${base}/api/v1/audit/${encodeURIComponent(lote)}/pdf`;
+
+  try {
+    const res = await fetch(url, { method: "GET", credentials: "include" });
+    if (!res.ok) {
+      onError(res.status === 404 ? "Lote no encontrado." : "No se pudo descargar el PDF.");
+      return;
+    }
+    const blob = await res.blob();
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeLote = (lote || "lote").replace(/[\s/\\]+/g, "_");
+    a.href = href;
+    a.download = `trazabilidad-${safeLote}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(href);
+  } catch (err) {
+    onError("Error al descargar. Verifica la conexión.");
+  }
+}
+
 // Status mapping: display label (Spanish) <-> backend value (English)
 // PATCH requests must send backend values.
 const STATUS_OPTIONS = [
@@ -280,6 +311,7 @@ export default function BatchLookupPage() {
   const canChangeStatus = data?.permissions?.canChangeStatus ?? false;
   const canRegisterScan = data?.permissions?.canRegisterScan ?? can("SCAN");
   const canDownloadZpl = data?.permissions?.canCreateLabel ?? (hasRole("ADMIN") || hasRole("ALMACEN"));
+  const canDownloadPdf = hasRole("ADMIN") || hasRole("INSPECCION");
   const transitions = data?.availableTransitions ?? [];
   const dropdownOptions = transitions.length > 0
     ? STATUS_OPTIONS.filter((o) => transitions.includes(o.value))
@@ -513,6 +545,21 @@ export default function BatchLookupPage() {
                   <ScansTable events={scans} />
                 )}
               </div>
+              {canDownloadPdf && (
+                <div style={{ marginTop: 12 }}>
+                  <Button
+                    appearance="secondary"
+                    size="small"
+                    onClick={() =>
+                      downloadAuditPdf(loteTrim, (msg) =>
+                        toasts.push({ intent: "error", title: "Error", message: msg })
+                      )
+                    }
+                  >
+                    Descargar historial (PDF)
+                  </Button>
+                </div>
+              )}
             </Card>
           </div>
         </div>
