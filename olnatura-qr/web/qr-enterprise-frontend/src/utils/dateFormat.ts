@@ -1,12 +1,14 @@
 /**
  * Date formatting for Microsoft Dynamics compatibility: DD/MM/YYYY
- * Used in label preview, PNG, ZPL, and form display.
+ * Example: 11/09/2025
+ * Used in label preview, PNG export, ZPL, and form display.
+ * All dates shown to users must use this format.
  */
 
 const DDMMYYYY_REGEX = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
 
 /**
- * Format ISO date (YYYY-MM-DD) or LocalDate string to DD/MM/YYYY
+ * Format any date string (YYYY-MM-DD or DD/MM/YYYY) to DD/MM/YYYY for display
  */
 export function formatDateDDMMYYYY(isoOrLocal: string | null | undefined): string {
   if (!isoOrLocal || typeof isoOrLocal !== "string") return "";

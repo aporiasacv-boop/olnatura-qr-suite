@@ -3,7 +3,7 @@ import { Card, Text, Input, Button, Radio, RadioGroup } from "@fluentui/react-co
 import { useAuth } from "../auth/AuthContext";
 import { api, ApiError, API_BASE } from "../api/client";
 import { generateQrWithLogo } from "../utils/qrWithLogo";
-import { parseDDMMYYYYToISO, isValidDDMMYYYY, formatDateDDMMYYYY } from "../utils/dateFormat";
+import { parseDDMMYYYYToISO, isValidDDMMYYYY } from "../utils/dateFormat";
 import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
 import LabelPreview from "../components/label/LabelPreview";
 import type { FechaTipo } from "../utils/labelToPng";
@@ -256,8 +256,8 @@ export default function RegisterLabelPage() {
           onChange={(v) => setForm((s) => ({ ...s, lote: v }))}
         />
         <Field
-          label="Fecha entrada"
-          placeholder="DD/MM/YYYY"
+          label="Fecha entrada (DD/MM/YYYY)"
+          placeholder="11/09/2025"
           value={form.fechaEntrada}
           onChange={(v) => setForm((s) => ({ ...s, fechaEntrada: v }))}
         />
@@ -280,21 +280,23 @@ export default function RegisterLabelPage() {
               ? "Caducidad (DD/MM/YYYY)"
               : "Reanálisis (DD/MM/YYYY)"
           }
-          placeholder="DD/MM/YYYY"
+          placeholder="11/09/2025"
           value={form.fechaValor}
           onChange={(v) => setForm((s) => ({ ...s, fechaValor: v }))}
         />
         <Field
-          label="Envase No (contenedor actual)"
-          placeholder="Ej. 1"
+          label="Envase No"
+          placeholder="1"
           value={form.envaseNum}
           onChange={(v) => setForm((s) => ({ ...s, envaseNum: v }))}
+          hint="Contenedor actual (ej: 1 de 40)"
         />
         <Field
-          label="Cantidad total (contenedores)"
-          placeholder="Ej. 20"
+          label="Cantidad total"
+          placeholder="40"
           value={form.envaseTotal}
           onChange={(v) => setForm((s) => ({ ...s, envaseTotal: v }))}
+          hint="Total de contenedores"
         />
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -328,9 +330,9 @@ export default function RegisterLabelPage() {
                 materialName={form.nombre.trim() || form.lote.trim() || "—"}
                 codigo={form.codigo.trim() || "—"}
                 lote={form.lote.trim() || "—"}
-                fecha={formatDateDDMMYYYY(form.fechaEntrada) || form.fechaEntrada}
-                caducidad={formatDateDDMMYYYY(caducidadDisplay) || caducidadDisplay}
-                reanalisis={formatDateDDMMYYYY(reanalisisDisplay) || reanalisisDisplay}
+                fecha={form.fechaEntrada}
+                caducidad={caducidadDisplay}
+                reanalisis={reanalisisDisplay}
                 cantidad="N/A"
                 envaseNum={form.envaseNum || "—"}
                 envaseTotal={form.envaseTotal || "—"}
@@ -343,7 +345,6 @@ export default function RegisterLabelPage() {
             <Button
               appearance="secondary"
               onClick={onScrollToPreview}
-              disabled={!hasPreview}
             >
               Vista previa
             </Button>
@@ -379,11 +380,13 @@ function Field({
   placeholder,
   value,
   onChange,
+  hint,
 }: {
   label: string;
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
+  hint?: string;
 }) {
   return (
     <div style={{ display: "grid", gap: 6 }}>
@@ -393,6 +396,9 @@ function Field({
         onChange={(_, d) => onChange(d.value)}
         placeholder={placeholder}
       />
+      {hint ? (
+        <Text style={{ fontSize: 12, color: "#6B7280" }}>{hint}</Text>
+      ) : null}
     </div>
   );
 }

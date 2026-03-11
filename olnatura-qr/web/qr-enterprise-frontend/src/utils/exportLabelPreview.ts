@@ -5,7 +5,8 @@
 
 import { toPng } from "html-to-image";
 
-const DEFAULT_PIXEL_RATIO = 2;
+/** Higher ratio for print-quality label export (≈300 DPI equivalent) */
+const DEFAULT_PIXEL_RATIO = 3;
 
 /**
  * Export a label preview element to PNG data URL.

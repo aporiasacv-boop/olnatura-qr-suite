@@ -132,9 +132,13 @@ export default function LabelPreview(props: LabelPreviewProps) {
   );
 }
 
+/**
+ * Proportions match real printed label (Zebra 800×600 dots).
+ * Scale: 1px ≈ 2 dots for consistent visual match.
+ */
 const LABEL_WIDTH = 400;
 const LABEL_HEIGHT = 300;
-const QR_SIZE = 140;
+const QR_SIZE = 160;
 
 const labelStyles: Record<string, React.CSSProperties> = {
   root: {
@@ -150,16 +154,16 @@ const labelStyles: Record<string, React.CSSProperties> = {
     backgroundColor: "#fff",
     border: "2px solid #45a350",
     borderRadius: 4,
-    padding: 12,
-    paddingRight: QR_SIZE + 20,
+    padding: 14,
+    paddingRight: QR_SIZE + 18,
     boxSizing: "border-box",
   },
   header: {
     textAlign: "center",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 700,
     color: "#1a1a1a",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   section: {
     marginBottom: 8,
