@@ -63,5 +63,9 @@ public class LabelDto {
     ) {}
 
     public record StatusRequest(String status) {}
+
     public record StatusResponse(UUID id, String status) {}
+
+    /** Optional body for POST /label/{id}/zpl - embeds QR image as ^GF when provided */
+    public record ZplRequest(Integer total, Integer from, Integer to, String qrImageBase64) {}
 }

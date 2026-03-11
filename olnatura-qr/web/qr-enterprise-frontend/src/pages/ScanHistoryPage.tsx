@@ -6,6 +6,8 @@ import { useToasts } from "../components/ui/toasts";
 import LoadingState from "../components/ui/LoadingState";
 import EmptyState from "../components/ui/EmptyState";
 import ErrorState from "../components/ui/ErrorState";
+import ScanHistoryTable from "../components/ui/ScanHistoryTable";
+import { LABELS } from "../utils/displayLabels";
 
 export default function ScanHistoryPage() {
   const toasts = useToasts();
@@ -35,11 +37,11 @@ export default function ScanHistoryPage() {
         intent: "error",
         title:
           ae.status === 404
-            ? "Sin eventos"
+            ? LABELS.noEvents
             : "Error al consultar historial",
         message:
           ae.status === 404
-            ? "No hay historial para ese lote."
+            ? LABELS.noRecords
             : ae.status === 401
             ? "Tu sesión no es válida."
             : "Intenta de nuevo.",
@@ -49,11 +51,11 @@ export default function ScanHistoryPage() {
       setErr({
         title:
           ae.status === 404
-            ? "Sin eventos"
+            ? LABELS.noEvents
             : "Error al consultar historial",
         detail:
           ae.status === 404
-            ? "No hay historial para ese lote."
+            ? LABELS.noRecords
             : ae.status === 401
             ? "Vuelve a iniciar sesión."
             : "Intenta de nuevo.",
@@ -67,10 +69,10 @@ export default function ScanHistoryPage() {
     <div style={{ display: "grid", gap: 14 }}>
       <div>
         <Text weight="semibold" size={700}>
-          Historial de escaneos
+          {LABELS.scanHistory}
         </Text>
         <div style={{ color: "#6B6B6B", marginTop: 4 }}>
-          Filtra por lote para revisar trazabilidad.
+          Consulta por lote para revisar trazabilidad.
         </div>
       </div>
 
@@ -96,13 +98,13 @@ export default function ScanHistoryPage() {
 
       {status === "idle" && (
         <EmptyState
-          title="Listo para filtrar"
+          title={LABELS.readyToFilter}
           hint="Ingresa un lote para ver sus eventos."
         />
       )}
 
       {status === "loading" && (
-        <LoadingState label="Cargando historial…" />
+        <LoadingState label="Consultando historial…" />
       )}
 
       {status === "error" && err && (
@@ -116,27 +118,14 @@ export default function ScanHistoryPage() {
       {status === "ok" && events && (
         events.length === 0 ? (
           <EmptyState
-            title="Sin eventos"
-            hint="Este lote no tiene registros."
+            title={LABELS.noEvents}
+            hint={LABELS.noRecords}
           />
         ) : (
           <Card style={{ padding: 16 }}>
-            <Text weight="semibold">Eventos</Text>
+            <Text weight="semibold">{LABELS.scanHistory}</Text>
             <div style={{ marginTop: 12 }}>
-              <pre
-                style={{
-                  margin: 0,
-                  background: "#F6F7F8",
-                  padding: 12,
-                  borderRadius: 12,
-                  overflow: "auto",
-                }}
-              >
-                {JSON.stringify(events, null, 2)}
-              </pre>
-              <div style={{ marginTop: 8, color: "#6B6B6B", fontSize: 12 }}>
-                Nota: aquí puedes reemplazar el JSON por una tabla cuando confirmemos el schema exacto del evento.
-              </div>
+              <ScanHistoryTable events={events} />
             </div>
           </Card>
         )

@@ -1,8 +1,13 @@
 import { pushToast } from "../components/ui/toasts";
 
-// API base URL
+// API base URL - use "" for same-origin (when served from backend), or absolute URL for dev
+const raw = import.meta.env.VITE_API_BASE_URL;
 export const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+  raw === ""
+    ? ""
+    : typeof raw === "string" && raw.trim().length > 0
+      ? raw.trim().replace(/\/+$/, "")
+      : "http://localhost:3001";
 
 // Api error class
 export class ApiError extends Error {

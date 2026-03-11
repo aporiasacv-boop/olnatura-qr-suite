@@ -59,7 +59,7 @@ npm run dev
 
 ```bash
 cd OlnaturaQR
-./gradlew assembleDebug -PAPI_BASE_URL=http://:3001/
+./gradlew assembleDebug -PAPI_BASE_URL=http://192.168.41.177:3001/
 # Instalar el APK desde app/build/outputs/apk/debug/
 ```
 

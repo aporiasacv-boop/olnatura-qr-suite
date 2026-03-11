@@ -15,6 +15,7 @@ import {
 import { api, ApiError } from "../api/client";
 import { useToasts } from "../components/ui/toasts";
 import { brand } from "../styles/brand";
+import { LABELS, formatDateTime, actionTypeDisplay } from "../utils/displayLabels";
 
 const useStyles = makeStyles({
   wrap: { display: "grid", rowGap: "12px" },
@@ -85,10 +86,10 @@ export default function AdminAuditPage() {
       <div className={s.headerRow}>
         <div>
           <Text weight="semibold" size={600}>
-            Historial de auditoría
+            {LABELS.auditLog}
           </Text>
           <div className={s.muted}>
-            <Text size={300}>Acciones registradas (append-only)</Text>
+            <Text size={300}>Acciones registradas en el sistema</Text>
           </div>
         </div>
         <Button appearance="primary" onClick={load} disabled={busy}>
@@ -100,26 +101,27 @@ export default function AdminAuditPage() {
         <div style={{ padding: 12, overflowX: "auto" }}>
           {events.length === 0 ? (
             <div style={{ padding: 24, textAlign: "center", color: brand.muted }}>
-              No hay eventos aún
+              {LABELS.noRecords}
             </div>
           ) : (
-            <Table aria-label="Audit events">
+            <Table aria-label={LABELS.auditLog}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell>Fecha</TableHeaderCell>
-                  <TableHeaderCell>Acción</TableHeaderCell>
+                  <TableHeaderCell>{LABELS.fecha}</TableHeaderCell>
+                  <TableHeaderCell>{LABELS.accion}</TableHeaderCell>
                   <TableHeaderCell>Actor</TableHeaderCell>
                   <TableHeaderCell>Lote</TableHeaderCell>
-                  <TableHeaderCell>Detalles</TableHeaderCell>
+                  <TableHeaderCell>{LABELS.detalle}</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {events.map((e) => (
+                {events.map((e) => {
+                  const { date, time } = formatDateTime(e.createdAt);
+                  const dateTimeStr = date !== LABELS.noData && time !== LABELS.noData ? `${date} ${time}` : "—";
+                  return (
                   <TableRow key={e.id}>
-                    <TableCell>
-                      {e.createdAt ? new Date(e.createdAt).toLocaleString() : "-"}
-                    </TableCell>
-                    <TableCell>{e.actionType}</TableCell>
+                    <TableCell>{dateTimeStr}</TableCell>
+                    <TableCell>{actionTypeDisplay(e.actionType)}</TableCell>
                     <TableCell>
                       {e.actorRol ?? "-"} {e.actorEmail ? `(${e.actorEmail})` : ""}
                     </TableCell>
@@ -127,10 +129,11 @@ export default function AdminAuditPage() {
                     <TableCell>
                       {e.metadata && Object.keys(e.metadata).length > 0
                         ? JSON.stringify(e.metadata)
-                        : "-"}
+                        : "—"}
                     </TableCell>
                   </TableRow>
-                ))}
+                );
+                })}
               </TableBody>
             </Table>
           )}

@@ -23,6 +23,8 @@ import LoadingState from "../components/ui/LoadingState";
 import EmptyState from "../components/ui/EmptyState";
 import ErrorState from "../components/ui/ErrorState";
 import StatusTag from "../components/ui/StatusTag";
+import { LABELS, fuenteDisplay } from "../utils/displayLabels";
+import ScanHistoryTable from "../components/ui/ScanHistoryTable";
 
 // Helpers
 function getDeviceId() {
@@ -49,19 +51,33 @@ function readDynamic(data: QrResponse | null, key: string, fallback = "—") {
   return asText((data as any)?.dynamic?.[key], fallback);
 }
 
-async function downloadZpl(data: QrResponse | null, loteInput: string) {
+async function downloadZpl(
+  data: QrResponse | null,
+  loteInput: string,
+  opts?: { totalEnvases?: number; printFrom?: number; printTo?: number }
+) {
   const label: any = (data as any)?.label ?? {};
   const loteFromLabel = typeof label.lote === "string" ? label.lote.trim() : "";
   const lote = loteFromLabel || loteInput.trim();
   if (!lote) return;
 
+  const total = opts?.totalEnvases ?? label.envaseTotal ?? 1;
+  const from = opts?.printFrom ?? label.envaseNum ?? 1;
+  const to = opts?.printTo ?? from;
+
   const base = API_BASE.replace(/\/+$/, "");
-  const url = `${base}/api/v1/label/${encodeURIComponent(lote)}/zpl`;
+  const params = new URLSearchParams();
+  if (total !== (label.envaseTotal ?? 1)) params.set("total", String(total));
+  if (from !== to || from !== (label.envaseNum ?? 1)) {
+    params.set("from", String(from));
+    params.set("to", String(to));
+  }
+  const qs = params.toString();
+  const url = `${base}/api/v1/label/${encodeURIComponent(lote)}/zpl${qs ? `?${qs}` : ""}`;
 
   try {
     const res = await fetch(url, { method: "GET", credentials: "include" });
     if (!res.ok) {
-      // Best-effort: let caller surface a toast if needed
       console.error("ZPL download failed", res.status, await res.text());
       return;
     }
@@ -69,9 +85,16 @@ async function downloadZpl(data: QrResponse | null, loteInput: string) {
     const blob = new Blob([text], { type: "text/plain" });
     const href = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const safeLote = (lote || "label").replace(/[\\s/\\\\]+/g, "_");
+    const cd = res.headers.get("Content-Disposition");
+    let filename = `label-${(lote || "label").replace(/[\s/\\]+/g, "_")}.zpl`;
+    if (cd) {
+      const m = cd.match(/filename="?([^";\n]+)"?/);
+      if (m?.[1]) filename = m[1].trim();
+    } else if (from !== to) {
+      filename = `etiqueta-${(lote || "label").replace(/[\s/\\]+/g, "_")}-del-${from}-al-${to}.zpl`;
+    }
     a.href = href;
-    a.download = `label-${safeLote}.zpl`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -150,6 +173,9 @@ export default function BatchLookupPage() {
   const [newStatus, setNewStatus] = useState<string>("");
   const [statusBusy, setStatusBusy] = useState(false);
   const [zplHelpOpen, setZplHelpOpen] = useState(false);
+  const [zplTotalEnvases, setZplTotalEnvases] = useState<string>("");
+  const [zplPrintFrom, setZplPrintFrom] = useState<string>("");
+  const [zplPrintTo, setZplPrintTo] = useState<string>("");
 
   const [sessionMetrics, setSessionMetrics] = useState<Map<string, LoteMetrics>>(() => {
     if (!DEV_METRICS) return new Map();
@@ -300,6 +326,16 @@ export default function BatchLookupPage() {
 
   // Derived values
   const labelEnvase = `${readLabel(data, "envaseNum")} / ${readLabel(data, "envaseTotal")}`;
+  const envaseNum = parseInt(String((data as any)?.label?.envaseNum ?? 1), 10) || 1;
+  const envaseTotal = parseInt(String((data as any)?.label?.envaseTotal ?? 1), 10) || 1;
+
+  useEffect(() => {
+    if (status === "ok" && data) {
+      setZplTotalEnvases(String(envaseTotal));
+      setZplPrintFrom("1");
+      setZplPrintTo(String(envaseTotal));
+    }
+  }, [status, data, envaseTotal]);
 
   const dynamicCantidad = (() => {
     const cant = readDynamic(data, "cantidad");
@@ -318,14 +354,7 @@ export default function BatchLookupPage() {
     : [...STATUS_OPTIONS];
 
   const dynamicFuenteRaw = (data as any)?.dynamic?.fuente ?? "";
-  const fuenteNormalized =
-    typeof dynamicFuenteRaw === "string" ? dynamicFuenteRaw.trim().toUpperCase() : "";
-  const fuenteTooltip =
-    fuenteNormalized === "MOCK_DYNAMICS"
-      ? "Datos demo para pruebas."
-      : fuenteNormalized === "DB_ONLY"
-      ? "Status desde base local (sin Dynamics)."
-      : undefined;
+  const fuenteDisplayLabel = fuenteDisplay(dynamicFuenteRaw);
 
   const handleZplDownload = async () => {
     if (!loteTrim) return;
@@ -344,7 +373,14 @@ export default function BatchLookupPage() {
       });
     }
 
-    await downloadZpl(data, loteTrim);
+    const total = parseInt(zplTotalEnvases, 10) || envaseTotal;
+    const from = parseInt(zplPrintFrom, 10) || 1;
+    const to = parseInt(zplPrintTo, 10) || total;
+    await downloadZpl(data, loteTrim, {
+      totalEnvases: total,
+      printFrom: Math.max(1, Math.min(from, total)),
+      printTo: Math.max(1, Math.min(to, total)),
+    });
   };
 
   const clearSessionMetrics = () => {
@@ -393,9 +429,9 @@ export default function BatchLookupPage() {
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <div>
-        <Text weight="semibold" size={700}>Consulta por lote</Text>
+        <Text weight="semibold" size={700}>{LABELS.lookup}</Text>
         <div style={{ color: "#6B6B6B", marginTop: 4 }}>
-          Consulta por lote. Visualiza datos fijos y estado dinámico.
+          Visualiza datos de la etiqueta y estado actual del lote.
         </div>
       </div>
 
@@ -427,7 +463,7 @@ export default function BatchLookupPage() {
             disabled={!loteTrim || status === "loading"}
             title={!loteTrim ? "Ingresa un lote primero" : undefined}
           >
-            Registrar escaneo
+            {LABELS.registerScan}
           </Button>
         )}
       </Card>
@@ -441,7 +477,7 @@ export default function BatchLookupPage() {
       {status === "ok" && data && (
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 14 }}>
           <Card style={{ padding: 16 }}>
-            <Text weight="semibold">Datos fijos (Etiqueta)</Text>
+            <Text weight="semibold">{LABELS.labelData}</Text>
 
             <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <Field label="Tipo material" value={readLabel(data, "tipoMaterial")} />
@@ -459,24 +495,56 @@ export default function BatchLookupPage() {
               <Field label="Fecha entrada" value={readLabel(data, "fechaEntrada")} />
               <Field label="Caducidad" value={readLabel(data, "caducidad")} />
               <Field label="Reanálisis" value={readLabel(data, "reanalisis")} />
-              <Field label="Envase" value={labelEnvase} />
+              <Field label={LABELS.envase} value={labelEnvase} />
             </div>
 
             <div style={{ marginTop: 14, color: "#6B6B6B", fontSize: 12 }}>
-              Descargar etiqueta (PNG): disponible desde la pantalla de registrar etiqueta o generar etiqueta.
+              Etiqueta PNG: disponible en registrar etiqueta o generar etiqueta.
             </div>
 
             {canDownloadZpl && (
               <div style={{ marginTop: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div>
+                    <Text style={{ fontSize: 12, color: "#6B6B6B" }}>Total envases</Text>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={zplTotalEnvases}
+                      onChange={(_, d) => setZplTotalEnvases(d.value ?? "")}
+                      placeholder={String(envaseTotal)}
+                    />
+                  </div>
+                  <div>
+                    <Text style={{ fontSize: 12, color: "#6B6B6B" }}>Imprimir desde</Text>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={zplPrintFrom}
+                      onChange={(_, d) => setZplPrintFrom(d.value ?? "")}
+                      placeholder="1"
+                    />
+                  </div>
+                  <div>
+                    <Text style={{ fontSize: 12, color: "#6B6B6B" }}>Imprimir hasta</Text>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={zplPrintTo}
+                      onChange={(_, d) => setZplPrintTo(d.value ?? "")}
+                      placeholder={String(envaseTotal)}
+                    />
+                  </div>
+                </div>
                 <Button
                   appearance="secondary"
                   size="small"
                   onClick={() => void handleZplDownload()}
                 >
-                  Descargar ZPL
+                  {LABELS.downloadZpl}
                 </Button>
                 <Text style={{ display: "block", marginTop: 4, color: "#6B6B6B", fontSize: 12 }}>
-                  Archivo ZPL para impresora Zebra. No se abre como documento.{" "}
+                  Archivo para impresora Zebra.{" "}
                   <Link onClick={() => setZplHelpOpen(true)}>Cómo imprimir</Link>
                 </Text>
               </div>
@@ -485,11 +553,11 @@ export default function BatchLookupPage() {
 
           <div style={{ display: "grid", gap: 14 }}>
             <Card style={{ padding: 16 }}>
-              <Text weight="semibold">Estado dinámico</Text>
+              <Text weight="semibold">{LABELS.dynamicState}</Text>
 
               <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <Text>Estado</Text>
+                  <Text>{LABELS.dynamicStatus}</Text>
                   <StatusTag status={statusToDisplayLabel(dynamicStatus)} />
                   {dropdownOptions.length > 0 ? (
                     <>
@@ -526,23 +594,19 @@ export default function BatchLookupPage() {
                   )}
                 </div>
 
-                <Field label="Ubicación" value={readDynamic(data, "ubicacion")} />
-                <Field label="Cantidad" value={dynamicCantidad} />
-                <Field
-                  label="Fuente"
-                  value={readDynamic(data, "fuente")}
-                  tooltip={fuenteTooltip}
-                />
+                <Field label={LABELS.ubicacion} value={readDynamic(data, "ubicacion")} />
+                <Field label={LABELS.cantidad} value={dynamicCantidad} />
+                <Field label={LABELS.fuente} value={fuenteDisplayLabel} />
               </div>
             </Card>
 
             <Card style={{ padding: 16 }}>
-              <Text weight="semibold">Historial de escaneos</Text>
+              <Text weight="semibold">{LABELS.scanHistory}</Text>
               <div style={{ marginTop: 12 }}>
                 {scans === null ? null : scans.length === 0 ? (
-                  <EmptyState title="Sin escaneos" hint="Este lote aún no registra eventos." />
+                  <EmptyState title={LABELS.noScans} hint={LABELS.noRecords} />
                 ) : (
-                  <ScansTable events={scans} />
+                  <ScanHistoryTable events={scans} />
                 )}
               </div>
               {canDownloadPdf && (
@@ -556,7 +620,7 @@ export default function BatchLookupPage() {
                       )
                     }
                   >
-                    Descargar historial (PDF)
+                    {LABELS.downloadAuditPdf}
                   </Button>
                 </div>
               )}
@@ -566,7 +630,7 @@ export default function BatchLookupPage() {
       )}
 
       {status === "idle" && (
-        <EmptyState title="Listo para consultar" hint="Ingresa un lote y presiona Buscar." />
+        <EmptyState title={LABELS.readyToLookup} hint="Ingresa un lote y presiona Buscar." />
       )}
 
       {DEV_METRICS && loteTrim && (() => {
@@ -687,53 +751,6 @@ function CopyField({
         </Button>
       </div>
       <div style={{ marginTop: 4, fontWeight: 600, wordBreak: "break-all" }}>{display}</div>
-    </div>
-  );
-}
-
-function pick(ev: any, keys: string[], fallback = "—") {
-  for (const k of keys) {
-    const v = ev?.[k];
-    if (typeof v === "string" && v.trim()) return v;
-    if (typeof v === "number") return String(v);
-  }
-  return fallback;
-}
-
-function ScansTable({ events }: { events: any[] }) {
-  return (
-    <div style={{ border: "1px solid #E6E6E6", borderRadius: 12, overflow: "hidden" }}>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1.3fr 1fr 1fr 1fr",
-          padding: "10px 12px",
-          background: "#F6F7F8",
-          fontWeight: 600,
-        }}
-      >
-        <div>Fecha</div>
-        <div>Dispositivo</div>
-        <div>Usuario</div>
-        <div>Ubicación</div>
-      </div>
-
-      {events.map((ev, idx) => (
-        <div
-          key={idx}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.3fr 1fr 1fr 1fr",
-            padding: "10px 12px",
-            borderTop: "1px solid #EFEFEF",
-          }}
-        >
-          <div>{pick(ev, ["fecha", "timestamp", "createdAt"])}</div>
-          <div>{pick(ev, ["dispositivo", "device", "deviceId"])}</div>
-          <div>{pick(ev, ["usuario", "user", "username"])}</div>
-          <div>{pick(ev, ["ubicacion", "location"])}</div>
-        </div>
-      ))}
     </div>
   );
 }

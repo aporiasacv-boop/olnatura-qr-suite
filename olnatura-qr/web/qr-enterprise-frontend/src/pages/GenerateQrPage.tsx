@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button, Card, Input, Text, makeStyles, shorthands } from "@fluentui/react-components";
 import { api, ApiError } from "../api/client";
 
@@ -33,6 +33,7 @@ const useStyles = makeStyles({
 
 export default function GenerateQrPage() {
   const s = useStyles();
+  const previewRef = useRef<HTMLDivElement>(null);
   const [lote, setLote] = useState("");
   const [labelData, setLabelData] = useState<QrResponse["label"] | null>(null);
   const [pngDataUrl, setPngDataUrl] = useState<string | null>(null);
@@ -126,20 +127,8 @@ export default function GenerateQrPage() {
     a.remove();
   }
 
-  function printLabel() {
-    if (!pngDataUrl) return;
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.write(`
-      <!DOCTYPE html><html><head><title>Etiqueta</title></head>
-      <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;">
-        <img src="${pngDataUrl}" alt="Etiqueta" style="max-width:100%;height:auto;" />
-      </body></html>
-    `);
-    w.document.close();
-    w.focus();
-    w.print();
-    w.close();
+  function scrollToPreview() {
+    previewRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   return (
@@ -166,17 +155,17 @@ export default function GenerateQrPage() {
             <Button appearance="primary" onClick={generate} disabled={busy || !v}>
               {busy ? "Generando…" : "Generar etiqueta"}
             </Button>
-            <Button onClick={download} disabled={!pngDataUrl}>
-              Descargar PNG
+            <Button appearance="secondary" onClick={scrollToPreview} disabled={!pngDataUrl}>
+              Vista previa
             </Button>
-            <Button appearance="secondary" onClick={printLabel} disabled={!pngDataUrl}>
-              Imprimir
+            <Button appearance="secondary" onClick={download} disabled={!pngDataUrl}>
+              Descargar PNG
             </Button>
           </div>
 
           {error ? <Text style={{ color: "#B10E1C" }}>{error}</Text> : null}
 
-          <div className={s.preview}>
+          <div ref={previewRef} className={s.preview}>
             {pngDataUrl ? (
               <img src={pngDataUrl} alt="Etiqueta preview" className={s.img} />
             ) : (

@@ -120,7 +120,7 @@ export default function Sidebar() {
               Aprobar usuarios
             </NavLink>
             <NavLink to="/admin/audit" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-              Auditoría
+              Historial de auditoría
             </NavLink>
           </>
         )}

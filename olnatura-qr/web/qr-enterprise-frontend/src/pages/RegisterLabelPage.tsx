@@ -1,9 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Card, Text, Input, Button, Radio, RadioGroup } from "@fluentui/react-components";
 import { useAuth } from "../auth/AuthContext";
-import { api, ApiError } from "../api/client";
+import { api, ApiError, API_BASE } from "../api/client";
 import { generateQrWithLogo } from "../utils/qrWithLogo";
-import { renderLabelToPng, type FechaTipo } from "../utils/labelToPng";
+import { parseDDMMYYYYToISO, isValidDDMMYYYY, formatDateDDMMYYYY } from "../utils/dateFormat";
+import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
+import LabelPreview from "../components/label/LabelPreview";
+import type { FechaTipo } from "../utils/labelToPng";
 
 const QR_PREFIX = "OLNQR:1:";
 
@@ -29,6 +32,7 @@ type CreateResponse = {
 
 export default function RegisterLabelPage() {
   const { me } = useAuth();
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const canQr = useMemo(() => {
     const roles = me?.roles ?? [];
@@ -53,11 +57,14 @@ export default function RegisterLabelPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const loteOk = form.lote.trim().length > 0;
-  const fechaEntradaOk = /^\d{4}-\d{2}-\d{2}$/.test(form.fechaEntrada.trim());
+  const fechaEntradaOk = isValidDDMMYYYY(form.fechaEntrada);
   const envaseNum = parseInt(form.envaseNum, 10) || 0;
   const envaseTotal = parseInt(form.envaseTotal, 10) || 0;
   const envaseOk = envaseNum > 0 && envaseTotal > 0 && envaseNum <= envaseTotal;
   const canRegister = canQr && loteOk && fechaEntradaOk && envaseOk && !busy;
+
+  const caducidadDisplay = form.fechaTipo === "CADUCIDAD" ? form.fechaValor : "";
+  const reanalisisDisplay = form.fechaTipo === "REANALISIS" ? form.fechaValor : "";
 
   const onRegisterAndGenerate = async () => {
     setErr(null);
@@ -73,24 +80,37 @@ export default function RegisterLabelPage() {
       return;
     }
     if (!fechaEntradaOk) {
-      setErr("Fecha de entrada requerida (YYYY-MM-DD).");
+      setErr("Fecha de entrada requerida (DD/MM/YYYY).");
       return;
     }
     if (!envaseOk) {
-      setErr("Envase Num/Total deben ser > 0 y envaseNum ≤ envaseTotal.");
+      setErr("Envase Num/Total deben ser > 0 y Envase Num ≤ Cantidad total.");
       return;
     }
 
+    const fechaEntradaIso = parseDDMMYYYYToISO(form.fechaEntrada);
+    if (!fechaEntradaIso) {
+      setErr("Formato de fecha inválido. Usa DD/MM/YYYY.");
+      return;
+    }
+
+    const fechaValorIso =
+      form.fechaValor.trim() && isValidDDMMYYYY(form.fechaValor)
+        ? parseDDMMYYYYToISO(form.fechaValor)
+        : null;
+
     try {
       setBusy(true);
-      const caducidad = form.fechaTipo === "CADUCIDAD" && form.fechaValor.trim() ? form.fechaValor.trim() : null;
-      const reanalisis = form.fechaTipo === "REANALISIS" && form.fechaValor.trim() ? form.fechaValor.trim() : null;
+      const caducidad =
+        form.fechaTipo === "CADUCIDAD" && fechaValorIso ? fechaValorIso : null;
+      const reanalisis =
+        form.fechaTipo === "REANALISIS" && fechaValorIso ? fechaValorIso : null;
       const body = {
         tipoMaterial: form.tipoMaterial.trim() || "MP",
         nombre: form.nombre.trim() || form.lote.trim(),
         codigo: form.codigo.trim() || form.lote.trim(),
         lote: form.lote.trim(),
-        fechaEntrada: form.fechaEntrada.trim(),
+        fechaEntrada: fechaEntradaIso,
         caducidad,
         reanalisis,
         envaseNum,
@@ -118,41 +138,75 @@ export default function RegisterLabelPage() {
     }
   };
 
+  const onScrollToPreview = () => {
+    previewRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const onDownloadPng = async () => {
     setErr(null);
-    if (!qrDataUrl) {
-      setErr("Primero registra y genera el QR.");
+    const el = previewRef.current?.querySelector("[data-label-preview]") as HTMLElement;
+    if (!el) {
+      setErr("Vista previa no disponible. Registra primero la etiqueta.");
       return;
     }
     try {
       setBusy(true);
-      const labelPng = await renderLabelToPng(
-        {
-          tipoMaterial: form.tipoMaterial.trim(),
-          nombre: form.nombre.trim(),
-          codigo: form.codigo.trim(),
-          lote: form.lote.trim(),
-          fechaEntrada: form.fechaEntrada.trim(),
-          fechaTipo: form.fechaTipo,
-          fechaValor: form.fechaValor.trim(),
-          envaseNum: form.envaseNum ? Number(form.envaseNum) : undefined,
-          envaseTotal: form.envaseTotal ? Number(form.envaseTotal) : undefined,
-        },
-        qrDataUrl
-      );
+      const dataUrl = await exportLabelPreviewToPng(el);
       const lote = form.lote.trim() || "etiqueta";
       const a = document.createElement("a");
-      a.href = labelPng;
+      a.href = dataUrl;
       a.download = `ETIQUETA_${lote}.png`;
       document.body.appendChild(a);
       a.click();
       a.remove();
     } catch (e) {
-      setErr("No se pudo generar la etiqueta imprimible.");
+      setErr("No se pudo generar el PNG.");
     } finally {
       setBusy(false);
     }
   };
+
+  const onDownloadZpl = async () => {
+    setErr(null);
+    if (!createResp?.id) {
+      setErr("Primero registra la etiqueta para descargar ZPL.");
+      return;
+    }
+    try {
+      setBusy(true);
+      const total = envaseTotal || 1;
+      const base = API_BASE || "";
+      const url = `${base}/api/v1/label/${createResp.id}/zpl`;
+      const res = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          total,
+          from: 1,
+          to: total,
+          qrImageBase64: qrDataUrl || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("No se pudo descargar el archivo ZPL.");
+      const blob = await res.blob();
+      const lote = form.lote.trim().replace(/[^\w\-]+/g, "_");
+      const filename = `etiqueta-${lote}.zpl`;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      setErr("No se pudo descargar la etiqueta Zebra (.zpl).");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const hasPreview = !!qrDataUrl;
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
@@ -162,12 +216,12 @@ export default function RegisterLabelPage() {
         </Text>
 
         <div style={{ color: "#6B6B6B", marginTop: 4 }}>
-          Registra la etiqueta en el sistema, genera QR con token y etiqueta imprimible.
+          Registra la etiqueta en el sistema, genera QR con token y descarga PNG o etiqueta Zebra.
         </div>
 
         {!canQr ? (
           <div style={{ color: "#8A6D00", marginTop: 8 }}>
-            Tu rol no permite generar/descargar QR (solo ADMIN y ALMACÉN).
+            Tu rol no permite generar/descargar etiquetas (solo ADMIN y ALMACÉN).
           </div>
         ) : null}
 
@@ -203,7 +257,7 @@ export default function RegisterLabelPage() {
         />
         <Field
           label="Fecha entrada"
-          placeholder="YYYY-MM-DD"
+          placeholder="DD/MM/YYYY"
           value={form.fechaEntrada}
           onChange={(v) => setForm((s) => ({ ...s, fechaEntrada: v }))}
         />
@@ -211,7 +265,9 @@ export default function RegisterLabelPage() {
           <Text>Fecha (tipo)</Text>
           <RadioGroup
             value={form.fechaTipo}
-            onChange={(_, d) => setForm((s) => ({ ...s, fechaTipo: d.value as FechaTipo }))}
+            onChange={(_, d) =>
+              setForm((s) => ({ ...s, fechaTipo: d.value as FechaTipo }))
+            }
             layout="horizontal"
           >
             <Radio value="CADUCIDAD" label="Caducidad" />
@@ -219,62 +275,100 @@ export default function RegisterLabelPage() {
           </RadioGroup>
         </div>
         <Field
-          label={form.fechaTipo === "CADUCIDAD" ? "Caducidad (YYYY-MM-DD)" : "Reanálisis (YYYY-MM-DD)"}
-          placeholder="YYYY-MM-DD"
+          label={
+            form.fechaTipo === "CADUCIDAD"
+              ? "Caducidad (DD/MM/YYYY)"
+              : "Reanálisis (DD/MM/YYYY)"
+          }
+          placeholder="DD/MM/YYYY"
           value={form.fechaValor}
           onChange={(v) => setForm((s) => ({ ...s, fechaValor: v }))}
         />
         <Field
-          label="Envase Num"
-          placeholder="1"
+          label="Envase No (contenedor actual)"
+          placeholder="Ej. 1"
           value={form.envaseNum}
           onChange={(v) => setForm((s) => ({ ...s, envaseNum: v }))}
         />
         <Field
-          label="Envase Total"
-          placeholder="20"
+          label="Cantidad total (contenedores)"
+          placeholder="Ej. 20"
           value={form.envaseTotal}
           onChange={(v) => setForm((s) => ({ ...s, envaseTotal: v }))}
         />
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Button appearance="primary" onClick={onRegisterAndGenerate} disabled={!canRegister}>
-            {busy ? "Registrando…" : "Registrar y generar QR"}
-          </Button>
-
           <Button
-            appearance="secondary"
-            onClick={onDownloadPng}
-            disabled={!canQr || !qrDataUrl || busy}
+            appearance="primary"
+            onClick={onRegisterAndGenerate}
+            disabled={!canRegister}
           >
-            Descargar PNG
+            {busy ? "Registrando…" : "Registrar y generar QR"}
           </Button>
         </div>
 
-        {qrDataUrl ? (
-          <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
-            <Text weight="semibold">Vista previa</Text>
-            <div
-              style={{
-                display: "grid",
-                placeItems: "center",
-                background: "#fff",
-                borderRadius: 12,
-                padding: 12,
-                border: "1px solid rgba(0,0,0,0.08)",
-              }}
-            >
-              <img
-                src={qrDataUrl}
-                alt="QR preview"
-                style={{ width: 320, height: 320, objectFit: "contain" }}
+        <div
+          ref={previewRef}
+          style={{ display: "grid", gap: 12, marginTop: 8 }}
+        >
+          <Text weight="semibold">Vista previa de la etiqueta</Text>
+
+          <div
+            style={{
+              display: "grid",
+              placeItems: "start",
+              background: "#f9fafb",
+              borderRadius: 12,
+              padding: 16,
+              border: "1px solid rgba(0,0,0,0.08)",
+            }}
+          >
+            <div>
+              <LabelPreview
+                materialName={form.nombre.trim() || form.lote.trim() || "—"}
+                codigo={form.codigo.trim() || "—"}
+                lote={form.lote.trim() || "—"}
+                fecha={formatDateDDMMYYYY(form.fechaEntrada) || form.fechaEntrada}
+                caducidad={formatDateDDMMYYYY(caducidadDisplay) || caducidadDisplay}
+                reanalisis={formatDateDDMMYYYY(reanalisisDisplay) || reanalisisDisplay}
+                cantidad="N/A"
+                envaseNum={form.envaseNum || "—"}
+                envaseTotal={form.envaseTotal || "—"}
+                qrData={qrDataUrl}
               />
             </div>
-            <div style={{ color: "#6B6B6B", fontSize: 12 }}>
-              Formato: OLNQR:1:&lt;token&gt;. La etiqueta queda persistida en el sistema.
-            </div>
           </div>
-        ) : null}
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Button
+              appearance="secondary"
+              onClick={onScrollToPreview}
+              disabled={!hasPreview}
+            >
+              Vista previa
+            </Button>
+            <Button
+              appearance="secondary"
+              onClick={onDownloadPng}
+              disabled={!canQr || !hasPreview || busy}
+            >
+              Descargar PNG
+            </Button>
+            <Button
+              appearance="secondary"
+              onClick={onDownloadZpl}
+              disabled={!canQr || !createResp || busy}
+            >
+              Descargar etiqueta Zebra (.zpl)
+            </Button>
+          </div>
+
+          {qrDataUrl ? (
+            <div style={{ color: "#6B6B6B", fontSize: 12 }}>
+              Formato QR: OLNQR:1:&lt;token&gt;. La etiqueta queda persistida en el sistema.
+            </div>
+          ) : null}
+        </div>
       </Card>
     </div>
   );
@@ -294,7 +388,11 @@ function Field({
   return (
     <div style={{ display: "grid", gap: 6 }}>
       <Text>{label}</Text>
-      <Input value={value} onChange={(_, d) => onChange(d.value)} placeholder={placeholder} />
+      <Input
+        value={value}
+        onChange={(_, d) => onChange(d.value)}
+        placeholder={placeholder}
+      />
     </div>
   );
 }

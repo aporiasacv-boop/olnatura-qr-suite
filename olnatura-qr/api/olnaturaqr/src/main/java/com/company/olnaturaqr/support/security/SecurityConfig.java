@@ -56,10 +56,18 @@ public class SecurityConfig {
 
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/actuator/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/public/ping").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
          // Landing pública del QR (sin login) - HTML para cámara genérica
             .requestMatchers(HttpMethod.GET, "/qr/**").permitAll()
+
+         // SPA static assets and shell (index.html for client-side routing)
+            .requestMatchers(req ->
+                "GET".equals(req.getMethod())
+                    && req.getRequestURI() != null
+                    && !req.getRequestURI().startsWith("/api")
+            ).permitAll()
 
          // Auth
             .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()

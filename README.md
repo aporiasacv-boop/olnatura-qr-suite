@@ -140,10 +140,10 @@ cd OlnaturaQR
 ./gradlew assembleDebug
 ```
 
-- **Emulador**: `BASE_URL` por defecto `http://:3001/`
+- **Emulador**: `BASE_URL` por defecto `http://192.168.41.177:3001/`
 - **Dispositivo físico**: usa la IP de tu máquina:
   ```bash
-  ./gradlew assembleDebug -PAPI_BASE_URL=http://:3001/
+  ./gradlew assembleDebug -PAPI_BASE_URL=http://192.168.41.177:3001/
   ```
 
 O edita `app/build.gradle.kts` y cambia el valor por defecto de `API_BASE_URL`.
