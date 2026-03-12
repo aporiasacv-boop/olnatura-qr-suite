@@ -14,6 +14,7 @@ import BatchLookupPage from "../pages/BatchLookupPage";
 import ScanHistoryPage from "../pages/ScanHistoryPage";
 import RegisterLabelPage from "../pages/RegisterLabelPage";
 import GenerateQrPage from "../pages/GenerateQrPage"; // 👈 NUEVO
+import LabelPreviewTestPage from "../pages/LabelPreviewTestPage";
 
 import { RequireAuth, RequireAdmin } from "../auth/guards";
 import { RequireRole } from "../auth/RequireRole"; // 👈 NUEVO
@@ -63,6 +64,11 @@ export const router = createBrowserRouter([
             <RegisterLabelPage />
           </RequireRole>
         ),
+      },
+
+      {
+        path: "label-preview-test",
+        element: <LabelPreviewTestPage />,
       },
 
       {
