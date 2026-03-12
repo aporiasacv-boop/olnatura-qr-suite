@@ -11,7 +11,8 @@ function logAudit(actionType: string, lote: string | null) {
 }
 import type { QrResponse } from "../api/types";
 import { generateQrWithLogo } from "../utils/qrWithLogo";
-import { renderLabelToPng, type FechaTipo } from "../utils/labelToPng";
+import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
+import LabelPreview from "../components/label/LabelPreview";
 
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "14px", maxWidth: "600px" },
@@ -36,7 +37,7 @@ export default function GenerateQrPage() {
   const previewRef = useRef<HTMLDivElement>(null);
   const [lote, setLote] = useState("");
   const [labelData, setLabelData] = useState<QrResponse["label"] | null>(null);
-  const [pngDataUrl, setPngDataUrl] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +55,7 @@ export default function GenerateQrPage() {
     }
     setBusy(true);
     setError(null);
-    setPngDataUrl(null);
+    setQrDataUrl(null);
     setLabelData(null);
 
     try {
@@ -81,26 +82,7 @@ export default function GenerateQrPage() {
         logoSizeRatio: 0.22,
       });
 
-      const fechaTipo: FechaTipo = (label as any).fechaTipo ?? (label.reanalisis?.trim() && !label.caducidad?.trim() ? "REANALISIS" : "CADUCIDAD");
-      const fechaValor = (label as any).fechaValor ?? (fechaTipo === "CADUCIDAD" ? label.caducidad : label.reanalisis);
-      const fullLabelPng = await renderLabelToPng(
-        {
-          tipoMaterial: label.tipoMaterial,
-          nombre: label.nombre,
-          codigo: label.codigo,
-          lote: label.lote,
-          fechaEntrada: label.fechaEntrada,
-          fechaTipo,
-          fechaValor,
-          caducidad: label.caducidad,
-          reanalisis: label.reanalisis,
-          envaseNum: label.envaseNum,
-          envaseTotal: label.envaseTotal,
-        },
-        qrWithLogo
-      );
-
-      setPngDataUrl(fullLabelPng);
+      setQrDataUrl(qrWithLogo);
       logAudit("GENERATE_LABEL", v);
     } catch (e) {
       const ae = e as ApiError;
@@ -116,15 +98,22 @@ export default function GenerateQrPage() {
     }
   }
 
-  function download() {
-    if (!pngDataUrl) return;
-    logAudit("DOWNLOAD_LABEL", v);
-    const a = document.createElement("a");
-    a.href = pngDataUrl;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  async function download() {
+    const el = previewRef.current?.querySelector("[data-label-preview]") as HTMLElement | null;
+    if (!el) return;
+    try {
+      setBusy(true);
+      logAudit("DOWNLOAD_LABEL", v);
+      const dataUrl = await exportLabelPreviewToPng(el);
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } finally {
+      setBusy(false);
+    }
   }
 
   function scrollToPreview() {
@@ -155,19 +144,55 @@ export default function GenerateQrPage() {
             <Button appearance="primary" onClick={generate} disabled={busy || !v}>
               {busy ? "Generando…" : "Generar etiqueta"}
             </Button>
-            <Button appearance="secondary" onClick={scrollToPreview} disabled={!pngDataUrl}>
+            <Button appearance="secondary" onClick={scrollToPreview} disabled={!qrDataUrl}>
               Vista previa
             </Button>
-            <Button appearance="secondary" onClick={download} disabled={!pngDataUrl}>
+            <Button appearance="secondary" onClick={download} disabled={!qrDataUrl || busy}>
               Descargar PNG
             </Button>
           </div>
 
           {error ? <Text style={{ color: "#B10E1C" }}>{error}</Text> : null}
 
-          <div ref={previewRef} className={s.preview}>
-            {pngDataUrl ? (
-              <img src={pngDataUrl} alt="Etiqueta preview" className={s.img} />
+          <div ref={previewRef} className={s.preview} style={{ overflowX: "auto" }}>
+            {labelData && qrDataUrl ? (
+              <div
+                style={{
+                  width: 400,
+                  height: 300,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: 800,
+                    height: 600,
+                    transform: "scale(0.5)",
+                    transformOrigin: "top left",
+                  }}
+                >
+                  <LabelPreview
+                    materialName={String(labelData.nombre ?? "").trim() || "—"}
+                    codigo={String(labelData.codigo ?? "").trim() || "—"}
+                    lote={String(labelData.lote ?? "").trim() || "—"}
+                    fecha={labelData.fechaEntrada ?? "N/A"}
+                    caducidad={
+                      (labelData as any).fechaTipo === "REANALISIS"
+                        ? ""
+                        : ((labelData as any).fechaValor ?? labelData.caducidad ?? "")
+                    }
+                    reanalisis={
+                      (labelData as any).fechaTipo === "REANALISIS"
+                        ? ((labelData as any).fechaValor ?? labelData.reanalisis ?? "")
+                        : ""
+                    }
+                    cantidad="N/A"
+                    envaseNum={labelData.envaseNum ?? "—"}
+                    envaseTotal={labelData.envaseTotal ?? "—"}
+                    qrData={qrDataUrl}
+                  />
+                </div>
+              </div>
             ) : (
               <Text style={{ opacity: 0.6 }}>Vista previa aquí</Text>
             )}
