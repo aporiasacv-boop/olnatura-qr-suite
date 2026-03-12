@@ -64,7 +64,7 @@ export default function LabelPreviewTestPage() {
         </div>
       </div>
 
-      <Card style={{ padding: 16, display: "grid", gap: 12, maxWidth: 720 }}>
+      <Card style={{ padding: 16, display: "grid", gap: 12, maxWidth: 840 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <Button appearance="secondary" onClick={onDownloadPng} disabled={busy}>
             {busy ? "Generando PNG..." : "Descargar PNG (Playground)"}
@@ -74,26 +74,47 @@ export default function LabelPreviewTestPage() {
         <div
           ref={previewWrapRef}
           style={{
-            display: "grid",
-            placeItems: "start",
-            background: "#f9fafb",
-            borderRadius: 12,
-            padding: 16,
-            border: "1px solid rgba(0,0,0,0.08)",
+            width: "100%",
+            overflowX: "auto",
+            paddingTop: 16,
           }}
         >
-          <LabelPreview
-            materialName={MOCK_LABEL.materialName}
-            codigo={MOCK_LABEL.codigo}
-            lote={MOCK_LABEL.lote}
-            fecha={MOCK_LABEL.fecha}
-            caducidad={MOCK_LABEL.caducidad}
-            reanalisis={MOCK_LABEL.reanalisis}
-            cantidad={MOCK_LABEL.cantidad}
-            envaseNum={MOCK_LABEL.envaseNum}
-            envaseTotal={MOCK_LABEL.envaseTotal}
-            qrData={qrDataUrl}
-          />
+          <div
+            style={{
+              width: "fit-content",
+              margin: "0 auto",
+            }}
+          >
+            <div
+              style={{
+                width: 100,
+                height: 90,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: 800,
+                  height: 600,
+                  transform: "scale(0.5)",
+                  transformOrigin: "top left",
+                }}
+              >
+                <LabelPreview
+              materialName={MOCK_LABEL.materialName}
+              codigo={MOCK_LABEL.codigo}
+              lote={MOCK_LABEL.lote}
+              fecha={MOCK_LABEL.fecha}
+              caducidad={MOCK_LABEL.caducidad}
+              reanalisis={MOCK_LABEL.reanalisis}
+              cantidad={MOCK_LABEL.cantidad}
+              envaseNum={MOCK_LABEL.envaseNum}
+              envaseTotal={MOCK_LABEL.envaseTotal}
+              qrData={qrDataUrl}
+            />
+              </div>
+            </div>
+          </div>
         </div>
       </Card>
     </div>

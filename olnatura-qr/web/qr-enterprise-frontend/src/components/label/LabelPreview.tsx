@@ -1,17 +1,8 @@
 /**
- * LabelPreview - Renders the label exactly as it will print.
- * Matches warehouse label layout. Updates live when props change.
- *
- * Layout:
- * HEADER: "MATERIAL DE ACONDICIONADO"
- * SECTION: Nombre
- * ROW: Fecha | Código | Lote
- * SECTION: Caducidad, Reanálisis, Cantidad
- * BOTTOM ROW: Envase No | Cantidad total
- * RIGHT SIDE: QR with Olnatura logo
+ * LabelPreview - warehouse label preview aligned to Zebra structure.
+ * Fixed 800x600 layout, strong block borders, QR panel on right.
  */
 
-import { useRef } from "react";
 import { formatDateDDMMYYYY } from "../../utils/dateFormat";
 
 export type LabelPreviewProps = {
@@ -27,253 +18,260 @@ export type LabelPreviewProps = {
   qrData: string | null;
 };
 
-export default function LabelPreview(props: LabelPreviewProps) {
-  const {
-    materialName,
-    codigo,
-    lote,
-    fecha,
-    caducidad,
-    reanalisis,
-    cantidad,
-    envaseNum,
-    envaseTotal,
-    qrData,
-  } = props;
+const LABEL_WIDTH = 800;
+const LABEL_HEIGHT = 600;
+const BORDER = "2px solid #000";
+const FONT = "Arial, Helvetica, sans-serif";
 
-  const rootRef = useRef<HTMLDivElement>(null);
+const smallLabelStyle: React.CSSProperties = {
+  fontSize: 16,
+  fontWeight: 700,
+  marginBottom: 8,
+};
 
-  const fechaFmt = formatDateDDMMYYYY(fecha);
-  const caducidadFmt = formatDateDDMMYYYY(caducidad);
-  const reanalisisFmt = formatDateDDMMYYYY(reanalisis);
+const valueStyle: React.CSSProperties = {
+  fontSize: 24,
+  fontWeight: 700,
+  lineHeight: 1.15,
+  wordBreak: "break-word",
+};
 
-  const envaseNumStr = String(envaseNum ?? "").trim() || "—";
-  const envaseTotalStr = String(envaseTotal ?? "").trim() || "—";
+export default function LabelPreview({
+  materialName,
+  codigo,
+  lote,
+  fecha,
+  caducidad,
+  reanalisis,
+  cantidad,
+  envaseNum,
+  envaseTotal,
+  qrData,
+}: LabelPreviewProps) {
+  const fechaFmt = formatDateDDMMYYYY(fecha) || "N/A";
+  const caducidadFmt = formatDateDDMMYYYY(caducidad) || "N/A";
+  const reanalisisFmt = formatDateDDMMYYYY(reanalisis) || "N/A";
+
+  const nombreStr = String(materialName ?? "").trim() || "N/A";
+  const codigoStr = String(codigo ?? "").trim() || "N/A";
+  const loteStr = String(lote ?? "").trim() || "N/A";
+  const cantidadStr = String(cantidad ?? "").trim() || "N/A";
+  const envaseNumStr = String(envaseNum ?? "").trim() || "0";
+  const envaseTotalStr = String(envaseTotal ?? "").trim() || "0";
 
   return (
     <div
-      ref={rootRef}
-      className="label-preview-root"
-      style={labelStyles.root}
       data-label-preview
+      style={{
+        width: LABEL_WIDTH,
+        height: LABEL_HEIGHT,
+        background: "#fff",
+        border: BORDER,
+        boxSizing: "border-box",
+        fontFamily: FONT,
+        color: "#000",
+        overflow: "hidden",
+        display: "grid",
+        gridTemplateColumns: "520px 280px",
+        gridTemplateRows: "70px 80px 90px 220px 140px",
+      }}
     >
-      <div style={labelStyles.border}>
-        {/* HEADER */}
-        <div style={labelStyles.header}>
-          MATERIAL DE ACONDICIONADO
+      {/* HEADER */}
+      <div
+        style={{
+          gridColumn: "1 / 3",
+          borderBottom: BORDER,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 28,
+          fontWeight: 700,
+          letterSpacing: 0.5,
+          textAlign: "center",
+        }}
+      >
+        MATERIAL DE ACONDICIONADO
+      </div>
+
+      {/* NOMBRE */}
+      <div
+        style={{
+          gridColumn: "1 / 2",
+          borderBottom: BORDER,
+          padding: "10px 14px",
+          boxSizing: "border-box",
+        }}
+      >
+        <div style={smallLabelStyle}>Nombre:</div>
+        <div
+          style={{
+            ...valueStyle,
+            fontSize: 22,
+          }}
+        >
+          {nombreStr}
+        </div>
+      </div>
+
+      {/* QR */}
+      <div
+        style={{
+          gridColumn: "2 / 3",
+          gridRow: "2 / 5",
+          borderLeft: BORDER,
+          borderBottom: BORDER,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 12,
+          boxSizing: "border-box",
+          background: "#fff",
+        }}
+      >
+        {qrData ? (
+          <img
+            src={qrData}
+            alt="QR"
+            style={{
+              width: 220,
+              height: 220,
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 220,
+              height: 220,
+              border: BORDER,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 24,
+              fontWeight: 700,
+            }}
+          >
+            QR
+          </div>
+        )}
+      </div>
+
+      {/* FECHA | CODIGO | LOTE */}
+      <div
+        style={{
+          gridColumn: "1 / 2",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          borderBottom: BORDER,
+        }}
+      >
+        <div
+          style={{
+            padding: "10px 12px",
+            borderRight: BORDER,
+            boxSizing: "border-box",
+          }}
+        >
+          <div style={smallLabelStyle}>Fecha:</div>
+          <div style={{ ...valueStyle, fontSize: 18 }}>{fechaFmt}</div>
         </div>
 
-        {/* SECTION: Nombre */}
-        <div style={labelStyles.section}>
-          <div style={labelStyles.sectionLabel}>Nombre</div>
-          <div style={labelStyles.sectionValue}>{materialName || "—"}</div>
+        <div
+          style={{
+            padding: "10px 12px",
+            borderRight: BORDER,
+            boxSizing: "border-box",
+          }}
+        >
+          <div style={smallLabelStyle}>Código:</div>
+          <div style={{ ...valueStyle, fontSize: 18 }}>{codigoStr}</div>
         </div>
 
-        {/* ROW: Fecha | Código | Lote */}
-        <div style={labelStyles.row3}>
-          <div style={labelStyles.cell}>
-            <div style={labelStyles.cellLabel}>Fecha</div>
-            <div style={labelStyles.cellValue}>{fechaFmt || "—"}</div>
+        <div
+          style={{
+            padding: "10px 12px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div style={smallLabelStyle}>Lote:</div>
+          <div style={{ ...valueStyle, fontSize: 16 }}>{loteStr}</div>
+        </div>
+      </div>
+
+      {/* CADUCIDAD | REANALISIS | CANTIDAD */}
+      <div
+        style={{
+          gridColumn: "1 / 2",
+          borderBottom: BORDER,
+          padding: "14px 16px",
+          boxSizing: "border-box",
+          display: "grid",
+          gridTemplateColumns: "180px 1fr",
+          rowGap: 18,
+          alignContent: "start",
+        }}
+      >
+        <div style={{ fontSize: 20, fontWeight: 700 }}>Caducidad:</div>
+        <div style={{ fontSize: 24, fontWeight: 700 }}>{caducidadFmt}</div>
+
+        <div style={{ fontSize: 20, fontWeight: 700 }}>Reanálisis:</div>
+        <div style={{ fontSize: 24, fontWeight: 700 }}>{reanalisisFmt}</div>
+
+        <div style={{ fontSize: 20, fontWeight: 700 }}>Cantidad:</div>
+        <div style={{ fontSize: 24, fontWeight: 700 }}>{cantidadStr}</div>
+      </div>
+
+      {/* FOOTER */}
+      <div
+        style={{
+          gridColumn: "1 / 3",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+        }}
+      >
+        <div
+          style={{
+            borderRight: BORDER,
+            padding: "10px 14px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 18 }}>
+            Envase No.
           </div>
-          <div style={labelStyles.cell}>
-            <div style={labelStyles.cellLabel}>Código</div>
-            <div style={labelStyles.cellValue}>{codigo || "—"}</div>
-          </div>
-          <div style={labelStyles.cell}>
-            <div style={labelStyles.cellLabel}>Lote</div>
-            <div style={labelStyles.cellValue}>{lote || "—"}</div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 12,
+            }}
+          >
+            <span style={{ fontSize: 50, fontWeight: 700 }}>
+              {envaseNumStr}
+            </span>
+            <span style={{ fontSize: 24, fontWeight: 700 }}>de</span>
+            <span style={{ fontSize: 50, fontWeight: 700 }}>
+              {envaseTotalStr}
+            </span>
           </div>
         </div>
 
-        {/* SECTION: Caducidad, Reanálisis, Cantidad */}
-        <div style={labelStyles.sectionGrid}>
-          <div style={labelStyles.gridRow}>
-            <span style={labelStyles.gridLabel}>Caducidad</span>
-            <span style={labelStyles.gridValue}>{caducidadFmt || "—"}</span>
+        <div
+          style={{
+            padding: "10px 14px",
+            boxSizing: "border-box",
+          }}
+        >
+          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 18 }}>
+            Cantidad total
           </div>
-          <div style={labelStyles.gridRow}>
-            <span style={labelStyles.gridLabel}>Reanálisis</span>
-            <span style={labelStyles.gridValue}>{reanalisisFmt || "—"}</span>
+          <div style={{ fontSize: 56, fontWeight: 700 }}>
+            {envaseTotalStr}
           </div>
-          <div style={labelStyles.gridRow}>
-            <span style={labelStyles.gridLabel}>Cantidad</span>
-            <span style={labelStyles.gridValue}>{cantidad || "—"}</span>
-          </div>
-        </div>
-
-        {/* BOTTOM ROW: Envase No | Cantidad total */}
-        <div style={labelStyles.bottomRow}>
-          <div style={labelStyles.envaseBlock}>
-            <div style={labelStyles.envaseLabel}>Envase No</div>
-            <div style={labelStyles.envaseNum}>{envaseNumStr}</div>
-            <span style={labelStyles.envaseDe}>de</span>
-            <div style={labelStyles.envaseTotal}>{envaseTotalStr}</div>
-          </div>
-          <div style={labelStyles.totalBlock}>
-            <div style={labelStyles.totalLabel}>Cantidad total</div>
-            <div style={labelStyles.totalValue}>{envaseTotalStr}</div>
-          </div>
-        </div>
-
-        {/* RIGHT SIDE: QR with logo */}
-        <div style={labelStyles.qrArea}>
-          {qrData ? (
-            <img
-              src={qrData}
-              alt="QR"
-              style={labelStyles.qrImg}
-            />
-          ) : (
-            <div style={labelStyles.qrPlaceholder}>QR</div>
-          )}
         </div>
       </div>
     </div>
   );
 }
-
-/**
- * Proportions match real printed label (Zebra 800×600 dots).
- * Scale: 1px ≈ 2 dots for consistent visual match.
- */
-const LABEL_WIDTH = 400;
-const LABEL_HEIGHT = 300;
-const QR_SIZE = 160;
-
-const labelStyles: Record<string, React.CSSProperties> = {
-  root: {
-    width: LABEL_WIDTH,
-    minHeight: LABEL_HEIGHT,
-    fontFamily: "system-ui, 'Segoe UI', sans-serif",
-    fontSize: 12,
-  },
-  border: {
-    position: "relative",
-    width: "100%",
-    minHeight: LABEL_HEIGHT,
-    backgroundColor: "#fff",
-    border: "2px solid #45a350",
-    borderRadius: 4,
-    padding: 14,
-    paddingRight: QR_SIZE + 18,
-    boxSizing: "border-box",
-  },
-  header: {
-    textAlign: "center",
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#1a1a1a",
-    marginBottom: 10,
-  },
-  section: {
-    marginBottom: 8,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    color: "#6B7280",
-    marginBottom: 2,
-  },
-  sectionValue: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: "#111827",
-  },
-  row3: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 8,
-    marginBottom: 10,
-  },
-  cell: {
-    padding: 6,
-    border: "1px solid #E5E7EB",
-    borderRadius: 2,
-  },
-  cellLabel: {
-    fontSize: 10,
-    color: "#6B7280",
-  },
-  cellValue: {
-    fontSize: 12,
-    fontWeight: 600,
-  },
-  sectionGrid: {
-    display: "grid",
-    gap: 4,
-    marginBottom: 12,
-  },
-  gridRow: {
-    display: "flex",
-    gap: 12,
-  },
-  gridLabel: {
-    fontSize: 11,
-    color: "#6B7280",
-    minWidth: 70,
-  },
-  gridValue: {
-    fontSize: 12,
-    fontWeight: 600,
-  },
-  bottomRow: {
-    display: "flex",
-    gap: 16,
-    alignItems: "flex-end",
-  },
-  envaseBlock: {
-    display: "flex",
-    alignItems: "baseline",
-    gap: 6,
-  },
-  envaseLabel: {
-    fontSize: 11,
-    color: "#6B7280",
-  },
-  envaseNum: {
-    fontSize: 24,
-    fontWeight: 700,
-  },
-  envaseDe: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  envaseTotal: {
-    fontSize: 24,
-    fontWeight: 700,
-  },
-  totalBlock: {},
-  totalLabel: {
-    fontSize: 11,
-    color: "#6B7280",
-  },
-  totalValue: {
-    fontSize: 22,
-    fontWeight: 700,
-  },
-  qrArea: {
-    position: "absolute",
-    right: 12,
-    top: 12,
-    width: QR_SIZE,
-    height: QR_SIZE,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  qrImg: {
-    width: QR_SIZE,
-    height: QR_SIZE,
-    objectFit: "contain",
-  },
-  qrPlaceholder: {
-    width: QR_SIZE,
-    height: QR_SIZE,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 4,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#9CA3AF",
-    fontSize: 14,
-  },
-};

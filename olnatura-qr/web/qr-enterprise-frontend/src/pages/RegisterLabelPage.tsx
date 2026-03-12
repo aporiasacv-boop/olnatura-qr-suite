@@ -323,10 +323,25 @@ export default function RegisterLabelPage() {
               borderRadius: 12,
               padding: 16,
               border: "1px solid rgba(0,0,0,0.08)",
+              overflowX: "auto",
             }}
           >
-            <div>
-              <LabelPreview
+            <div
+              style={{
+                width: 400,
+                height: 300,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: 800,
+                  height: 600,
+                  transform: "scale(0.5)",
+                  transformOrigin: "top left",
+                }}
+              >
+                <LabelPreview
                 materialName={form.nombre.trim() || form.lote.trim() || "—"}
                 codigo={form.codigo.trim() || "—"}
                 lote={form.lote.trim() || "—"}
@@ -338,6 +353,7 @@ export default function RegisterLabelPage() {
                 envaseTotal={form.envaseTotal || "—"}
                 qrData={qrDataUrl}
               />
+              </div>
             </div>
           </div>
 
