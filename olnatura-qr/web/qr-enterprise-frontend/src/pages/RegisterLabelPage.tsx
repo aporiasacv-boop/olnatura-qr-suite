@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Card, Text, Input, Button, Radio, RadioGroup } from "@fluentui/react-components";
 import { useAuth } from "../auth/AuthContext";
 import { api, ApiError, API_BASE } from "../api/client";
-import { generateQrWithLogo } from "../utils/qrWithLogo";
+import { generateQrPlain } from "../utils/qrWithLogo";
 import { parseDDMMYYYYToISO, isValidDDMMYYYY } from "../utils/dateFormat";
 import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
 import LabelPreview from "../components/label/LabelPreview";
@@ -119,14 +119,7 @@ export default function RegisterLabelPage() {
       const res = await api<CreateResponse>("/label", { method: "POST", body });
       setCreateResp(res);
       const payload = QR_PREFIX + res.publicToken;
-      const logoPath = `${import.meta.env.BASE_URL}logo-olnatura.png`;
-      const dataUrl = await generateQrWithLogo(payload, {
-        errorCorrectionLevel: "H",
-        margin: 2,
-        width: 640,
-        logoUrl: logoPath,
-        logoSizeRatio: 0.22,
-      });
+      const dataUrl = await generateQrPlain(payload, { width: 220, margin: 2 });
       setQrDataUrl(dataUrl);
     } catch (e) {
       const ae = e as ApiError;
@@ -342,17 +335,19 @@ export default function RegisterLabelPage() {
                 }}
               >
                 <LabelPreview
-                materialName={form.nombre.trim() || form.lote.trim() || "—"}
-                codigo={form.codigo.trim() || "—"}
-                lote={form.lote.trim() || "—"}
-                fecha={form.fechaEntrada}
-                caducidad={caducidadDisplay}
-                reanalisis={reanalisisDisplay}
-                cantidad="N/A"
-                envaseNum={form.envaseNum || "—"}
-                envaseTotal={form.envaseTotal || "—"}
-                qrData={qrDataUrl}
-              />
+                  materialName={form.nombre.trim() || form.lote.trim() || "—"}
+                  codigo={form.codigo.trim() || "—"}
+                  lote={form.lote.trim() || "—"}
+                  fecha={form.fechaEntrada}
+                  caducidad={caducidadDisplay}
+                  reanalisis={reanalisisDisplay}
+                  cantidad="N/A"
+                  envaseNum={form.envaseNum || "—"}
+                  envaseTotal={form.envaseTotal || "—"}
+                  qrData={qrDataUrl}
+                  logoUrl={`${import.meta.env.BASE_URL}logo-olnatura.png`}
+                  documentCode={createResp?.label?.documentCode ?? "AL-001-E02/04"}
+                />
               </div>
             </div>
           </div>

@@ -16,6 +16,9 @@ export type LabelPreviewProps = {
   envaseNum: number | string;
   envaseTotal: number | string;
   qrData: string | null;
+  /** Logo en esquina (sin logo en QR). Ruta por defecto: /logo-olnatura.png */
+  logoUrl?: string;
+  documentCode?: string;
 };
 
 const LABEL_WIDTH = 800;
@@ -36,6 +39,10 @@ const valueStyle: React.CSSProperties = {
   wordBreak: "break-word",
 };
 
+const DEFAULT_LOGO = "/logo-olnatura.png";
+const FOOTER_COMPLIANCE =
+  "Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgacion y/o reproduccion total o parcial. Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACION.";
+
 export default function LabelPreview({
   materialName,
   codigo,
@@ -47,6 +54,8 @@ export default function LabelPreview({
   envaseNum,
   envaseTotal,
   qrData,
+  logoUrl = DEFAULT_LOGO,
+  documentCode = "AL-001-E02/04",
 }: LabelPreviewProps) {
   const fechaFmt = formatDateDDMMYYYY(fecha) || "N/A";
   const caducidadFmt = formatDateDDMMYYYY(caducidad) || "N/A";
@@ -73,43 +82,50 @@ export default function LabelPreview({
         overflow: "hidden",
         display: "grid",
         gridTemplateColumns: "520px 280px",
-        gridTemplateRows: "70px 80px 90px 220px 140px",
+        gridTemplateRows: "90px 85px 130px 155px 90px 50px",
       }}
     >
-      {/* HEADER */}
+      {/* HEADER: logo esquina + titulo */}
       <div
         style={{
           gridColumn: "1 / 3",
           borderBottom: BORDER,
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 28,
-          fontWeight: 700,
-          letterSpacing: 0.5,
-          textAlign: "center",
+          alignItems: "stretch",
+          minHeight: 0,
         }}
       >
-        MATERIAL DE ACONDICIONADO
-      </div>
-
-      {/* NOMBRE */}
-      <div
-        style={{
-          gridColumn: "1 / 2",
-          borderBottom: BORDER,
-          padding: "10px 14px",
-          boxSizing: "border-box",
-        }}
-      >
-        <div style={smallLabelStyle}>Nombre:</div>
         <div
           style={{
-            ...valueStyle,
-            fontSize: 22,
+            width: 90,
+            minWidth: 90,
+            borderRight: BORDER,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 8,
+            boxSizing: "border-box",
           }}
         >
-          {nombreStr}
+          {logoUrl && (
+            <img
+              src={logoUrl}
+              alt="Logo"
+              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+            />
+          )}
+        </div>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            padding: "0 14px",
+          }}
+        >
+          <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: 0.5 }}>MATERIAL DE ACONDICIONADO</div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{nombreStr}</div>
         </div>
       </div>
 
@@ -218,7 +234,7 @@ export default function LabelPreview({
         <div style={{ fontSize: 20, fontWeight: 700 }}>Reanálisis:</div>
         <div style={{ fontSize: 24, fontWeight: 700 }}>{reanalisisFmt}</div>
 
-        <div style={{ fontSize: 20, fontWeight: 700 }}>Cantidad:</div>
+        <div style={{ fontSize: 20, fontWeight: 700 }}>Cantidad por envase:</div>
         <div style={{ fontSize: 24, fontWeight: 700 }}>{cantidadStr}</div>
       </div>
 
@@ -238,7 +254,7 @@ export default function LabelPreview({
           }}
         >
           <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 18 }}>
-            Envase No.
+            No. de envases
           </div>
 
           <div
@@ -271,6 +287,20 @@ export default function LabelPreview({
             {envaseTotalStr}
           </div>
         </div>
+      </div>
+
+      {/* FOOTER: documentCode + compliance */}
+      <div
+        style={{
+          gridColumn: "1 / 3",
+          borderTop: BORDER,
+          padding: "10px 14px",
+          fontSize: 12,
+          lineHeight: 1.4,
+          boxSizing: "border-box",
+        }}
+      >
+        {documentCode} {FOOTER_COMPLIANCE}
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ function logAudit(actionType: string, lote: string | null) {
   }).catch(() => {});
 }
 import type { QrResponse } from "../api/types";
-import { generateQrWithLogo } from "../utils/qrWithLogo";
+import { generateQrPlain } from "../utils/qrWithLogo";
 import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
 import LabelPreview from "../components/label/LabelPreview";
 
@@ -72,17 +72,9 @@ export default function GenerateQrPage() {
       const payload = label.publicToken
         ? `OLNQR:1:${label.publicToken}`
         : String(label.lote ?? v);
-      const logoPath = `${import.meta.env.BASE_URL}logo-olnatura.png`;
 
-      const qrWithLogo = await generateQrWithLogo(payload, {
-        errorCorrectionLevel: "H",
-        margin: 4,
-        width: 800,
-        logoUrl: logoPath,
-        logoSizeRatio: 0.22,
-      });
-
-      setQrDataUrl(qrWithLogo);
+      const qrData = await generateQrPlain(payload, { width: 220, margin: 2 });
+      setQrDataUrl(qrData);
       logAudit("GENERATE_LABEL", v);
     } catch (e) {
       const ae = e as ApiError;
@@ -190,6 +182,8 @@ export default function GenerateQrPage() {
                     envaseNum={labelData.envaseNum ?? "—"}
                     envaseTotal={labelData.envaseTotal ?? "—"}
                     qrData={qrDataUrl}
+                    logoUrl={`${import.meta.env.BASE_URL}logo-olnatura.png`}
+                    documentCode={(labelData as any).documentCode ?? "AL-001-E02/04"}
                   />
                 </div>
               </div>

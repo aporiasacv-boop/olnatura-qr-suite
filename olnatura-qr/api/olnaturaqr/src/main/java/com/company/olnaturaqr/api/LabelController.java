@@ -321,18 +321,26 @@ public class LabelController {
                 "^FO125,40^A0N,28,28^FD" + escapeZpl(tipoMaterial) + "^FS\n" +
                 "^FO130,92^A0N,28,28^FD" + escapeZpl(nombre) + "^FS\n" +
                 "\n" +
-                "^FO28,125^A0N,24,24^FD" + escapeZpl(fechaStr) + "^FS\n" +
-                "^FO158,125^A0N,24,24^FD" + escapeZpl(codigo) + "^FS\n" +
-                "^FO388,125^A0N,24,24^FD" + escapeZpl(lote) + "^FS\n" +
+                "^FO28,125^A0N,18,18^FDFecha^FS\n" +
+                "^FO28,155^A0N,25,25^FD" + escapeZpl(fechaStr) + "^FS\n" +
+                "^FO158,125^A0N,18,18^FDCodigo^FS\n" +
+                "^FO158,155^A0N,25,25^FD" + escapeZpl(codigo) + "^FS\n" +
+                "^FO388,125^A0N,18,18^FDLote^FS\n" +
+                "^FO388,155^A0N,25,25^FD" + escapeZpl(lote) + "^FS\n" +
                 "\n" +
-                "^FO28,208^A0N,24,24^FD" + escapeZpl(caducidadStr) + "^FS\n" +
-                "^FO28,278^A0N,24,24^FD" + escapeZpl(reanalisisStr) + "^FS\n" +
-                "^FO28,348^A0N,24,24^FD" + escapeZpl(cantidadStr) + "^FS\n" +
+                "^FO28,195^A0N,18,18^FDCaducidad^FS\n" +
+                "^FO28,220^A0N,25,25^FD" + escapeZpl(caducidadStr) + "^FS\n" +
+                "^FO28,265^A0N,18,18^FDReanalisis^FS\n" +
+                "^FO28,290^A0N,25,25^FD" + escapeZpl(reanalisisStr) + "^FS\n" +
+                "^FO28,335^A0N,18,18^FDCantidad por envase^FS\n" +
+                "^FO28,365^A0N,25,25^FD" + escapeZpl(cantidadStr) + "^FS\n" +
                 "\n" +
                 qrBlock(qrImageBase64, qrPayload) + "\n" +
                 "\n" +
-                "^FO28,400^A0N,24,24^FD" + escapeZpl(envaseDisplay) + "^FS\n" +
-                "^FO208,400^A0N,24,24^FD" + envaseTotal + "^FS\n" +
+                "^FO28,408^A0N,18,18^FDNo. de envases^FS\n" +
+                "^FO28,440^A0N,27,27^FD" + escapeZpl(envaseDisplay) + "^FS\n" +
+                "^FO208,408^A0N,18,18^FDCantidad total^FS\n" +
+                "^FO260,440^A0N,27,27^FD" + envaseTotal + "^FS\n" +
                 "\n" +
                 "^FO25,510^A0N,16,16^FB740,3,3,L,0^FD" + escapeZpl(documentCode) + " Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgacion y/o reproduccion total o parcial. Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACION.^FS\n" +
                 "\n" +
@@ -367,8 +375,8 @@ public class LabelController {
     }
 
     private String qrBlock(String qrImageBase64, String qrPayload) {
-        // Always use native Zebra QR (^BQN). qrImageBase64 is ignored; ^GFA bitmap QR is not used.
-        return "^FO485,260^BQN,2,8\n^FDQA," + qrPayload + "^FS";
+        // Native Zebra QR at ^FO455,190 (template de referencia fija). qrImageBase64 ignored.
+        return "^FO455,190^BQN,2,8\n^FDQA," + qrPayload + "^FS";
     }
 
     /** Escape ^ and \ to avoid breaking ZPL field commands */

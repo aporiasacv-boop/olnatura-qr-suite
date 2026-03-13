@@ -35,6 +35,20 @@ const DEFAULTS: Required<Omit<QrWithLogoOptions, "logoUrl">> = {
   debug: false,
 };
 
+/** Genera un QR plano (sin logo) para preview alineado con ZPL nativo. */
+export async function generateQrPlain(
+  payload: string,
+  opts: { width?: number; margin?: number; errorCorrectionLevel?: "L" | "M" | "Q" | "H" } = {}
+): Promise<string> {
+  const { width = 220, margin = 2, errorCorrectionLevel = "M" } = opts;
+  return QRCode.toDataURL(payload, {
+    errorCorrectionLevel,
+    margin,
+    width,
+    color: { dark: "#0B0B0B", light: "#FFFFFF" },
+  });
+}
+
 export async function generateQrWithLogo(
   payload: string,
   opts: QrWithLogoOptions = {}
