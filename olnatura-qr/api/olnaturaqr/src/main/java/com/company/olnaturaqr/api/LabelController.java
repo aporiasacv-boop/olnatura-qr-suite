@@ -3,7 +3,6 @@ package com.company.olnaturaqr.api;
 import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.infra.dynamics.MockDynamicsClient;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
-import com.company.olnaturaqr.support.zpl.ZplGraphicUtil;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
@@ -378,15 +377,7 @@ public class LabelController {
     }
 
     private String qrBlock(String qrImageBase64, String qrPayload) {
-        if (qrImageBase64 != null && !qrImageBase64.isBlank()) {
-            String gfa = ZplGraphicUtil.toGfa(qrImageBase64, 200);
-            if (!gfa.isEmpty()) {
-                return "^FO485,260\n" + gfa + "\n^FS";
-            }
-        }
-        // Native Zebra ^BQN QR (no logo overlay). Logo overlay is not applied on native ^BQN because
-        // thermal ZPL only prints black and cannot erase QR modules; a white ^GFA cannot overwrite
-        // already-printed black, so embedding a logo into the native QR area is not viable.
+        // Always use native Zebra QR (^BQN). qrImageBase64 is ignored; ^GFA bitmap QR is not used.
         return "^FO485,260^BQN,2,8\n^FDQA," + qrPayload + "^FS";
     }
 
