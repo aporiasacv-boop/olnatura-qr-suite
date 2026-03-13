@@ -287,64 +287,54 @@ public class LabelController {
         String cantidadStr = dynamics.fetchByLote(lote)
                 .map(d -> String.format("%.0f", d.cantidad()).replace(".0", "") + (d.uom() != null && !d.uom().isBlank() ? " " + d.uom().trim() : ""))
                 .orElse("N/A");
+        String documentCode = orEmpty(q.getDocumentCode(), "AL-001-E02/04");
+        String envaseDisplay = String.format("%02d", envaseNum) + " de " + String.format("%02d", envaseTotal);
 
         return "^XA\n" +
                 "^PW800\n" +
                 "^LL600\n" +
-                "^CI28\n" +
+                "^CI15\n" +
                 "\n" +
-                "^FO20,30^GB760,2,2^FS\n" +
-                "^FO20,90^GB760,2,2^FS\n" +
-                "^FO20,160^GB760,2,2^FS\n" +
-                "^FO20,560^GB760,2,2^FS\n" +
+                "^FO8,8^GB790,590,9^FS\n" +
                 "\n" +
-                "^FO20,30^GB2,530,2^FS\n" +
-                "^FO778,30^GB2,530,2^FS\n" +
+                "^FO20,20^GB90,100,2^FS\n" +
+                "^FO110,20^GB670,50,2^FS\n" +
+                "^FO110,70^GB670,50,2^FS\n" +
                 "\n" +
-                "^FO20,45^A0N,32,32^FB760,1,0,C,0^FD" + escapeZpl(tipoMaterial) + "^FS\n" +
+                "^FO20,120^GB130,65,2^FS\n" +
+                "^FO150,120^GB230,65,2^FS\n" +
+                "^FO380,120^GB400,65,2^FS\n" +
                 "\n" +
-                "^FO30,105^A0N,24,24^FDNombre:^FS\n" +
-                "^FO135,103^A0N,25,25^FB620,2,2,L,0^FD" + escapeZpl(nombre) + "^FS\n" +
+                "^FO20,185^GB360,70,2^FS\n" +
+                "^FO20,255^GB360,70,2^FS\n" +
+                "^FO20,325^GB360,70,2^FS\n" +
                 "\n" +
-                "^FO20,160^GB220,80,2^FS\n" +
-                "^FO240,160^GB250,80,2^FS\n" +
-                "^FO490,160^GB290,80,2^FS\n" +
+                "^FO380,185^GB400,300,2^FS\n" +
                 "\n" +
-                "^FO30,175^A0N,22,22^FDFecha:^FS\n" +
-                "^FO30,203^A0N,28,28^FD" + escapeZpl(fechaStr) + "^FS\n" +
+                "^FO20,395^GB180,90,2^FS\n" +
+                "^FO200,395^GB180,90,2^FS\n" +
                 "\n" +
-                "^FO250,175^A0N,22,22^FDCodigo:^FS\n" +
-                "^FO250,203^A0N,28,28^FD" + escapeZpl(codigo) + "^FS\n" +
+                "^FO20,485^GB760,95,2^FS\n" +
                 "\n" +
-                "^FO500,175^A0N,22,22^FDLote:^FS\n" +
-                "^FO500,203^A0N,24,24^FD" + escapeZpl(lote) + "^FS\n" +
+                "^FO25,25\n^GFA,1080,1080,12,0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001C00000000000000000000000FC000000000000000003FFE07F80000000000000001FFFFC7FE0000000000000007FFFFC3FF800000000000001FFFFFE3FFE00000000000007FFFFFE3FFF8000000000000FFFFFFE1FFFC000000000001FFFFFFF1FFFE000000000003FFFFFFF1FFFF000000000007FFE003F1FFFF80000000000FFF000070FFFF80000000001FFE000018FFFFC0000000003FF8000008FFFFE0000000003FF00000007FFFE0000000007FE00000007FFFE0000000007FC00000003FFFF000000000FFC00000001FFFF000000000FF800000001FFFF000000000FF8000000007FFF000000001FF0000000003FFF000000001FF0000000020FFF000000001FF00000000101FF000000001FF000000001C01C000000001FE000000001F000000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000003FE00000000000FF800000003FC00000000000FF800000007FC00000000000FFC00000007FC000000000007FC0000000FFC000000000007FE0000000FF8000000000003FF0000001FF8000000000003FF8000003FF0000000000001FFC000007FF0000000000001FFF00001FFE0000000000000FFF80007FFC00000000000007FFF001FFFC00000000000003FFFFFFFFF800000000000001FFFFFFFFF000000000000000FFFFFFFFE0000000000000007FFFFFFF80000000000000001FFFFFFF000000000000000007FFFFFC000000000000000001FFFFE00000000000000000001FFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000^FS\n" +
                 "\n" +
-                "^FO20,240^GB430,190,2^FS\n" +
-                "^FO450,240^GB330,320,3^FS\n" +
+                "^FO125,40^A0N,28,28^FD" + escapeZpl(tipoMaterial) + "^FS\n" +
+                "^FO130,92^A0N,28,28^FD" + escapeZpl(nombre) + "^FS\n" +
                 "\n" +
-                "^FO35,270^A0N,24,24^FDCaducidad:^FS\n" +
-                "^FO210,270^A0N,30,30^FD" + escapeZpl(caducidadStr) + "^FS\n" +
+                "^FO28,125^A0N,24,24^FD" + escapeZpl(fechaStr) + "^FS\n" +
+                "^FO158,125^A0N,24,24^FD" + escapeZpl(codigo) + "^FS\n" +
+                "^FO388,125^A0N,24,24^FD" + escapeZpl(lote) + "^FS\n" +
                 "\n" +
-                "^FO35,320^A0N,24,24^FDReanalisis:^FS\n" +
-                "^FO210,320^A0N,30,30^FD" + escapeZpl(reanalisisStr) + "^FS\n" +
+                "^FO28,208^A0N,24,24^FD" + escapeZpl(caducidadStr) + "^FS\n" +
+                "^FO28,278^A0N,24,24^FD" + escapeZpl(reanalisisStr) + "^FS\n" +
+                "^FO28,348^A0N,24,24^FD" + escapeZpl(cantidadStr) + "^FS\n" +
                 "\n" +
-                "^FO35,370^A0N,24,24^FDCantidad:^FS\n" +
-                "^FO210,370^A0N,30,30^FD" + escapeZpl(cantidadStr) + "^FS\n" +
+                qrBlock(qrImageBase64, qrPayload) + "\n" +
                 "\n" +
-                "^FO20,425^GB260,135,2^FS\n" +
-                "^FO280,425^GB170,135,2^FS\n" +
+                "^FO28,400^A0N,24,24^FD" + escapeZpl(envaseDisplay) + "^FS\n" +
+                "^FO208,400^A0N,24,24^FD" + envaseTotal + "^FS\n" +
                 "\n" +
-                "^FO35,450^A0N,22,22^FDEnvase No.^FS\n" +
-                "^FO70,490^A0N,44,44^FD" + String.format("%02d", envaseNum) + "^FS\n" +
-                "^FO138,500^A0N,24,24^FDde^FS\n" +
-                "^FO180,490^A0N,44,44^FD" + String.format("%02d", envaseTotal) + "^FS\n" +
-                "\n" +
-                "^FO300,450^A0N,20,20^FDCantidad total^FS\n" +
-                "^FO345,495^A0N,48,48^FD" + envaseTotal + "^FS\n" +
-                "\n" +
-                qrBlock(qrImageBase64, qrPayload) +
-                "\n" +
-                footerBlock(orEmpty(q.getDocumentCode(), "AL-001-E02/04")) +
+                "^FO25,510^A0N,16,16^FB740,3,3,L,0^FD" + escapeZpl(documentCode) + " Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgacion y/o reproduccion total o parcial. Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACION.^FS\n" +
                 "\n" +
                 "^XZ\n";
     }
@@ -379,15 +369,6 @@ public class LabelController {
     private String qrBlock(String qrImageBase64, String qrPayload) {
         // Always use native Zebra QR (^BQN). qrImageBase64 is ignored; ^GFA bitmap QR is not used.
         return "^FO485,260^BQN,2,8\n^FDQA," + qrPayload + "^FS";
-    }
-
-    private static final String FOOTER_COMPLIANCE =
-            "Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgación y/o reproducción total o parcial. "
-            + "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACIÓN.";
-
-    private String footerBlock(String documentCode) {
-        return "^FO20,562^A0N,14,14^FD" + escapeZpl(documentCode) + "^FS\n" +
-                "^FO20,578^A0N,10,10^FB760,3,0,C,0^FD" + escapeZpl(FOOTER_COMPLIANCE) + "^FS";
     }
 
     /** Escape ^ and \ to avoid breaking ZPL field commands */
