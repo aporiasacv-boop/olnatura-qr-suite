@@ -386,9 +386,8 @@ public class LabelController {
         int qrX = 485;
         int qrY = 260;
         int logoSize = 40;
-        int qrCenterOffset = 25;  // ~half of typical QR size with ^BQN,2,8
-        int overlayX = qrX + qrCenterOffset - logoSize / 2;
-        int overlayY = qrY + qrCenterOffset - logoSize / 2;
+        int overlayX = 575;  // visually centered over rendered QR
+        int overlayY = 350;
         String qrZpl = "^FO" + qrX + "," + qrY + "^BQN,2,8\n^FDQA," + qrPayload + "^FS";
         String whiteRect = OlnaturaLogoGfa.whiteRectGfa(logoSize);
         String logoGfa = OlnaturaLogoGfa.smallOverlayGfa();
