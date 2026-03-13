@@ -381,13 +381,10 @@ public class LabelController {
                 return "^FO485,260\n" + gfa + "\n^FS";
             }
         }
-        // Native Zebra ^BQN QR + DEBUG: black square overlay (temporary - verify positioning)
-        // Logo ^GFA removed to isolate: if square visible = positioning ok, problem is logo conversion
-        int qrX = 485;
-        int qrY = 260;
-        String qrZpl = "^FO" + qrX + "," + qrY + "^BQN,2,8\n^FDQA," + qrPayload + "^FS";
-        String debugOverlay = "^FO590,365^GB20,20,20,B,0^FS";
-        return qrZpl + "\n" + debugOverlay;
+        // Native Zebra ^BQN QR (no logo overlay). Logo overlay is not applied on native ^BQN because
+        // thermal ZPL only prints black and cannot erase QR modules; a white ^GFA cannot overwrite
+        // already-printed black, so embedding a logo into the native QR area is not viable.
+        return "^FO485,260^BQN,2,8\n^FDQA," + qrPayload + "^FS";
     }
 
     /** Escape ^ and \ to avoid breaking ZPL field commands */
