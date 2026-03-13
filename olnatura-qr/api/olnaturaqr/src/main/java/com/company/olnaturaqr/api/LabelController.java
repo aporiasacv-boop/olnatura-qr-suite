@@ -3,7 +3,6 @@ package com.company.olnaturaqr.api;
 import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.infra.dynamics.MockDynamicsClient;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
-import com.company.olnaturaqr.support.zpl.OlnaturaLogoGfa;
 import com.company.olnaturaqr.support.zpl.ZplGraphicUtil;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
@@ -382,18 +381,13 @@ public class LabelController {
                 return "^FO485,260\n" + gfa + "\n^FS";
             }
         }
-        // Native Zebra ^BQN QR + Olnatura logo overlay (white rect + logo centered)
+        // Native Zebra ^BQN QR + DEBUG: black square overlay (temporary - verify positioning)
+        // Logo ^GFA removed to isolate: if square visible = positioning ok, problem is logo conversion
         int qrX = 485;
         int qrY = 260;
-        int logoSize = 40;
-        int overlayX = 575;  // visually centered over rendered QR
-        int overlayY = 350;
         String qrZpl = "^FO" + qrX + "," + qrY + "^BQN,2,8\n^FDQA," + qrPayload + "^FS";
-        String whiteRect = OlnaturaLogoGfa.whiteRectGfa(logoSize);
-        String logoGfa = OlnaturaLogoGfa.smallOverlayGfa();
-        String logoOverlay = "^FO" + overlayX + "," + overlayY + "\n" + whiteRect + "\n^FS\n" +
-                "^FO" + overlayX + "," + overlayY + "\n" + logoGfa + "\n^FS";
-        return qrZpl + "\n" + logoOverlay;
+        String debugOverlay = "^FO590,365^GB20,20,20,B,0^FS";
+        return qrZpl + "\n" + debugOverlay;
     }
 
     /** Escape ^ and \ to avoid breaking ZPL field commands */
