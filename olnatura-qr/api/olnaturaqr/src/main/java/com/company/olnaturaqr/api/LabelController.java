@@ -72,6 +72,7 @@ public class LabelController {
         q.setReanalisis(req.reanalisis());
         q.setEnvaseNum(req.envaseNum());
         q.setEnvaseTotal(req.envaseTotal());
+        q.setDocumentCode(req.documentCode() != null && !req.documentCode().isBlank() ? req.documentCode().trim() : null);
 
         // Estado inicial fijo
         q.setStatusDinamico("PENDING");
@@ -344,6 +345,8 @@ public class LabelController {
                 "\n" +
                 qrBlock(qrImageBase64, qrPayload) +
                 "\n" +
+                footerBlock(orEmpty(q.getDocumentCode(), "AL-001-E02/04")) +
+                "\n" +
                 "^XZ\n";
     }
 
@@ -385,6 +388,15 @@ public class LabelController {
         // thermal ZPL only prints black and cannot erase QR modules; a white ^GFA cannot overwrite
         // already-printed black, so embedding a logo into the native QR area is not viable.
         return "^FO485,260^BQN,2,8\n^FDQA," + qrPayload + "^FS";
+    }
+
+    private static final String FOOTER_COMPLIANCE =
+            "Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgación y/o reproducción total o parcial. "
+            + "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACIÓN.";
+
+    private String footerBlock(String documentCode) {
+        return "^FO20,562^A0N,14,14^FD" + escapeZpl(documentCode) + "^FS\n" +
+                "^FO20,578^A0N,10,10^FB760,3,0,C,0^FD" + escapeZpl(FOOTER_COMPLIANCE) + "^FS";
     }
 
     /** Escape ^ and \ to avoid breaking ZPL field commands */

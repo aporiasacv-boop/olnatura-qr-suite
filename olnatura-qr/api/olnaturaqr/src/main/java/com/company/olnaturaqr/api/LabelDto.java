@@ -17,7 +17,8 @@ public class LabelDto {
             LocalDate caducidad,
             LocalDate reanalisis,
             int envaseNum,
-            int envaseTotal
+            int envaseTotal,
+            String documentCode
     ) {}
 
     public record LabelView(
@@ -33,6 +34,7 @@ public class LabelDto {
             int envaseNum,
             int envaseTotal,
             String statusDinamico,
+            String documentCode,
             Instant createdAt
     ) {
         public static LabelView from(QrLabel q) {
@@ -49,6 +51,7 @@ public class LabelDto {
                     q.getEnvaseNum(),
                     q.getEnvaseTotal(),
                     q.getStatusDinamico(),
+                    q.getDocumentCode(),
                     q.getCreatedAt()
             );
         }

@@ -46,6 +46,9 @@ public class QrLabel {
     @Column(name = "status_dinamico", nullable = false, length = 40)
     private String statusDinamico;
 
+    @Column(name = "document_code", length = 60)
+    private String documentCode;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -83,6 +86,9 @@ public class QrLabel {
 
     public String getStatusDinamico() { return statusDinamico; }
     public void setStatusDinamico(String statusDinamico) { this.statusDinamico = statusDinamico; }
+
+    public String getDocumentCode() { return documentCode; }
+    public void setDocumentCode(String documentCode) { this.documentCode = documentCode; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
