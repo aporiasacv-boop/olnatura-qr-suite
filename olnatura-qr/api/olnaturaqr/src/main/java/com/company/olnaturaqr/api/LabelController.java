@@ -3,6 +3,7 @@ package com.company.olnaturaqr.api;
 import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.infra.dynamics.MockDynamicsClient;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
+import com.company.olnaturaqr.support.zpl.OlnaturaLogoGfa;
 import com.company.olnaturaqr.support.zpl.ZplGraphicUtil;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
@@ -381,7 +382,19 @@ public class LabelController {
                 return "^FO485,260\n" + gfa + "\n^FS";
             }
         }
-        return "^FO485,260^BQN,2,8\n^FDQA," + qrPayload + "^FS";
+        // Native Zebra ^BQN QR + Olnatura logo overlay (white rect + logo centered)
+        int qrX = 485;
+        int qrY = 260;
+        int logoSize = 40;
+        int qrCenterOffset = 25;  // ~half of typical QR size with ^BQN,2,8
+        int overlayX = qrX + qrCenterOffset - logoSize / 2;
+        int overlayY = qrY + qrCenterOffset - logoSize / 2;
+        String qrZpl = "^FO" + qrX + "," + qrY + "^BQN,2,8\n^FDQA," + qrPayload + "^FS";
+        String whiteRect = OlnaturaLogoGfa.whiteRectGfa(logoSize);
+        String logoGfa = OlnaturaLogoGfa.smallOverlayGfa();
+        String logoOverlay = "^FO" + overlayX + "," + overlayY + "\n" + whiteRect + "\n^FS\n" +
+                "^FO" + overlayX + "," + overlayY + "\n" + logoGfa + "\n^FS";
+        return qrZpl + "\n" + logoOverlay;
     }
 
     /** Escape ^ and \ to avoid breaking ZPL field commands */
