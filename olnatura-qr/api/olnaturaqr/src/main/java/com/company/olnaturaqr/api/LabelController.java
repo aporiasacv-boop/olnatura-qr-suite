@@ -1,7 +1,7 @@
 package com.company.olnaturaqr.api;
 
 import com.company.olnaturaqr.domain.qr.QrLabel;
-import com.company.olnaturaqr.infra.dynamics.MockDynamicsClient;
+import com.company.olnaturaqr.infra.dynamics.DynamicsClient;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
@@ -32,9 +32,9 @@ public class LabelController {
 
     private final QrLabelRepository repo;
     private final AuditService auditService;
-    private final MockDynamicsClient dynamics;
+    private final DynamicsClient dynamics;
 
-    public LabelController(QrLabelRepository repo, AuditService auditService, MockDynamicsClient dynamics) {
+    public LabelController(QrLabelRepository repo, AuditService auditService, DynamicsClient dynamics) {
         this.repo = repo;
         this.auditService = auditService;
         this.dynamics = dynamics;
