@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 sealed class GateState {
     data object Checking : GateState()
@@ -61,8 +64,18 @@ class ResultViewModel(
         // GATE: SIEMPRE /me primero
         val me = try {
             authRepo.me()
-        } catch (_: Exception) {
-            _state.update { it.copy(loading = false, gate = GateState.Unauthorized) }
+        } catch (e: Exception) {
+            val http = e as? HttpException
+            when (http?.code()) {
+                401, 403 -> _state.update { it.copy(loading = false, gate = GateState.Unauthorized) }
+                else -> _state.update {
+                    it.copy(
+                        loading = false,
+                        gate = GateState.Authorized,
+                        error = connectionMessage(e)
+                    )
+                }
+            }
             return@launch
         }
 
@@ -87,7 +100,7 @@ class ResultViewModel(
                     _state.update {
                         it.copy(
                             loading = false,
-                            error = (e.message ?: "No se pudo consultar el lote").take(120)
+                            error = connectionMessage(e)
                         )
                     }
                     return@launch
@@ -116,5 +129,15 @@ class ResultViewModel(
     private fun countToday(events: List<ScanEventResponse>): Int {
         val today = java.time.LocalDate.now().toString()
         return events.count { (it.createdAt ?: "").startsWith(today) }
+    }
+
+    private fun connectionMessage(e: Throwable): String {
+        return when (e) {
+            is UnknownHostException -> "No se pudo conectar al servidor (host no encontrado). Revisa la IP/base URL."
+            is SocketTimeoutException -> "Tiempo de espera agotado al conectar con el servidor."
+            is IOException -> "Error de red al conectar con el servidor. Verifica red e IP."
+            is HttpException -> "Error HTTP ${e.code()} al consultar el servidor."
+            else -> (e.message ?: "No se pudo consultar el lote").take(160)
+        }
     }
 }

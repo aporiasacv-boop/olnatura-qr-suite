@@ -52,15 +52,18 @@ fun ResultScreen(
             ) {
                 when (state.gate) {
                     is GateState.Checking -> {
-                        if (state.loading) {
-                            Text("Cargando…")
-                        }
+                        if (state.loading) Text("Cargando…")
+                        else if (state.error != null) ErrorContent(
+                            message = state.error!!,
+                            onRetry = { vm.load(lote) }
+                        )
                     }
                     is GateState.Unauthorized -> {
                         UnauthorizedContent(onGoToLogin = onGoToLogin)
                     }
                     is GateState.Authorized -> {
                         when {
+                            state.loading -> Text("Cargando…")
                             state.notFound -> NotFoundContent(lote = lote)
                             state.error != null -> ErrorContent(
                                 message = state.error!!,

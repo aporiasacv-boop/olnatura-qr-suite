@@ -71,7 +71,8 @@ public class LabelController {
         q.setReanalisis(req.reanalisis());
         q.setEnvaseNum(req.envaseNum());
         q.setEnvaseTotal(req.envaseTotal());
-        q.setDocumentCode(req.documentCode() != null && !req.documentCode().isBlank() ? req.documentCode().trim() : null);
+        q.setDocumentCode(
+                req.documentCode() != null && !req.documentCode().isBlank() ? req.documentCode().trim() : null);
 
         // Estado inicial fijo
         q.setStatusDinamico("PENDING");
@@ -165,8 +166,7 @@ public class LabelController {
             @PathVariable String id,
             @RequestParam(required = false) Integer total,
             @RequestParam(required = false) Integer from,
-            @RequestParam(required = false) Integer to
-    ) {
+            @RequestParam(required = false) Integer to) {
         String key = id == null ? "" : id.trim();
         QrLabel q = resolveLabel(key);
 
@@ -198,8 +198,7 @@ public class LabelController {
                         "mode", "ZPL_DOWNLOAD",
                         "from", printFrom,
                         "to", printTo,
-                        "count", printTo - printFrom + 1
-                ),
+                        "count", printTo - printFrom + 1),
                 null);
 
         HttpHeaders headers = new HttpHeaders();
@@ -212,19 +211,21 @@ public class LabelController {
                 .body(zplAll.toString());
     }
 
-    /** POST: same as GET but accepts qrImageBase64 to embed QR+logo as ^GF graphic */
+    /**
+     * POST: same as GET but accepts qrImageBase64 to embed QR+logo as ^GF graphic
+     */
     @PreAuthorize("hasAnyRole('ADMIN','ALMACEN')")
     @PostMapping(value = "/{id}/zpl", consumes = "application/json")
     public ResponseEntity<String> downloadZplWithGraphic(
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable String id,
-            @RequestBody(required = false) LabelDto.ZplRequest req
-    ) {
+            @RequestBody(required = false) LabelDto.ZplRequest req) {
         Integer total = req != null && req.total() != null ? req.total() : null;
         Integer from = req != null && req.from() != null ? req.from() : null;
         Integer to = req != null && req.to() != null ? req.to() : null;
         String qrBase64 = req != null && req.qrImageBase64() != null && !req.qrImageBase64().isBlank()
-                ? req.qrImageBase64() : null;
+                ? req.qrImageBase64()
+                : null;
 
         String key = id == null ? "" : id.trim();
         QrLabel q = resolveLabel(key);
@@ -257,8 +258,7 @@ public class LabelController {
                         "mode", "ZPL_DOWNLOAD",
                         "from", printFrom,
                         "to", printTo,
-                        "count", printTo - printFrom + 1
-                ),
+                        "count", printTo - printFrom + 1),
                 null);
 
         HttpHeaders headers = new HttpHeaders();
@@ -292,7 +292,8 @@ public class LabelController {
 
         String envaseDisplay = String.format("%02d", envaseNum) + " de " + String.format("%02d", envaseTotal);
 
-        // Template aprobado: NO cambiar geometría, solo inyectar valores en coordenadas existentes.
+        // Template aprobado: NO cambiar geometría, solo inyectar valores en coordenadas
+        // existentes.
         return "^XA\n" +
                 "^PW800\n" +
                 "^LL600\n" +
@@ -319,45 +320,46 @@ public class LabelController {
                 "\n" +
                 "^FO20,485^GB760,95,2^FS\n" +
                 "\n" +
-                "^FO25,25\n^GFA,1080,1080,12,0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001C00000000000000000000000FC000000000000000003FFE07F80000000000000001FFFFC7FE0000000000000007FFFFC3FF800000000000001FFFFFE3FFE00000000000007FFFFFE3FFF8000000000000FFFFFFE1FFFC000000000001FFFFFFF1FFFE000000000003FFFFFFF1FFFF000000000007FFE003F1FFFF80000000000FFF000070FFFF80000000001FFE000018FFFFC0000000003FF8000008FFFFE0000000003FF00000007FFFE0000000007FE00000007FFFE0000000007FC00000003FFFF000000000FFC00000001FFFF000000000FF800000001FFFF000000000FF8000000007FFF000000001FF0000000003FFF000000001FF0000000020FFF000000001FF00000000101FF000000001FF000000001C01C000000001FE000000001F000000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000003FE00000000000FF800000003FC00000000000FF800000007FC00000000000FFC00000007FC000000000007FC0000000FFC000000000007FE0000000FF8000000000003FF0000001FF8000000000003FF8000003FF0000000000001FFC000007FF0000000000001FFF00001FFE0000000000000FFF80007FFC00000000000007FFF001FFFC00000000000003FFFFFFFFF800000000000001FFFFFFFFF000000000000000FFFFFFFFE0000000000000007FFFFFFF80000000000000001FFFFFFF000000000000000007FFFFFC000000000000000001FFFFE00000000000000000001FFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000^FS\n" +
+                "^FO25,25\n^GFA,1080,1080,12,0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001C00000000000000000000000FC000000000000000003FFE07F80000000000000001FFFFC7FE0000000000000007FFFFC3FF800000000000001FFFFFE3FFE00000000000007FFFFFE3FFF8000000000000FFFFFFE1FFFC000000000001FFFFFFF1FFFE000000000003FFFFFFF1FFFF000000000007FFE003F1FFFF80000000000FFF000070FFFF80000000001FFE000018FFFFC0000000003FF8000008FFFFE0000000003FF00000007FFFE0000000007FE00000007FFFE0000000007FC00000003FFFF000000000FFC00000001FFFF000000000FF800000001FFFF000000000FF8000000007FFF000000001FF0000000003FFF000000001FF0000000020FFF000000001FF00000000101FF000000001FF000000001C01C000000001FE000000001F000000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000003FE00000000000FF800000003FC00000000000FF800000007FC00000000000FFC00000007FC000000000007FC0000000FFC000000000007FE0000000FF8000000000003FF0000001FF8000000000003FF8000003FF0000000000001FFC000007FF0000000000001FFF00001FFE0000000000000FFF80007FFC00000000000007FFF001FFFC00000000000003FFFFFFFFF800000000000001FFFFFFFFF000000000000000FFFFFFFFE0000000000000007FFFFFFF80000000000000001FFFFFFF000000000000000007FFFFFC000000000000000001FFFFE00000000000000000001FFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000^FS\n"
+                +
                 "\n" +
-                // tipoMaterial (valor)
-                "^FO125,40^A0N,28,28^FDMATERIAL DE ACONDICIONADO^FS\n" +
+                // Encabezado fijo (aprobado)
+                "^FO125,36^ADN,18,10^FDMATERIAL DE ACONDICIONADO^FS\n" +
                 // nombre (valor)
-                "^FO130,92^A0N,28,28^FD" + escapeZpl(nombre) + "^FS\n" +
+                "^FO130,86^ADN,18,10^FD" + escapeZpl(nombre) + "^FS\n" +
                 "\n" +
                 // Fecha (label + valor)
-                "^FO28,125^A0N,18,18^FDFecha^FS\n" +
-                "^FO28,155^A0N,25,25^FD" + escapeZpl(fechaStr) + "^FS\n" +
+                "^FO28,128^ADN,14,8^FDFecha^FS\n" +
+                "^FO28,150^ADN,18,10^FD" + escapeZpl(fechaStr) + "^FS\n" +
                 // Codigo (label + valor)
-                "^FO158,125^A0N,18,18^FDCodigo^FS\n" +
-                "^FO158,155^A0N,25,25^FD" + escapeZpl(codigo) + "^FS\n" +
+                "^FO158,128^ADN,14,8^FDCodigo^FS\n" +
+                "^FO158,150^ADN,18,10^FD" + escapeZpl(codigo) + "^FS\n" +
                 // Lote (label + valor)
-                "^FO388,125^A0N,18,18^FDLote^FS\n" +
-                "^FO388,155^A0N,25,25^FD" + escapeZpl(lote) + "^FS\n" +
+                "^FO388,128^ADN,14,8^FDLote^FS\n" +
+                "^FO388,150^ADN,18,10^FD" + escapeZpl(lote) + "^FS\n" +
                 "\n" +
                 // Caducidad (label + valor)
-                "^FO28,195^A0N,18,18^FDCaducidad^FS\n" +
-                "^FO28,220^A0N,25,25^FD" + escapeZpl(caducidadStr) + "^FS\n" +
+                "^FO28,195^ADN,14,8^FDCaducidad^FS\n" +
+                "^FO28,219^ADN,18,10^FD" + escapeZpl(caducidadStr) + "^FS\n" +
                 // Reanalisis (label + valor)
-                "^FO28,265^A0N,18,18^FDReanalisis^FS\n" +
-                "^FO28,290^A0N,25,25^FD" + escapeZpl(reanalisisStr) + "^FS\n" +
+                "^FO28,265^ADN,14,8^FDReanalisis^FS\n" +
+                "^FO28,289^ADN,18,10^FD" + escapeZpl(reanalisisStr) + "^FS\n" +
                 // Cantidad por envase (label + valor)
-                "^FO28,335^A0N,18,18^FDCantidad por envase^FS\n" +
-                "^FO28,365^A0N,25,25^FD" + escapeZpl(cantidadStr) + "^FS\n" +
+                "^FO28,335^ADN,14,8^FDCantidad por envase^FS\n" +
+                "^FO28,359^ADN,18,10^FD" + escapeZpl(cantidadStr) + "^FS\n" +
                 "\n" +
                 // QR (bloque actual, no cambiar lógica)
                 qrBlock(qrImageBase64, qrPayload) + "\n" +
                 "\n" +
                 // No. de envases (label + valor)
-                "^FO28,408^A0N,18,18^FDNo. de envases^FS\n" +
-                "^FO28,440^A0N,27,27^FD" + escapeZpl(envaseDisplay) + "^FS\n" +
+                "^FO28,410^ADN,14,8^FDNo. de envases^FS\n" +
+                "^FO28,438^ADN,20,10^FD" + escapeZpl(envaseDisplay) + "^FS\n" +
                 // Cantidad total (label + valor)
-                "^FO208,408^A0N,18,18^FDCantidad total^FS\n" +
-                "^FO260,440^A0N,27,27^FD" + escapeZpl(String.valueOf(envaseTotal)) + "^FS\n" +
+                "^FO208,410^ADN,14,8^FDCantidad total^FS\n" +
+                "^FO260,438^ADN,20,10^FD" + escapeZpl(String.valueOf(envaseTotal)) + "^FS\n" +
                 "\n" +
                 // Footer (documentCode + texto fijo; wording aprobado)
-                "^FO25,510^A0N,16,16^FB740,3,3,L,0^FD" + escapeZpl(documentCode) +
+                "^FO25,503^ADN,7,4^FB748,4,1,L,0^FD" + escapeZpl(documentCode) +
                 " Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgacion y/o reproduccion total o parcial. " +
                 "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACION.^FS\n" +
                 "\n" +
@@ -392,13 +394,15 @@ public class LabelController {
     }
 
     private String qrBlock(String qrImageBase64, String qrPayload) {
-        // Native Zebra QR at ^FO455,190 (template de referencia fija). qrImageBase64 ignored.
+        // Native Zebra QR at ^FO455,190 (template de referencia fija). qrImageBase64
+        // ignored.
         return "^FO455,190^BQN,2,8\n^FDQA," + qrPayload + "^FS";
     }
 
     /** Escape ^ and \ to avoid breaking ZPL field commands */
     private String escapeZpl(String s) {
-        if (s == null) return "";
+        if (s == null)
+            return "";
         return s.replace("\\", " ").replace("^", " ");
     }
 
