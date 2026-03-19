@@ -25,6 +25,37 @@ repositories {
 	maven { url = 'https://repo.spring.io/snapshot' }
 }
 
+def frontendDir = file("${projectDir}/../../web/qr-enterprise-frontend")
+def frontendDistDir = file("${frontendDir}/dist")
+def npmCommand = System.getProperty("os.name").toLowerCase().contains("windows") ? "npm.cmd" : "npm"
+
+tasks.register('frontendNpmCi', Exec) {
+	workingDir frontendDir
+	commandLine npmCommand, 'ci'
+	inputs.file file("${frontendDir}/package.json")
+	inputs.file file("${frontendDir}/package-lock.json")
+	outputs.dir file("${frontendDir}/node_modules")
+}
+
+tasks.register('frontendBuild', Exec) {
+	dependsOn 'frontendNpmCi'
+	workingDir frontendDir
+	commandLine npmCommand, 'run', 'build'
+	inputs.dir file("${frontendDir}/src")
+	inputs.file file("${frontendDir}/index.html")
+	inputs.file file("${frontendDir}/vite.config.ts")
+	inputs.file file("${frontendDir}/tsconfig.json")
+	inputs.file file("${frontendDir}/tsconfig.app.json")
+	inputs.file file("${frontendDir}/tsconfig.node.json")
+	outputs.dir frontendDistDir
+}
+
+tasks.register('copyFrontendToJar', Sync) {
+	dependsOn 'frontendBuild'
+	from frontendDistDir
+	into layout.buildDirectory.dir("generated/frontend-static")
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -50,4 +81,11 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.named('processResources') {
+	dependsOn 'copyFrontendToJar'
+	from(layout.buildDirectory.dir("generated/frontend-static")) {
+		into 'static'
+	}
 }

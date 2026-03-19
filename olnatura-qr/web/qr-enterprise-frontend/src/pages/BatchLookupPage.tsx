@@ -326,7 +326,6 @@ export default function BatchLookupPage() {
 
   // Derived values
   const labelEnvase = `${readLabel(data, "envaseNum")} / ${readLabel(data, "envaseTotal")}`;
-  const envaseNum = parseInt(String((data as any)?.label?.envaseNum ?? 1), 10) || 1;
   const envaseTotal = parseInt(String((data as any)?.label?.envaseTotal ?? 1), 10) || 1;
 
   useEffect(() => {

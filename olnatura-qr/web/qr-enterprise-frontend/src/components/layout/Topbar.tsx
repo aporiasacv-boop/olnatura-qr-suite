@@ -1,7 +1,5 @@
-import React from "react";
 import { Button, makeStyles, Text } from "@fluentui/react-components";
 import { useAuth } from "../../auth/AuthContext";
-import { api } from "../../api/client";
 
 const useStyles = makeStyles({
   root: {

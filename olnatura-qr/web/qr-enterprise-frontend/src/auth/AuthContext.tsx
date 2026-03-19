@@ -1,5 +1,5 @@
 import * as React from "react";
-import { api, setOnUnauthorized, ApiError } from "../api/client";
+import { api, setOnUnauthorized } from "../api/client";
 import type { LoginRequest, Me, Role } from "../api/types";
 
 type AuthState =
@@ -70,10 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = React.useCallback(async () => {
     try {
       await api<void>("/auth/logout", { method: "POST" });
-    } catch (err) {
+    } catch {
       // si falla igual limpiamos localmente
-      const _ae = err as ApiError;
-      // (puedes loggear si quieres)
     } finally {
       setAnonymous();
     }
