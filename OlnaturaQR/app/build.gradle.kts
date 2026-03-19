@@ -17,8 +17,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // API base URL: cambia para dev/prod (ej. http://10.0.2.2:3001/ para emulador)
-        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "http://192.168.41.230:3001/"}\"")
+        // API base URL: default Azure, override with -PAPI_BASE_URL=...
+        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "https://qr-empresarial-demo-fdfahagrafbmdne2.mexicocentral-01.azurewebsites.net/"}\"")
     }
 
     buildFeatures {
