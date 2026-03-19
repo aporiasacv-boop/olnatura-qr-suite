@@ -54,7 +54,7 @@ export async function generateQrWithLogo(
   opts: QrWithLogoOptions = {}
 ): Promise<string> {
   const merged = { ...DEFAULTS, ...opts };
-  const { errorCorrectionLevel, margin, width, color, debug } = merged;
+  const { errorCorrectionLevel, margin, width, color } = merged;
 
   const qrDataUrl = await QRCode.toDataURL(payload, {
     errorCorrectionLevel,
@@ -68,8 +68,7 @@ export async function generateQrWithLogo(
 
   try {
     return await drawLogoOverlay(qrDataUrl, preferredLogo, fallbackLogo, merged);
-  } catch (e) {
-    if (debug) console.warn("[qrWithLogo] overlay falló, fallback sin logo:", e);
+  } catch {
     return qrDataUrl;
   }
 }
@@ -80,15 +79,11 @@ async function drawLogoOverlay(
   fallbackLogo: string,
   opts: Required<Omit<QrWithLogoOptions, "logoUrl">>
 ): Promise<string> {
-  const { debug } = opts;
-
   const qrImg = await loadImage(qrDataUrl);
   let logoImg: HTMLImageElement;
   try {
     logoImg = await loadImage(preferredLogo);
-    if (debug) console.log("[qrWithLogo] logo cargado:", preferredLogo);
-  } catch (e) {
-    if (debug) console.warn("[qrWithLogo] logo principal falló, usando fallback:", preferredLogo, e);
+  } catch {
     logoImg = await loadImage(fallbackLogo);
   }
 
@@ -145,14 +140,6 @@ async function drawLogoOverlay(
   // Algunos logos traen transparencia y se ven muy claros:
   // aumenta un poco el contraste pintando primero un blanco puro (ya lo hicimos con badge)
   ctx.drawImage(logoImg, lx, ly, logoSize, logoSize);
-
-  if (debug) {
-    console.log("[qrWithLogo] OK overlay", {
-      qr: size,
-      badgeSize,
-      logoSize,
-    });
-  }
 
   return canvas.toDataURL("image/png");
 }

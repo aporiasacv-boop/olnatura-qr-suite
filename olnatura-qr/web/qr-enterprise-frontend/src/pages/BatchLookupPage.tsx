@@ -234,12 +234,10 @@ export default function BatchLookupPage() {
           next.set(loteTrim, { lookupAt, firstZplAt: null, zplCount: 0 });
           return next;
         });
-        console.log("[ZPL Metrics] lookup recorded", { lote: loteTrim, lookupAt: new Date(lookupAt).toISOString() });
       }
     } catch (e) {
       const ae = e as ApiError;
 
-      // ✅ Aquí NO hacemos toast para no duplicar UX.
       setErr({
         title: ae.status === 404 ? "Lote no encontrado" : "Error al consultar",
         detail:
@@ -362,12 +360,9 @@ export default function BatchLookupPage() {
       setSessionMetrics((prev) => {
         const next = new Map(prev);
         const cur = next.get(loteTrim) ?? { lookupAt: 0, firstZplAt: null, zplCount: 0 };
-        const isFirst = cur.firstZplAt === null;
         const firstZplAt = cur.firstZplAt ?? Date.now();
         const newCount = cur.zplCount + 1;
         next.set(loteTrim, { ...cur, firstZplAt, zplCount: newCount });
-        if (isFirst) console.log("[ZPL Metrics] first ZPL click", { lote: loteTrim, firstZplAt: new Date(firstZplAt).toISOString() });
-        else if (newCount > 1) console.log("[ZPL Metrics] reprint detected", { lote: loteTrim, zplDownloadCount: newCount });
         return next;
       });
     }
