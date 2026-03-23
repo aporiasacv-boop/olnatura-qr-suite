@@ -92,7 +92,7 @@ export default function RequestAccessPage() {
       toasts.push({
         intent: "success",
         title: "Solicitud enviada",
-        message: "Quedó en estado PENDING. Un admin la revisará.",
+        message: "Tu solicitud fue enviada correctamente.",
       });
     } catch (err: any) {
       const ae = err as ApiError;
@@ -113,7 +113,7 @@ export default function RequestAccessPage() {
         <Card className={s.card}>
           <CardHeader
             header={<Text weight="semibold" size={600}>Solicitud enviada</Text>}
-            description={<Text size={300} className={s.muted}>Estado: {submitted.status}</Text>}
+            description={<Text size={300} className={s.muted}>En revisión</Text>}
           />
           <CardPreview>
             <div className={s.inner}>
@@ -137,7 +137,7 @@ export default function RequestAccessPage() {
       <Card className={s.card}>
         <CardHeader
           header={<Text weight="semibold" size={600}>Solicitar acceso</Text>}
-          description={<Text size={300} className={s.muted}>Solicita acceso al sistema interno</Text>}
+          description={<Text size={300} className={s.muted}>Completa los datos para enviar tu solicitud</Text>}
         />
         <CardPreview>
           <div className={s.inner}>

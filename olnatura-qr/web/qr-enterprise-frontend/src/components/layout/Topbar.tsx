@@ -23,7 +23,7 @@ export default function Topbar() {
 
   return (
     <header className={s.root}>
-      <Text weight="semibold">Panel interno Olnatura</Text>
+      <Text weight="semibold">Sistema Olnatura</Text>
       <div className={s.right}>
         <div>
           <div><Text weight="semibold">{username}</Text></div>

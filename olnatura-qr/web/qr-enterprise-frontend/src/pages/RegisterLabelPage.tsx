@@ -72,7 +72,7 @@ export default function RegisterLabelPage() {
     setQrDataUrl(null);
 
     if (!canQr) {
-      setErr("No autorizado. Solo ADMIN y ALMACÉN pueden registrar.");
+      setErr("No autorizado.");
       return;
     }
     if (!loteOk) {
@@ -208,13 +208,9 @@ export default function RegisterLabelPage() {
           Registrar etiqueta
         </Text>
 
-        <div style={{ color: "#6B6B6B", marginTop: 4 }}>
-          Registra la etiqueta en el sistema, genera QR con token y descarga PNG o etiqueta Zebra.
-        </div>
-
         {!canQr ? (
           <div style={{ color: "#8A6D00", marginTop: 8 }}>
-            Tu rol no permite generar/descargar etiquetas (solo ADMIN y ALMACÉN).
+            No tienes permisos para esta acción.
           </div>
         ) : null}
 
@@ -376,9 +372,7 @@ export default function RegisterLabelPage() {
           </div>
 
           {qrDataUrl ? (
-            <div style={{ color: "#6B6B6B", fontSize: 12 }}>
-              Formato QR: OLNQR:1:&lt;token&gt;. La etiqueta queda persistida en el sistema.
-            </div>
+            <div style={{ color: "#6B6B6B", fontSize: 12 }}>Etiqueta generada correctamente.</div>
           ) : null}
         </div>
       </Card>

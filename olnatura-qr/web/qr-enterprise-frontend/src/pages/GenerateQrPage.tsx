@@ -117,9 +117,6 @@ export default function GenerateQrPage() {
       <Text size={600} weight="semibold">
         Generar etiqueta imprimible
       </Text>
-      <Text size={300} style={{ opacity: 0.75 }}>
-        Solo ADMIN/ALMACÉN. Busca por lote y genera la etiqueta con datos estáticos y QR con logo. El estatus no se imprime.
-      </Text>
 
       <Card>
         <div style={{ padding: 16, display: "grid", gap: 12 }}>
@@ -188,7 +185,7 @@ export default function GenerateQrPage() {
                 </div>
               </div>
             ) : (
-              <Text style={{ opacity: 0.6 }}>Vista previa aquí</Text>
+              <Text style={{ opacity: 0.6 }}>Sin vista previa</Text>
             )}
           </div>
         </div>

@@ -5,6 +5,7 @@ import AppShell from "../components/layout/AppShell";
 import LoginPage from "../pages/LoginPage";
 import DashboardPage from "../pages/DashboardPage";
 import NotFoundPage from "../pages/NotFoundPage";
+import RegisterRequestPage from "../pages/RegisterRequestPage";
 
 import RequestAccessPage from "../pages/RequestAccessPage";
 import AdminApprovalPage from "../pages/AdminApprovalPage";
@@ -26,6 +27,10 @@ export const router = createBrowserRouter([
   {
     path: "/request-access",
     element: <RequestAccessPage />,
+  },
+  {
+    path: "/register-request",
+    element: <RegisterRequestPage />,
   },
 
   {

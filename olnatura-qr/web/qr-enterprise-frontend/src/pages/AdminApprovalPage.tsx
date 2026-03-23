@@ -132,11 +132,6 @@ export default function AdminApprovalPage() {
           <Text weight="semibold" size={600}>
             Aprobar usuarios
           </Text>
-          <div className={s.muted}>
-            <Text size={300}>
-              Solicitudes pendientes de acceso (enabled=false)
-            </Text>
-          </div>
         </div>
 
         <Button appearance="primary" onClick={load} disabled={busy}>
