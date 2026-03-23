@@ -60,10 +60,92 @@ export function actionTypeDisplay(actionType: string | null | undefined): string
     GENERATE_LABEL: "Generar etiqueta",
     EXPORT_AUDIT_PDF: "Exportación de historial PDF",
     APPROVE_USER: "Aprobación de usuario",
+    REJECT_USER: "Rechazo de usuario",
     ACCESS_REQUEST: "Solicitud de acceso",
     DOWNLOAD_LABEL: "Descarga de etiqueta",
   };
   return map[v] ?? actionType;
+}
+
+/** Map audit metadata keys (backend) to friendly Spanish labels */
+const METADATA_KEY_LABELS: Record<string, string> = {
+  targetUserId: "ID de usuario destino",
+  targetUsername: "Usuario destino",
+  targetUserName: "Usuario destino", // fallback si viene así
+  roleRequested: "Rol solicitado",
+  exportType: "Tipo de exportación",
+  count: "Cantidad",
+  countEvents: "Eventos exportados",
+  labelId: "ID de etiqueta",
+  requester: "Solicitante",
+  lote: "Lote",
+  mode: "Modo",
+  status: "Estado",
+  username: "Usuario",
+  email: "Correo",
+  userId: "ID de usuario",
+  from: "Desde",
+  to: "Hasta",
+  deviceId: "Dispositivo",
+};
+
+export function metadataKeyToLabel(key: string): string {
+  return METADATA_KEY_LABELS[key] ?? key;
+}
+
+/** Map some technical metadata values to friendly Spanish */
+function formatMetadataValue(key: string, value: unknown): string {
+  if (value == null) return LABELS.noData;
+  const str = String(value).trim();
+  if (!str) return LABELS.noData;
+  const v = str.toUpperCase();
+  if (key === "mode" && v === "ZPL_DOWNLOAD") return "Descarga ZPL";
+  if (key === "exportType" && v === "PDF") return "PDF";
+  if (key === "roleRequested") {
+    if (v === "ALMACEN") return "Almacén";
+    if (v === "INSPECCION") return "Inspección";
+    if (v === "ADMIN") return "Administrador";
+  }
+  return str;
+}
+
+/** Parse metadata safely - may be object or JSON string */
+function parseMetadata(raw: unknown): Record<string, unknown> | null {
+  if (raw == null) return null;
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+export type AuditDetailEntry = { label: string; value: string };
+
+/** Build friendly label-value pairs from audit metadata for display */
+export function formatAuditDetail(
+  metadata: Record<string, unknown> | string | null | undefined,
+  deviceId?: string | null
+): AuditDetailEntry[] {
+  const meta = parseMetadata(metadata);
+  const entries: AuditDetailEntry[] = [];
+  if (deviceId && String(deviceId).trim()) {
+    entries.push({ label: "Dispositivo", value: String(deviceId).trim() });
+  }
+  if (!meta || Object.keys(meta).length === 0) return entries;
+  for (const [k, v] of Object.entries(meta)) {
+    if (v == null || (typeof v === "string" && !v.trim())) continue;
+    const label = metadataKeyToLabel(k);
+    const value = formatMetadataValue(k, v);
+    entries.push({ label, value });
+  }
+  return entries;
 }
 
 /** Format ISO date string for display: DD/MM/YYYY HH:mm */

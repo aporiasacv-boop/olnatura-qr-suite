@@ -72,7 +72,8 @@ fun AppNavGraph(
                 onShare = onShare,
                 onGoToLogin = {
                     nav.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } }
-                }
+                },
+                onBack = { nav.popBackStack() }
             )
         }
 

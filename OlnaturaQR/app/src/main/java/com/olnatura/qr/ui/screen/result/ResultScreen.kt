@@ -27,7 +27,8 @@ fun ResultScreen(
     lote: String,
     onReport: (String) -> Unit,
     onShare: (String, String) -> Unit,
-    onGoToLogin: () -> Unit
+    onGoToLogin: () -> Unit,
+    onBack: (() -> Unit)? = null
 ) {
     val state by vm.state.collectAsState()
 
@@ -36,7 +37,7 @@ fun ResultScreen(
     }
 
     Scaffold(
-        topBar = { OlnTopBar(title = "Materia prima verificada", onBack = null) },
+        topBar = { OlnTopBar(title = "Materia prima verificada", onBack = onBack) },
         containerColor = OlnCream
     ) { padding ->
         Surface(

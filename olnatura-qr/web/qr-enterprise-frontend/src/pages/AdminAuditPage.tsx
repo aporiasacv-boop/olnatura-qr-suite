@@ -14,7 +14,37 @@ import { api, ApiError } from "../api/client";
 import { useToasts } from "../components/ui/toasts";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
-import { LABELS, formatDateTime, actionTypeDisplay } from "../utils/displayLabels";
+import { LABELS, formatDateTime, actionTypeDisplay, formatAuditDetail } from "../utils/displayLabels";
+
+function AuditDetailCell({
+  metadata,
+  deviceId,
+}: {
+  metadata?: Record<string, unknown> | string | null;
+  deviceId?: string | null;
+}) {
+  const entries = formatAuditDetail(metadata, deviceId);
+  if (entries.length === 0) return <span style={{ color: brand.muted }}>—</span>;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 160 }}>
+      {entries.map(({ label, value }) => (
+        <div
+          key={label}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "4px 8px",
+            fontSize: 13,
+            lineHeight: 1.35,
+          }}
+        >
+          <span style={{ fontWeight: 600, color: brand.muted }}>{label}:</span>
+          <span style={{ color: brand.text }}>{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "24px" },
@@ -116,9 +146,7 @@ export default function AdminAuditPage() {
                     </TableCell>
                     <TableCell>{e.lote ?? "-"}</TableCell>
                     <TableCell>
-                      {e.metadata && Object.keys(e.metadata).length > 0
-                        ? JSON.stringify(e.metadata)
-                        : "—"}
+                      <AuditDetailCell metadata={e.metadata} deviceId={e.deviceId} />
                     </TableCell>
                   </TableRow>
                 );

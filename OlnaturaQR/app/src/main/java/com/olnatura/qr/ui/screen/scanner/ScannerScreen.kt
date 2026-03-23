@@ -30,6 +30,10 @@ fun ScannerScreen(vm: ScannerViewModel, onLoteDetected: (String) -> Unit) {
     val s by vm.state.collectAsState()
     val context = LocalContext.current
 
+    LaunchedEffect(Unit) {
+        vm.resetForNewScan()
+    }
+
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
@@ -92,48 +96,7 @@ fun ScannerScreen(vm: ScannerViewModel, onLoteDetected: (String) -> Unit) {
                     )
                 )
             }
-
-            SimulateVerification(onLote = onLoteDetected)
         }
-    }
-}
-
-@Composable
-private fun SimulateVerification(onLote: (String) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    var lote by remember { mutableStateOf("") }
-
-    Button(
-        onClick = { open = true },
-        modifier = Modifier.fillMaxWidth().height(54.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = OlnaturaColors.Green),
-        shape = RoundedCornerShape(18.dp)
-    ) {
-        Text("Simular verificación", style = MaterialTheme.typography.titleMedium)
-    }
-
-    if (open) {
-        AlertDialog(
-            onDismissRequest = { open = false },
-            title = { Text("Simular verificación") },
-            text = {
-                OutlinedTextField(
-                    value = lote,
-                    onValueChange = { lote = it },
-                    label = { Text("Ingresa lote") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val t = lote.trim()
-                    if (t.isNotBlank()) onLote(t)
-                    open = false
-                }) { Text("Continuar") }
-            },
-            dismissButton = { TextButton(onClick = { open = false }) { Text("Cancelar") } }
-        )
     }
 }
 
@@ -144,6 +107,15 @@ private fun CameraPreview(onQrText: (String) -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val scanner = remember { BarcodeScanning.getClient() }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                ProcessCameraProvider.getInstance(context).get().unbindAll()
+            } catch (_: Exception) {}
+            cameraExecutor.shutdown()
+        }
+    }
 
     AndroidView(
         factory = { ctx ->
