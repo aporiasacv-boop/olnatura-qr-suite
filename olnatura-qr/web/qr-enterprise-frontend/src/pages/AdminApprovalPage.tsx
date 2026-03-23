@@ -1,7 +1,6 @@
 import * as React from "react";
 import {
   Button,
-  Card,
   makeStyles,
   shorthands,
   Table,
@@ -15,17 +14,12 @@ import {
 import { api, ApiError } from "../api/client";
 import type { AccessRequestItem } from "../api/types";
 import { useToasts } from "../components/ui/toasts";
+import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 
 const useStyles = makeStyles({
-  wrap: {
-    display: "grid",
-    rowGap: "12px",
-  },
-  card: {
-    ...shorthands.border("1px", "solid", brand.border),
-    ...shorthands.borderRadius("14px"),
-  },
+  wrap: { display: "grid", gap: "24px" },
+  title: { fontSize: "20px", fontWeight: 600, color: brand.text },
   headerRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -37,11 +31,8 @@ const useStyles = makeStyles({
   empty: {
     display: "grid",
     placeItems: "center",
-    rowGap: "10px",
-    ...shorthands.padding("18px"),
-    ...shorthands.borderRadius("12px"),
-    ...shorthands.border("1px", "solid", brand.border),
-    backgroundColor: "#FFF",
+    rowGap: "16px",
+    ...shorthands.padding("24px"),
   },
 });
 
@@ -128,23 +119,15 @@ export default function AdminApprovalPage() {
   return (
     <div className={s.wrap}>
       <div className={s.headerRow}>
-        <div>
-          <Text weight="semibold" size={600}>
-            Aprobar usuarios
-          </Text>
-        </div>
-
+        <h1 className={s.title}>Aprobar usuarios</h1>
         <Button appearance="primary" onClick={load} disabled={busy}>
           {busy ? "Actualizando…" : "Refrescar"}
         </Button>
       </div>
 
-      <Card className={s.card}>
-        <div style={{ padding: 12 }}>
+      <AppCard>
           {items === null ? (
-            <div style={{ padding: 12 }}>
-              <Text>Cargando…</Text>
-            </div>
+            <div style={{ padding: 24 }}><Text>Cargando…</Text></div>
           ) : pending.length === 0 ? (
             <div className={s.empty}>
               <Text weight="semibold">No hay solicitudes pendientes</Text>
@@ -201,8 +184,7 @@ export default function AdminApprovalPage() {
               </TableBody>
             </Table>
           )}
-        </div>
-      </Card>
+      </AppCard>
     </div>
   );
 }

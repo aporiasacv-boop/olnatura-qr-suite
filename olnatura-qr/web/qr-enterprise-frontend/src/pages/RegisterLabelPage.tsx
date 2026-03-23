@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { Card, Text, Input, Button, Radio, RadioGroup } from "@fluentui/react-components";
+import { Text, Input, Button, Radio, RadioGroup } from "@fluentui/react-components";
+import AppCard from "../components/ui/AppCard";
+import { brand } from "../styles/brand";
 import { useAuth } from "../auth/AuthContext";
 import { api, ApiError, API_BASE } from "../api/client";
 import { generateQrPlain } from "../utils/qrWithLogo";
@@ -202,24 +204,16 @@ export default function RegisterLabelPage() {
   const hasPreview = !!qrDataUrl;
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
+    <div style={{ display: "grid", gap: 24 }}>
       <div>
-        <Text weight="semibold" size={700}>
-          Registrar etiqueta
-        </Text>
-
+        <h1 style={{ fontSize: "20px", fontWeight: 600, color: brand.text, margin: 0 }}>Registrar etiqueta</h1>
         {!canQr ? (
-          <div style={{ color: "#8A6D00", marginTop: 8 }}>
-            No tienes permisos para esta acción.
-          </div>
+          <div style={{ color: brand.warningFg, marginTop: 8, fontSize: 14 }}>No tienes permisos para esta acción.</div>
         ) : null}
-
-        {err ? (
-          <div style={{ color: "#B10E1C", marginTop: 8 }}>{err}</div>
-        ) : null}
+        {err ? <div style={{ color: brand.dangerFg, marginTop: 8, fontSize: 14 }}>{err}</div> : null}
       </div>
 
-      <Card style={{ padding: 16, display: "grid", gap: 12, maxWidth: 720 }}>
+      <AppCard style={{ display: "grid", gap: 16, maxWidth: 720 }}>
         <Field
           label="Tipo material"
           placeholder="Ej. MP"
@@ -308,10 +302,10 @@ export default function RegisterLabelPage() {
             style={{
               display: "grid",
               placeItems: "start",
-              background: "#f9fafb",
+              background: brand.background,
               borderRadius: 12,
               padding: 16,
-              border: "1px solid rgba(0,0,0,0.08)",
+              border: `1px solid ${brand.border}`,
               overflowX: "auto",
             }}
           >
@@ -372,10 +366,10 @@ export default function RegisterLabelPage() {
           </div>
 
           {qrDataUrl ? (
-            <div style={{ color: "#6B6B6B", fontSize: 12 }}>Etiqueta generada correctamente.</div>
+            <div style={{ color: brand.muted, fontSize: 12 }}>Etiqueta generada correctamente.</div>
           ) : null}
         </div>
-      </Card>
+      </AppCard>
     </div>
   );
 }
@@ -394,16 +388,10 @@ function Field({
   hint?: string;
 }) {
   return (
-    <div style={{ display: "grid", gap: 6 }}>
-      <Text>{label}</Text>
-      <Input
-        value={value}
-        onChange={(_, d) => onChange(d.value)}
-        placeholder={placeholder}
-      />
-      {hint ? (
-        <Text style={{ fontSize: 12, color: "#6B7280" }}>{hint}</Text>
-      ) : null}
+    <div style={{ display: "grid", gap: 8 }}>
+      <Text style={{ fontSize: 14, fontWeight: 500, color: brand.text2 }}>{label}</Text>
+      <Input appearance="outline" size="large" value={value} onChange={(_, d) => onChange(d.value)} placeholder={placeholder} />
+      {hint ? <Text style={{ fontSize: 12, color: brand.muted }}>{hint}</Text> : null}
     </div>
   );
 }

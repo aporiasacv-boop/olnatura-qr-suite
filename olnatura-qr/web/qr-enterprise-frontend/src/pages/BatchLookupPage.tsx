@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Button,
-  Card,
   Dropdown,
   Input,
   Option,
@@ -14,7 +13,11 @@ import {
   DialogContent,
   DialogActions,
   Link,
+  makeStyles,
+  shorthands,
 } from "@fluentui/react-components";
+import AppCard from "../components/ui/AppCard";
+import { brand } from "../styles/brand";
 import { API_BASE, api, ApiError } from "../api/client";
 import type { QrResponse, ScanEvent } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
@@ -151,7 +154,34 @@ function statusToDisplayLabel(backendValue: string): string {
   return opt ? opt.label : (backendValue ?? "—");
 }
 
+const useStyles = makeStyles({
+  page: { display: "grid", gap: "24px" },
+  title: { fontSize: "20px", fontWeight: 600, color: brand.text },
+  searchCard: {
+    ...shorthands.padding("16px"),
+    display: "flex",
+    gap: "12px",
+    alignItems: "flex-end",
+  },
+  searchInput: { flex: 1 },
+  resultGrid: { display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "24px" },
+  dataGrid: {
+    marginTop: "12px",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+  fieldBox: {
+    ...shorthands.border("1px", "solid", brand.border),
+    ...shorthands.borderRadius("10px"),
+    ...shorthands.padding("10px"),
+  },
+  fieldLabel: { color: brand.muted, fontSize: "12px" },
+  fieldValue: { marginTop: "4px", fontWeight: 600 },
+});
+
 export default function BatchLookupPage() {
+  const s = useStyles();
   const { can, hasRole } = useAuth();
   const toasts = useToasts();
 
@@ -338,16 +368,13 @@ export default function BatchLookupPage() {
     }
   };
 
-  // Render
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div>
-        <Text weight="semibold" size={700}>{LABELS.lookup}</Text>
-      </div>
+    <div className={s.page}>
+      <h1 className={s.title}>{LABELS.lookup}</h1>
 
-      <Card style={{ padding: 16, display: "flex", gap: 10, alignItems: "end" }}>
-        <div style={{ flex: 1, display: "grid", gap: 6 }}>
-          <Text>Lote</Text>
+      <AppCard className={s.searchCard}>
+        <div className={s.searchInput} style={{ display: "grid", gap: 6 }}>
+          <Text style={{ fontSize: 14, fontWeight: 500 }}>Lote</Text>
           <Input
             id="lote"
             name="lote"
@@ -376,7 +403,7 @@ export default function BatchLookupPage() {
             {LABELS.registerScan}
           </Button>
         )}
-      </Card>
+      </AppCard>
 
       {status === "loading" && <LoadingState label="Consultando lote…" />}
 
@@ -385,11 +412,10 @@ export default function BatchLookupPage() {
       )}
 
       {status === "ok" && data && (
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 14 }}>
-          <Card style={{ padding: 16 }}>
+        <div className={s.resultGrid}>
+          <AppCard>
             <Text weight="semibold">{LABELS.labelData}</Text>
-
-            <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div className={s.dataGrid}>
               <Field label="Tipo material" value={readLabel(data, "tipoMaterial")} />
               <Field label="Nombre" value={readLabel(data, "nombre")} />
               <CopyField
@@ -412,7 +438,7 @@ export default function BatchLookupPage() {
               <div style={{ marginTop: 10 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
                   <div>
-                    <Text style={{ fontSize: 12, color: "#6B6B6B" }}>Total envases</Text>
+                    <Text style={{ fontSize: 12, color: brand.muted }}>Total envases</Text>
                     <Input
                       type="number"
                       min={1}
@@ -422,7 +448,7 @@ export default function BatchLookupPage() {
                     />
                   </div>
                   <div>
-                    <Text style={{ fontSize: 12, color: "#6B6B6B" }}>Imprimir desde</Text>
+                    <Text style={{ fontSize: 12, color: brand.muted }}>Imprimir desde</Text>
                     <Input
                       type="number"
                       min={1}
@@ -432,7 +458,7 @@ export default function BatchLookupPage() {
                     />
                   </div>
                   <div>
-                    <Text style={{ fontSize: 12, color: "#6B6B6B" }}>Imprimir hasta</Text>
+                    <Text style={{ fontSize: 12, color: brand.muted }}>Imprimir hasta</Text>
                     <Input
                       type="number"
                       min={1}
@@ -449,16 +475,16 @@ export default function BatchLookupPage() {
                 >
                   {LABELS.downloadZpl}
                 </Button>
-                <Text style={{ display: "block", marginTop: 4, color: "#6B6B6B", fontSize: 12 }}>
+                <Text style={{ display: "block", marginTop: 4, color: brand.muted, fontSize: 12 }}>
                   Archivo para impresora Zebra.{" "}
                   <Link onClick={() => setZplHelpOpen(true)}>Cómo imprimir</Link>
                 </Text>
               </div>
             )}
-          </Card>
+          </AppCard>
 
-          <div style={{ display: "grid", gap: 14 }}>
-            <Card style={{ padding: 16 }}>
+          <div style={{ display: "grid", gap: 24 }}>
+            <AppCard>
               <Text weight="semibold">{LABELS.dynamicState}</Text>
 
               <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
@@ -493,7 +519,7 @@ export default function BatchLookupPage() {
                     </>
                   ) : (
                     !canChangeStatus ? null : (
-                      <Text style={{ color: "#6B6B6B", fontSize: 12 }}>
+                      <Text style={{ color: brand.muted, fontSize: 12 }}>
                         Sin opciones disponibles
                       </Text>
                     )
@@ -504,9 +530,9 @@ export default function BatchLookupPage() {
                 <Field label={LABELS.cantidad} value={dynamicCantidad} />
                 <Field label={LABELS.fuente} value={fuenteDisplayLabel} />
               </div>
-            </Card>
+            </AppCard>
 
-            <Card style={{ padding: 16 }}>
+            <AppCard>
               <Text weight="semibold">{LABELS.scanHistory}</Text>
               <div style={{ marginTop: 12 }}>
                 {scans === null ? null : scans.length === 0 ? (
@@ -530,7 +556,7 @@ export default function BatchLookupPage() {
                   </Button>
                 </div>
               )}
-            </Card>
+            </AppCard>
           </div>
         </div>
       )}
@@ -568,62 +594,25 @@ export default function BatchLookupPage() {
   );
 }
 
-// Sub-components
-function Field({
-  label,
-  value,
-  tooltip,
-}: {
-  label: string;
-  value: React.ReactNode;
-  tooltip?: string;
-}) {
+function Field({ label, value, tooltip }: { label: string; value: React.ReactNode; tooltip?: string }) {
   const labelNode = tooltip ? (
-    <Tooltip content={tooltip} relationship="label">
-      <span>{label}</span>
-    </Tooltip>
-  ) : (
-    label
-  );
-
+    <Tooltip content={tooltip} relationship="label"><span>{label}</span></Tooltip>
+  ) : label;
   return (
-    <div style={{ border: "1px solid #E6E6E6", borderRadius: 10, padding: 10 }}>
-      <div style={{ color: "#6B6B6B", fontSize: 12 }}>{labelNode}</div>
+    <div style={{ border: `1px solid ${brand.border}`, borderRadius: 10, padding: 10 }}>
+      <div style={{ color: brand.muted, fontSize: 12 }}>{labelNode}</div>
       <div style={{ marginTop: 4, fontWeight: 600 }}>{value}</div>
     </div>
   );
 }
 
-function CopyField({
-  label,
-  value,
-  onCopy,
-}: {
-  label: string;
-  value: string;
-  onCopy: (label: string, value: string) => void;
-}) {
+function CopyField({ label, value, onCopy }: { label: string; value: string; onCopy: (l: string, v: string) => void }) {
   const display = value ?? "—";
   return (
-    <div style={{ border: "1px solid #E6E6E6", borderRadius: 10, padding: 10 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          color: "#6B6B6B",
-          fontSize: 12,
-        }}
-      >
+    <div style={{ border: `1px solid ${brand.border}`, borderRadius: 10, padding: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: brand.muted, fontSize: 12 }}>
         <span>{label}</span>
-        <Button
-          appearance="subtle"
-          size="small"
-          onClick={() => onCopy(label, display)}
-        >
-          Copiar
-        </Button>
+        <Button appearance="subtle" size="small" onClick={() => onCopy(label, display)}>Copiar</Button>
       </div>
       <div style={{ marginTop: 4, fontWeight: 600, wordBreak: "break-all" }}>{display}</div>
     </div>

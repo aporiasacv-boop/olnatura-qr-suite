@@ -6,6 +6,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Text } from "@fluentui/react-components";
 import { LABELS } from "../../utils/displayLabels";
+import { brand } from "../../styles/brand";
 
 function labelFor(seg: string) {
   if (!seg) return "Inicio";
@@ -27,16 +28,15 @@ export default function BreadcrumbsBar({ path }: { path: string }) {
   return (
     <div
       style={{
-        padding: "10px 20px",
-        borderBottom: "1px solid #E6E6E6",
-        background: "#FFFFFF",
+        padding: "10px 24px",
+        borderBottom: `1px solid ${brand.border}`,
+        backgroundColor: brand.surface,
       }}
     >
       <Breadcrumb>
         <BreadcrumbItem>
           <BreadcrumbButton onClick={() => navigate("/")}>Inicio</BreadcrumbButton>
         </BreadcrumbItem>
-
         {parts.map((p) => {
           acc += `/${p}`;
           const to = acc;
@@ -45,7 +45,7 @@ export default function BreadcrumbsBar({ path }: { path: string }) {
           return (
             <BreadcrumbItem key={to}>
               {isAdminCategory ? (
-                <Text style={{ color: "#6B6B6B", fontSize: 14 }}>{label}</Text>
+                <Text style={{ color: brand.muted, fontSize: 14 }}>{label}</Text>
               ) : (
                 <BreadcrumbButton onClick={() => navigate(to)}>
                   {label}

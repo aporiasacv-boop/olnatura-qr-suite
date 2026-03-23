@@ -1,4 +1,3 @@
-
 import { Outlet, useLocation } from "react-router-dom";
 import { makeStyles, shorthands } from "@fluentui/react-components";
 import Sidebar from "./Sidebar";
@@ -14,25 +13,26 @@ const useStyles = makeStyles({
     backgroundColor: brand.background,
   },
   sidebar: {
-    backgroundColor: brand.background,
-    borderRight: `1px solid ${brand.border}`, // ✅ una sola prop
+    backgroundColor: brand.surface,
+    borderRight: `1px solid ${brand.border}`,
   },
   main: {
     display: "grid",
     gridTemplateRows: "56px 44px 1fr",
-    backgroundColor: brand.surface,
+    backgroundColor: brand.background,
     minWidth: 0,
   },
   content: {
-    ...shorthands.padding("20px", "24px"),
+    ...shorthands.padding("24px"),
     overflow: "auto",
     backgroundColor: brand.background,
   },
   surface: {
     backgroundColor: brand.surface,
-    ...shorthands.borderRadius("14px"),
-    ...shorthands.border("1px", "solid", brand.border), // ✅ shorthand
-    ...shorthands.padding("16px"),
+    borderRadius: "12px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    ...shorthands.border("1px", "solid", brand.border),
+    ...shorthands.padding("24px"),
     minHeight: "100%",
   },
 });

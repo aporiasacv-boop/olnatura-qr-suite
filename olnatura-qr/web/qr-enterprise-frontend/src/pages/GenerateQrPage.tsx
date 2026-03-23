@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { Button, Card, Input, Text, makeStyles, shorthands } from "@fluentui/react-components";
+import { Button, Input, Text, makeStyles, shorthands } from "@fluentui/react-components";
+import AppCard from "../components/ui/AppCard";
+import { brand } from "../styles/brand";
 import { api, ApiError } from "../api/client";
 
 function logAudit(actionType: string, lote: string | null) {
@@ -15,21 +17,21 @@ import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
 import LabelPreview from "../components/label/LabelPreview";
 
 const useStyles = makeStyles({
-  wrap: { display: "grid", gap: "14px", maxWidth: "600px" },
-  row: { display: "grid", gap: "6px" },
+  wrap: { display: "grid", gap: "24px", maxWidth: "600px" },
+  title: { fontSize: "20px", fontWeight: 600, color: brand.text },
+  row: { display: "grid", gap: "8px" },
+  label: { fontSize: "14px", fontWeight: 500, color: brand.text2 },
   preview: {
     display: "grid",
     placeItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: brand.surface,
     borderRadius: "12px",
     ...shorthands.padding("16px"),
-    boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-    border: "1px solid #E5E7EB",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    border: `1px solid ${brand.border}`,
   },
-  img: { maxWidth: "100%", height: "auto", objectFit: "contain" },
   actions: { display: "flex", gap: "10px", flexWrap: "wrap" },
-  labelText: { fontSize: "12px", color: "#6B7280" },
-  labelValue: { fontSize: "14px", fontWeight: 600 },
+  error: { color: brand.dangerFg, fontSize: "13px" },
 });
 
 export default function GenerateQrPage() {
@@ -114,14 +116,12 @@ export default function GenerateQrPage() {
 
   return (
     <div className={s.wrap}>
-      <Text size={600} weight="semibold">
-        Generar etiqueta imprimible
-      </Text>
+      <h1 className={s.title}>Generar etiqueta imprimible</h1>
 
-      <Card>
-        <div style={{ padding: 16, display: "grid", gap: 12 }}>
+      <AppCard>
+        <div style={{ display: "grid", gap: 16 }}>
           <div className={s.row}>
-            <Text>Lote</Text>
+            <span className={s.label}>Lote</span>
             <Input
               value={lote}
               onChange={(_, d) => setLote(d.value)}
@@ -141,7 +141,7 @@ export default function GenerateQrPage() {
             </Button>
           </div>
 
-          {error ? <Text style={{ color: "#B10E1C" }}>{error}</Text> : null}
+          {error ? <div className={s.error}>{error}</div> : null}
 
           <div ref={previewRef} className={s.preview} style={{ overflowX: "auto" }}>
             {labelData && qrDataUrl ? (
@@ -189,7 +189,7 @@ export default function GenerateQrPage() {
             )}
           </div>
         </div>
-      </Card>
+      </AppCard>
     </div>
   );
 }

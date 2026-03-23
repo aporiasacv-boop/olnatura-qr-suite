@@ -1,9 +1,7 @@
 import * as React from "react";
 import {
   Button,
-  Card,
   makeStyles,
-  shorthands,
   Table,
   TableBody,
   TableCell,
@@ -14,15 +12,13 @@ import {
 } from "@fluentui/react-components";
 import { api, ApiError } from "../api/client";
 import { useToasts } from "../components/ui/toasts";
+import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { LABELS, formatDateTime, actionTypeDisplay } from "../utils/displayLabels";
 
 const useStyles = makeStyles({
-  wrap: { display: "grid", rowGap: "12px" },
-  card: {
-    ...shorthands.border("1px", "solid", brand.border),
-    ...shorthands.borderRadius("14px"),
-  },
+  wrap: { display: "grid", gap: "24px" },
+  title: { fontSize: "20px", fontWeight: 600, color: brand.text },
   headerRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -84,21 +80,14 @@ export default function AdminAuditPage() {
   return (
     <div className={s.wrap}>
       <div className={s.headerRow}>
-        <div>
-          <Text weight="semibold" size={600}>
-            {LABELS.auditLog}
-          </Text>
-          <div className={s.muted}>
-            <Text size={300}>Acciones registradas en el sistema</Text>
-          </div>
-        </div>
+        <h1 className={s.title}>{LABELS.auditLog}</h1>
         <Button appearance="primary" onClick={load} disabled={busy}>
           {busy ? "Cargando…" : "Actualizar"}
         </Button>
       </div>
 
-      <Card className={s.card}>
-        <div style={{ padding: 12, overflowX: "auto" }}>
+      <AppCard>
+        <div style={{ overflowX: "auto" }}>
           {events.length === 0 ? (
             <div style={{ padding: 24, textAlign: "center", color: brand.muted }}>
               {LABELS.noRecords}
@@ -157,7 +146,7 @@ export default function AdminAuditPage() {
             </div>
           )}
         </div>
-      </Card>
+      </AppCard>
     </div>
   );
 }

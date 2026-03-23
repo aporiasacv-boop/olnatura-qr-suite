@@ -1,10 +1,10 @@
-import { Text } from "@fluentui/react-components";
+import { brand } from "../styles/brand";
 
 export default function NotFoundPage() {
   return (
     <div style={{ padding: 24 }}>
-      <Text weight="semibold" size={700}>404</Text>
-      <div style={{ color: "#6B6B6B", marginTop: 6 }}>La ruta no existe.</div>
+      <h1 style={{ fontSize: "20px", fontWeight: 600, color: brand.text, margin: 0 }}>404</h1>
+      <div style={{ color: brand.muted, marginTop: 8, fontSize: 14 }}>La ruta no existe.</div>
     </div>
   );
 }
