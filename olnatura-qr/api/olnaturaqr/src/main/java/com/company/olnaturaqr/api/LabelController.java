@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -207,7 +208,7 @@ public class LabelController {
         return ResponseEntity
                 .ok()
                 .headers(headers)
-                .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                .contentType(new MediaType("text", "plain", StandardCharsets.ISO_8859_1))
                 .body(zplAll.toString());
     }
 
@@ -267,7 +268,7 @@ public class LabelController {
         return ResponseEntity
                 .ok()
                 .headers(headers)
-                .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
+                .contentType(new MediaType("text", "plain", StandardCharsets.ISO_8859_1))
                 .body(zplAll.toString());
     }
 
@@ -295,7 +296,7 @@ public class LabelController {
         return "^XA\n" +
                 "^PW800\n" +
                 "^LL600\n" +
-                "^CI15\n" +
+                "^CI13\n" +
                 "\n" +
                 "^FO8,8^GB790,590,9^FS\n" +
                 "\n" +

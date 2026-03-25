@@ -3,7 +3,8 @@ import { Text, Input, Button, Radio, RadioGroup } from "@fluentui/react-componen
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { useAuth } from "../auth/AuthContext";
-import { api, ApiError, API_BASE } from "../api/client";
+import { api, ApiError } from "../api/client";
+import { downloadLabelZplFile } from "../utils/downloadLabelZpl";
 import { generateQrPlain } from "../utils/qrWithLogo";
 import { parseDDMMYYYYToISO, isValidDDMMYYYY } from "../utils/dateFormat";
 import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
@@ -133,10 +134,6 @@ export default function RegisterLabelPage() {
     }
   };
 
-  const onScrollToPreview = () => {
-    previewRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
   const onDownloadPng = async () => {
     setErr(null);
     const el = previewRef.current?.querySelector("[data-label-preview]") as HTMLElement;
@@ -170,32 +167,14 @@ export default function RegisterLabelPage() {
     try {
       setBusy(true);
       const total = envaseTotal || 1;
-      const base = API_BASE || "";
-      const url = `${base}/api/v1/label/${createResp.id}/zpl`;
-      const res = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          total,
-          from: 1,
-          to: total,
-          qrImageBase64: qrDataUrl || undefined,
-        }),
+      await downloadLabelZplFile({
+        labelIdOrLote: String(createResp.id),
+        totalEnvases: total,
+        printFrom: 1,
+        printTo: total,
       });
-      if (!res.ok) throw new Error("No se pudo descargar el archivo ZPL.");
-      const blob = await res.blob();
-      const lote = form.lote.trim().replace(/[^\w\-]+/g, "_");
-      const filename = `etiqueta-${lote}.zpl`;
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(a.href);
-    } catch (e) {
-      setErr("No se pudo descargar la etiqueta Zebra (.zpl).");
+    } catch {
+      setErr("No se pudo descargar la etiqueta Zebra (.zpl). Comprueba la sesión y vuelve a intentar.");
     } finally {
       setBusy(false);
     }
@@ -214,6 +193,7 @@ export default function RegisterLabelPage() {
       </div>
 
       <AppCard style={{ display: "grid", gap: 16, maxWidth: 720 }}>
+        <Text style={{ fontSize: 15, fontWeight: 600, color: brand.text }}>Datos de la etiqueta</Text>
         <Field
           label="Tipo material"
           placeholder="Ej. MP"
@@ -282,7 +262,7 @@ export default function RegisterLabelPage() {
           hint="Total de contenedores"
         />
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
           <Button
             appearance="primary"
             onClick={onRegisterAndGenerate}
@@ -291,84 +271,130 @@ export default function RegisterLabelPage() {
             {busy ? "Registrando…" : "Registrar y generar QR"}
           </Button>
         </div>
+      </AppCard>
+
+      <AppCard style={{ display: "grid", gap: 20, maxWidth: 720 }}>
+        <div>
+          <Text style={{ fontSize: 15, fontWeight: 600, color: brand.text, display: "block" }}>
+            Vista previa
+          </Text>
+          <Text style={{ fontSize: 13, color: brand.muted, marginTop: 4, display: "block" }}>
+            {hasPreview
+              ? "Misma disposición que en impresora Zebra. Puedes descargar PNG o ZPL."
+              : "Completa el formulario y pulsa «Registrar y generar QR» para ver la etiqueta con código."}
+          </Text>
+        </div>
 
         <div
           ref={previewRef}
-          style={{ display: "grid", gap: 12, marginTop: 8 }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 0,
+          }}
         >
-          <Text weight="semibold">Vista previa de la etiqueta</Text>
-
           <div
             style={{
-              display: "grid",
-              placeItems: "start",
-              background: brand.background,
-              borderRadius: 12,
+              width: "100%",
+              maxWidth: 432,
+              borderRadius: 10,
+              border: `1px solid ${brand.borderStrong}`,
+              backgroundColor: brand.surface,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
               padding: 16,
-              border: `1px solid ${brand.border}`,
-              overflowX: "auto",
+              boxSizing: "border-box",
             }}
           >
             <div
               style={{
-                width: 400,
-                height: 300,
+                width: "100%",
+                maxWidth: 400,
+                margin: "0 auto",
+                borderRadius: 6,
                 overflow: "hidden",
+                border: "1px solid rgba(0,0,0,0.12)",
+                background: "#fff",
+                position: "relative",
+                isolation: "isolate",
               }}
             >
               <div
                 style={{
-                  width: 800,
-                  height: 600,
-                  transform: "scale(0.5)",
-                  transformOrigin: "top left",
+                  width: "100%",
+                  maxWidth: 400,
+                  paddingBottom: "75%",
+                  height: 0,
+                  position: "relative",
+                  overflow: "hidden",
                 }}
               >
-                <LabelPreview
-                  materialName={form.nombre.trim() || form.lote.trim() || "—"}
-                  codigo={form.codigo.trim() || "—"}
-                  lote={form.lote.trim() || "—"}
-                  fecha={form.fechaEntrada}
-                  caducidad={caducidadDisplay}
-                  reanalisis={reanalisisDisplay}
-                  cantidad="N/A"
-                  envaseNum={form.envaseNum || "—"}
-                  envaseTotal={form.envaseTotal || "—"}
-                  qrData={qrDataUrl}
-                  logoUrl={`${import.meta.env.BASE_URL}logo-olnatura.png`}
-                  documentCode={createResp?.label?.documentCode ?? "AL-001-E02/04"}
-                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: 800,
+                    height: 600,
+                    transform: "scale(0.5)",
+                    transformOrigin: "top left",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <LabelPreview
+                    materialName={form.nombre.trim() || form.lote.trim() || "—"}
+                    codigo={form.codigo.trim() || "—"}
+                    lote={form.lote.trim() || "—"}
+                    fecha={form.fechaEntrada}
+                    caducidad={caducidadDisplay}
+                    reanalisis={reanalisisDisplay}
+                    cantidad="N/A"
+                    envaseNum={form.envaseNum || "—"}
+                    envaseTotal={form.envaseTotal || "—"}
+                    qrData={qrDataUrl}
+                    logoUrl={`${import.meta.env.BASE_URL}logo-olnatura.png`}
+                    documentCode={createResp?.label?.documentCode ?? "AL-001-E02/04"}
+                  />
+                </div>
               </div>
             </div>
           </div>
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Button
-              appearance="secondary"
-              onClick={onScrollToPreview}
-            >
-              Vista previa
-            </Button>
-            <Button
-              appearance="secondary"
-              onClick={onDownloadPng}
-              disabled={!canQr || !hasPreview || busy}
-            >
-              Descargar PNG
-            </Button>
-            <Button
-              appearance="secondary"
-              onClick={onDownloadZpl}
-              disabled={!canQr || !createResp || busy}
-            >
-              Descargar etiqueta Zebra (.zpl)
-            </Button>
-          </div>
-
-          {qrDataUrl ? (
-            <div style={{ color: brand.muted, fontSize: 12 }}>Etiqueta generada correctamente.</div>
-          ) : null}
         </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 10,
+            alignItems: "center",
+            paddingTop: 4,
+            borderTop: `1px solid ${brand.border}`,
+          }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: 600, color: brand.text2, width: "100%", marginBottom: 2 }}>
+            Descargas
+          </Text>
+          <Button
+            appearance="outline"
+            onClick={onDownloadPng}
+            disabled={!canQr || !hasPreview || busy}
+          >
+            Descargar PNG
+          </Button>
+          <Button
+            appearance="primary"
+            onClick={onDownloadZpl}
+            disabled={!canQr || !createResp || busy}
+          >
+            {busy ? "Descargando…" : "Descargar Zebra (.zpl)"}
+          </Button>
+        </div>
+
+        {hasPreview ? (
+          <div style={{ color: brand.successFg, fontSize: 13, background: brand.successBg, padding: "10px 12px", borderRadius: 8 }}>
+            Etiqueta registrada correctamente.
+          </div>
+        ) : null}
       </AppCard>
     </div>
   );

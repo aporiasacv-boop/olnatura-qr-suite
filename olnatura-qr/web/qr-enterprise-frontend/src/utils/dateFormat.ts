@@ -5,7 +5,21 @@
  * All dates shown to users must use this format.
  */
 
-const DDMMYYYY_REGEX = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+/** d/M/yy, dd/MM/yy, d/MM/yyyy, dd/M/yyyy, dd/MM/yyyy */
+const FLEX_DMY_REGEX = /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/;
+
+function parseFlexibleDMY(trimmed: string): { d: number; m: number; y: number } | null {
+  const m = trimmed.match(FLEX_DMY_REGEX);
+  if (!m) return null;
+  const day = parseInt(m[1]!, 10);
+  const month = parseInt(m[2]!, 10);
+  let year = parseInt(m[3]!, 10);
+  if (m[3]!.length === 2) year = 2000 + year;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return { d: day, m: month, y: year };
+}
 
 /**
  * Format any date string (YYYY-MM-DD or DD/MM/YYYY) to DD/MM/YYYY for display
@@ -23,39 +37,32 @@ export function formatDateDDMMYYYY(isoOrLocal: string | null | undefined): strin
 }
 
 /**
- * Parse DD/MM/YYYY to ISO string (YYYY-MM-DD) for API
+ * Parse flexible d/M/y forms to ISO string (YYYY-MM-DD) for API.
+ * Accepts: d/M/yy, dd/MM/yy, d/MM/yyyy, dd/M/yyyy, dd/MM/yyyy (yy → 20yy).
  */
 export function parseDDMMYYYYToISO(input: string | null | undefined): string {
   if (!input || typeof input !== "string") return "";
-  const m = input.trim().match(DDMMYYYY_REGEX);
-  if (!m) return "";
-  const [, d, mo, y] = m;
-  const day = parseInt(d!, 10);
-  const month = parseInt(mo!, 10);
-  const year = parseInt(y!, 10);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return "";
-  const date = new Date(year, month - 1, day);
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day)
-    return "";
-  return date.toISOString().slice(0, 10);
+  const r = parseFlexibleDMY(input.trim());
+  if (!r) return "";
+  const y = r.y;
+  const mo = String(r.m).padStart(2, "0");
+  const d = String(r.d).padStart(2, "0");
+  return `${y}-${mo}-${d}`;
 }
 
 /**
- * Parse YYYY-MM-DD or DD/MM/YYYY to Date
+ * Parse YYYY-MM-DD or slash-separated d/M/y to Date
  */
 function parseToDate(s: string): Date | null {
   const iso = /^\d{4}-\d{2}-\d{2}/.test(s);
   if (iso) return new Date(s);
-  const m = s.match(DDMMYYYY_REGEX);
-  if (m) {
-    const [, d, mo, y] = m;
-    return new Date(parseInt(y!, 10), parseInt(mo!, 10) - 1, parseInt(d!, 10));
-  }
+  const r = parseFlexibleDMY(s.trim());
+  if (r) return new Date(r.y, r.m - 1, r.d);
   return new Date(s);
 }
 
 /**
- * Validate DD/MM/YYYY format
+ * Validate date input (flexible forms accepted)
  */
 export function isValidDDMMYYYY(input: string | null | undefined): boolean {
   if (!input || typeof input !== "string") return false;
