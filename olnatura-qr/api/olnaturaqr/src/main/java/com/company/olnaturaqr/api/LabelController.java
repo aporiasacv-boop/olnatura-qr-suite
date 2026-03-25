@@ -6,6 +6,7 @@ import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
+import com.company.olnaturaqr.support.util.SpanishFlexibleDateParser;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -30,6 +32,9 @@ public class LabelController {
 
     /** Microsoft Dynamics format: DD/MM/YYYY */
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT);
+
+    /** CP850 + ^CI15: Zebra GK420t multilingual (acentos español); UTF-8/Latin-1 solían verse mal */
+    private static final Charset ZPL_OUT_CHARSET = Charset.forName("IBM850");
 
     private final QrLabelRepository repo;
     private final AuditService auditService;
@@ -49,7 +54,7 @@ public class LabelController {
         if (isBlank(req.tipoMaterial()) || isBlank(req.nombre()) || isBlank(req.codigo()) || isBlank(req.lote())) {
             throw new ResponseStatusException(BAD_REQUEST, "Campos requeridos: tipoMaterial, nombre, codigo, lote");
         }
-        if (req.fechaEntrada() == null) {
+        if (req.fechaEntrada() == null || req.fechaEntrada().isBlank()) {
             throw new ResponseStatusException(BAD_REQUEST, "fechaEntrada es requerida");
         }
         if (req.envaseNum() <= 0 || req.envaseTotal() <= 0) {
@@ -67,11 +72,13 @@ public class LabelController {
         q.setNombre(req.nombre().trim());
         q.setCodigo(req.codigo().trim());
         q.setLote(lote);
-        q.setFechaEntrada(req.fechaEntrada());
-        q.setCaducidad(req.caducidad());
-        q.setReanalisis(req.reanalisis());
+        q.setFechaEntrada(SpanishFlexibleDateParser.parseRequired(req.fechaEntrada(), "fechaEntrada"));
+        q.setCaducidad(SpanishFlexibleDateParser.parseOptional(req.caducidad()));
+        q.setReanalisis(SpanishFlexibleDateParser.parseOptional(req.reanalisis()));
         q.setEnvaseNum(req.envaseNum());
         q.setEnvaseTotal(req.envaseTotal());
+        String cpe = req.cantidadPorEnvase() != null ? req.cantidadPorEnvase().trim() : "";
+        q.setCantidadPorEnvase(cpe.isEmpty() ? null : cpe);
         q.setDocumentCode(
                 req.documentCode() != null && !req.documentCode().isBlank() ? req.documentCode().trim() : null);
 
@@ -208,7 +215,7 @@ public class LabelController {
         return ResponseEntity
                 .ok()
                 .headers(headers)
-                .contentType(new MediaType("text", "plain", StandardCharsets.ISO_8859_1))
+                .contentType(new MediaType("text", "plain", ZPL_OUT_CHARSET))
                 .body(zplAll.toString());
     }
 
@@ -268,7 +275,7 @@ public class LabelController {
         return ResponseEntity
                 .ok()
                 .headers(headers)
-                .contentType(new MediaType("text", "plain", StandardCharsets.ISO_8859_1))
+                .contentType(new MediaType("text", "plain", ZPL_OUT_CHARSET))
                 .body(zplAll.toString());
     }
 
@@ -285,10 +292,13 @@ public class LabelController {
         String fechaStr = formatDate(q.getFechaEntrada());
         String caducidadStr = formatDate(q.getCaducidad());
         String reanalisisStr = q.getReanalisis() != null ? formatDate(q.getReanalisis()) : "N/A";
-        String cantidadStr = dynamics.fetchByLote(lote)
-                .map(d -> String.format("%.0f", d.cantidad()).replace(".0", "") +
-                        (d.uom() != null && !d.uom().isBlank() ? " " + d.uom().trim() : ""))
-                .orElse("N/A");
+        String manualQty = safe(q.getCantidadPorEnvase());
+        String cantidadStr = !manualQty.isEmpty()
+                ? manualQty
+                : dynamics.fetchByLote(lote)
+                        .map(d -> String.format("%.0f", d.cantidad()).replace(".0", "") +
+                                (d.uom() != null && !d.uom().isBlank() ? " " + d.uom().trim() : ""))
+                        .orElse("N/A");
         String documentCode = orEmpty(q.getDocumentCode(), "AL-001-E02/04");
 
         String envaseDisplay = String.format("%02d", envaseNum) + " de " + String.format("%02d", envaseTotal);
@@ -296,7 +306,7 @@ public class LabelController {
         return "^XA\n" +
                 "^PW800\n" +
                 "^LL600\n" +
-                "^CI13\n" +
+                "^CI15\n" +
                 "\n" +
                 "^FO8,8^GB790,590,9^FS\n" +
                 "\n" +

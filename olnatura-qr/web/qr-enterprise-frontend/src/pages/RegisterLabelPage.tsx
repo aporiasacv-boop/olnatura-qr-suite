@@ -6,7 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import { api, ApiError } from "../api/client";
 import { downloadLabelZplFile } from "../utils/downloadLabelZpl";
 import { generateQrPlain } from "../utils/qrWithLogo";
-import { parseDDMMYYYYToISO, isValidDDMMYYYY } from "../utils/dateFormat";
+import { isValidDDMMYYYY } from "../utils/dateFormat";
 import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
 import LabelPreview from "../components/label/LabelPreview";
 import type { FechaTipo } from "../utils/labelToPng";
@@ -23,6 +23,7 @@ type FormState = {
   fechaValor: string;
   envaseNum: string;
   envaseTotal: string;
+  cantidadPorEnvase: string;
 };
 
 type CreateResponse = {
@@ -52,6 +53,7 @@ export default function RegisterLabelPage() {
     fechaValor: "",
     envaseNum: "",
     envaseTotal: "",
+    cantidadPorEnvase: "",
   });
 
   const [busy, setBusy] = useState(false);
@@ -90,34 +92,34 @@ export default function RegisterLabelPage() {
       setErr("Envase Num/Total deben ser > 0 y Envase Num ≤ Cantidad total.");
       return;
     }
-
-    const fechaEntradaIso = parseDDMMYYYYToISO(form.fechaEntrada);
-    if (!fechaEntradaIso) {
-      setErr("Formato de fecha inválido. Usa DD/MM/YYYY.");
+    if (form.fechaTipo === "CADUCIDAD" && form.fechaValor.trim() && !isValidDDMMYYYY(form.fechaValor)) {
+      setErr("Caducidad: revisa la fecha (puedes usar p. ej. 10/6/26 o 10/06/2026).");
+      return;
+    }
+    if (form.fechaTipo === "REANALISIS" && form.fechaValor.trim() && !isValidDDMMYYYY(form.fechaValor)) {
+      setErr("Reanálisis: revisa la fecha.");
       return;
     }
 
-    const fechaValorIso =
-      form.fechaValor.trim() && isValidDDMMYYYY(form.fechaValor)
-        ? parseDDMMYYYYToISO(form.fechaValor)
-        : null;
-
     try {
       setBusy(true);
+      const fv = form.fechaValor.trim();
       const caducidad =
-        form.fechaTipo === "CADUCIDAD" && fechaValorIso ? fechaValorIso : null;
+        form.fechaTipo === "CADUCIDAD" && fv.length > 0 ? fv : null;
       const reanalisis =
-        form.fechaTipo === "REANALISIS" && fechaValorIso ? fechaValorIso : null;
+        form.fechaTipo === "REANALISIS" && fv.length > 0 ? fv : null;
+      const cpe = form.cantidadPorEnvase.trim();
       const body = {
         tipoMaterial: form.tipoMaterial.trim() || "MP",
         nombre: form.nombre.trim() || form.lote.trim(),
         codigo: form.codigo.trim() || form.lote.trim(),
         lote: form.lote.trim(),
-        fechaEntrada: fechaEntradaIso,
+        fechaEntrada: form.fechaEntrada.trim(),
         caducidad,
         reanalisis,
         envaseNum,
         envaseTotal,
+        cantidadPorEnvase: cpe.length > 0 ? cpe : null,
       };
       const res = await api<CreateResponse>("/label", { method: "POST", body });
       setCreateResp(res);
@@ -261,6 +263,13 @@ export default function RegisterLabelPage() {
           onChange={(v) => setForm((s) => ({ ...s, envaseTotal: v }))}
           hint="Total de contenedores"
         />
+        <Field
+          label="Cantidad por envase"
+          placeholder="Ej. 25 kg o 1000"
+          value={form.cantidadPorEnvase}
+          onChange={(v) => setForm((s) => ({ ...s, cantidadPorEnvase: v }))}
+          hint="Opcional. Si la dejas vacía, en impresión se usará el dato de Dynamics cuando exista."
+        />
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
           <Button
@@ -348,7 +357,7 @@ export default function RegisterLabelPage() {
                     fecha={form.fechaEntrada}
                     caducidad={caducidadDisplay}
                     reanalisis={reanalisisDisplay}
-                    cantidad="N/A"
+                    cantidad={form.cantidadPorEnvase.trim() || "N/A"}
                     envaseNum={form.envaseNum || "—"}
                     envaseTotal={form.envaseTotal || "—"}
                     qrData={qrDataUrl}

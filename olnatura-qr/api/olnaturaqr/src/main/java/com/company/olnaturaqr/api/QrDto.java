@@ -21,7 +21,8 @@ public class QrDto {
             LocalDate caducidad,
             LocalDate reanalisis,
             int envaseNum,
-            int envaseTotal
+            int envaseTotal,
+            String cantidadPorEnvase
     ) {}
 
     public record Dynamic(

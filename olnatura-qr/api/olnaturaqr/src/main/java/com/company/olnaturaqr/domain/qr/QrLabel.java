@@ -43,6 +43,9 @@ public class QrLabel {
     @Column(name = "envase_total", nullable = false)
     private int envaseTotal;
 
+    @Column(name = "cantidad_por_envase", length = 120)
+    private String cantidadPorEnvase;
+
     @Column(name = "status_dinamico", nullable = false, length = 40)
     private String statusDinamico;
 
@@ -83,6 +86,9 @@ public class QrLabel {
 
     public int getEnvaseTotal() { return envaseTotal; }
     public void setEnvaseTotal(int envaseTotal) { this.envaseTotal = envaseTotal; }
+
+    public String getCantidadPorEnvase() { return cantidadPorEnvase; }
+    public void setCantidadPorEnvase(String cantidadPorEnvase) { this.cantidadPorEnvase = cantidadPorEnvase; }
 
     public String getStatusDinamico() { return statusDinamico; }
     public void setStatusDinamico(String statusDinamico) { this.statusDinamico = statusDinamico; }

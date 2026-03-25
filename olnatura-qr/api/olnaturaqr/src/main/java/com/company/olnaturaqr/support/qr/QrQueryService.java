@@ -54,7 +54,8 @@ public class QrQueryService {
                 label.getCaducidad(),
                 label.getReanalisis(),
                 label.getEnvaseNum(),
-                label.getEnvaseTotal()
+                label.getEnvaseTotal(),
+                label.getCantidadPorEnvase()
         );
 
         String statusOverride = normalizeStatus(label.getStatusDinamico());

@@ -13,12 +13,13 @@ public class LabelDto {
             String nombre,
             String codigo,
             String lote,
-            LocalDate fechaEntrada,
-            LocalDate caducidad,
-            LocalDate reanalisis,
+            String fechaEntrada,
+            String caducidad,
+            String reanalisis,
             int envaseNum,
             int envaseTotal,
-            String documentCode
+            String documentCode,
+            String cantidadPorEnvase
     ) {}
 
     public record LabelView(
@@ -33,6 +34,7 @@ public class LabelDto {
             LocalDate reanalisis,
             int envaseNum,
             int envaseTotal,
+            String cantidadPorEnvase,
             String statusDinamico,
             String documentCode,
             Instant createdAt
@@ -50,6 +52,7 @@ public class LabelDto {
                     q.getReanalisis(),
                     q.getEnvaseNum(),
                     q.getEnvaseTotal(),
+                    q.getCantidadPorEnvase(),
                     q.getStatusDinamico(),
                     q.getDocumentCode(),
                     q.getCreatedAt()

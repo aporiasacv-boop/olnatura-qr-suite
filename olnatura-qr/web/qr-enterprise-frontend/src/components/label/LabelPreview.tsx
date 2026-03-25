@@ -82,13 +82,15 @@ export default function LabelPreview({
         overflow: "hidden",
         display: "grid",
         gridTemplateColumns: "520px 280px",
-        gridTemplateRows: "90px 85px 130px 155px 90px 50px",
+        /* Fila 5 ampliada: números grandes necesitan ~115px; antes 90px desbordaban sobre Caducidad */
+        gridTemplateRows: "90px 85px 130px 125px 120px 50px",
       }}
     >
       {/* HEADER: logo esquina + titulo */}
       <div
         style={{
           gridColumn: "1 / 3",
+          gridRow: 1,
           borderBottom: BORDER,
           display: "flex",
           alignItems: "stretch",
@@ -129,7 +131,7 @@ export default function LabelPreview({
         </div>
       </div>
 
-      {/* QR */}
+      {/* QR: filas 2–4 (línea 5 = inicio pie, sin solaparse) */}
       <div
         style={{
           gridColumn: "2 / 3",
@@ -177,9 +179,11 @@ export default function LabelPreview({
       <div
         style={{
           gridColumn: "1 / 2",
+          gridRow: 2,
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",
           borderBottom: BORDER,
+          minHeight: 0,
         }}
       >
         <div
@@ -219,13 +223,16 @@ export default function LabelPreview({
       <div
         style={{
           gridColumn: "1 / 2",
+          gridRow: 3,
           borderBottom: BORDER,
-          padding: "14px 16px",
+          padding: "12px 16px",
           boxSizing: "border-box",
           display: "grid",
           gridTemplateColumns: "180px 1fr",
-          rowGap: 18,
+          rowGap: 14,
           alignContent: "start",
+          minHeight: 0,
+          overflow: "hidden",
         }}
       >
         <div style={{ fontSize: 20, fontWeight: 700 }}>Caducidad:</div>
@@ -238,52 +245,62 @@ export default function LabelPreview({
         <div style={{ fontSize: 24, fontWeight: 700 }}>{cantidadStr}</div>
       </div>
 
-      {/* FOOTER */}
+      {/* FOOTER: columna título + fila de valores (sin baseline que suba los números) */}
       <div
         style={{
           gridColumn: "1 / 3",
+          gridRow: 5,
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
+          minHeight: 0,
+          overflow: "hidden",
         }}
       >
         <div
           style={{
             borderRight: BORDER,
-            padding: "10px 14px",
+            padding: "8px 14px 10px",
             boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-start",
+            gap: 10,
+            minHeight: 0,
           }}
         >
-          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 18 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, flexShrink: 0 }}>
             No. de envases
           </div>
-
           <div
             style={{
               display: "flex",
-              alignItems: "baseline",
+              alignItems: "center",
               gap: 12,
+              flexShrink: 0,
+              lineHeight: 1,
             }}
           >
-            <span style={{ fontSize: 50, fontWeight: 700 }}>
-              {envaseNumStr}
-            </span>
-            <span style={{ fontSize: 24, fontWeight: 700 }}>de</span>
-            <span style={{ fontSize: 50, fontWeight: 700 }}>
-              {envaseTotalStr}
-            </span>
+            <span style={{ fontSize: 46, fontWeight: 700, lineHeight: 1 }}>{envaseNumStr}</span>
+            <span style={{ fontSize: 22, fontWeight: 700, lineHeight: 1 }}>de</span>
+            <span style={{ fontSize: 46, fontWeight: 700, lineHeight: 1 }}>{envaseTotalStr}</span>
           </div>
         </div>
 
         <div
           style={{
-            padding: "10px 14px",
+            padding: "8px 14px 10px",
             boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-start",
+            gap: 10,
+            minHeight: 0,
           }}
         >
-          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 18 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, flexShrink: 0 }}>
             Cantidad total
           </div>
-          <div style={{ fontSize: 56, fontWeight: 700 }}>
+          <div style={{ fontSize: 52, fontWeight: 700, lineHeight: 1, flexShrink: 0 }}>
             {envaseTotalStr}
           </div>
         </div>
@@ -293,11 +310,14 @@ export default function LabelPreview({
       <div
         style={{
           gridColumn: "1 / 3",
+          gridRow: 6,
           borderTop: BORDER,
           padding: "10px 14px",
           fontSize: 12,
           lineHeight: 1.4,
           boxSizing: "border-box",
+          minHeight: 0,
+          overflow: "hidden",
         }}
       >
         {documentCode} {FOOTER_COMPLIANCE}

@@ -39,6 +39,7 @@ export default function GenerateQrPage() {
   const previewRef = useRef<HTMLDivElement>(null);
   const [lote, setLote] = useState("");
   const [labelData, setLabelData] = useState<QrResponse["label"] | null>(null);
+  const [dynamicData, setDynamicData] = useState<QrResponse["dynamic"] | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +60,7 @@ export default function GenerateQrPage() {
     setError(null);
     setQrDataUrl(null);
     setLabelData(null);
+    setDynamicData(null);
 
     try {
       const qrResponse = await api<QrResponse>(`/qr/${encodeURIComponent(v)}`, { toast: false });
@@ -70,6 +72,7 @@ export default function GenerateQrPage() {
       }
 
       setLabelData(label);
+      setDynamicData(qrResponse?.dynamic ?? null);
 
       const payload = label.publicToken
         ? `OLNQR:1:${label.publicToken}`
@@ -175,7 +178,14 @@ export default function GenerateQrPage() {
                         ? ((labelData as any).fechaValor ?? labelData.reanalisis ?? "")
                         : ""
                     }
-                    cantidad="N/A"
+                    cantidad={(() => {
+                      const manual = String((labelData as { cantidadPorEnvase?: string })?.cantidadPorEnvase ?? "").trim();
+                      if (manual) return manual;
+                      const d = dynamicData as { cantidad?: number | null; uom?: string | null } | null;
+                      if (d != null && d.cantidad != null && typeof d.cantidad === "number")
+                        return `${d.cantidad}${d.uom && String(d.uom).trim() ? " " + String(d.uom).trim() : ""}`;
+                      return "N/A";
+                    })()}
                     envaseNum={labelData.envaseNum ?? "—"}
                     envaseTotal={labelData.envaseTotal ?? "—"}
                     qrData={qrDataUrl}
