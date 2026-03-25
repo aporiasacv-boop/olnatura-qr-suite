@@ -16,8 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -32,8 +30,6 @@ import static org.springframework.http.HttpStatus.*;
 @RestController
 @RequestMapping("/api/v1/label")
 public class LabelController {
-
-    private static final Logger log = LoggerFactory.getLogger(LabelController.class);
 
     /** Microsoft Dynamics format: DD/MM/YYYY */
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT);
@@ -221,7 +217,6 @@ public class LabelController {
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
 
         String zplText = zplAll.toString();
-        logZplPreOutputDiagnostics(q, zplText);
         byte[] zplBytes = zplText.getBytes(ZPL_OUT_CHARSET);
         return ResponseEntity
                 .ok()
@@ -284,36 +279,12 @@ public class LabelController {
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
 
         String zplText = zplAll.toString();
-        logZplPreOutputDiagnostics(q, zplText);
         byte[] zplBytes = zplText.getBytes(ZPL_OUT_CHARSET);
         return ResponseEntity
                 .ok()
                 .headers(headers)
                 .contentType(new MediaType("text", "plain", ZPL_OUT_CHARSET))
                 .body(zplBytes);
-    }
-
-    /**
-     * Diagnóstico temporal: confirma si U+FFFD () ya está en el String JVM antes de codificar a bytes.
-     * Quitar cuando el origen de corrupción esté localizado.
-     */
-    private static void logZplPreOutputDiagnostics(QrLabel q, String zplText) {
-        String nombre = q.getNombre();
-        String literalCodigo = "Código";
-        String literalReanalisis = "Reanálisis";
-        String footerConAcentos = "divulgación y/o reproducción total o parcial. "
-                + "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACIÓN.";
-        log.warn("[ZPL-DIAG] q.getNombre()={} hasU+FFFD={}", nombre, containsReplacementChar(nombre));
-        log.warn("[ZPL-DIAG] literal Código={} hasU+FFFD={}", literalCodigo, containsReplacementChar(literalCodigo));
-        log.warn("[ZPL-DIAG] literal Reanálisis={} hasU+FFFD={}", literalReanalisis,
-                containsReplacementChar(literalReanalisis));
-        log.warn("[ZPL-DIAG] footer(acentos) hasU+FFFD={} snippet={}", containsReplacementChar(footerConAcentos),
-                footerConAcentos);
-        log.warn("[ZPL-DIAG] zplText hasU+FFFD={} length={}", containsReplacementChar(zplText), zplText.length());
-    }
-
-    private static boolean containsReplacementChar(String s) {
-        return s != null && s.indexOf('\uFFFD') >= 0;
     }
 
     private String loteSafe(String lote) {
@@ -323,7 +294,6 @@ public class LabelController {
     private String buildSingleZpl(QrLabel q, int envaseNum, int envaseTotal, String qrImageBase64) {
         String lote = q.getLote();
         String qrPayload = "OLNQR:1:" + safe(q.getPublicToken());
-        String tipoMaterial = orEmpty(q.getTipoMaterial(), "MATERIAL DE ACONDICIONADO");
         String nombre = safe(q.getNombre());
         String codigo = safe(q.getCodigo());
         String fechaStr = formatDate(q.getFechaEntrada());
@@ -369,33 +339,33 @@ public class LabelController {
                 "^FO25,25\n^GFA,1080,1080,12,0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001C00000000000000000000000FC000000000000000003FFE07F80000000000000001FFFFC7FE0000000000000007FFFFC3FF800000000000001FFFFFE3FFE00000000000007FFFFFE3FFF8000000000000FFFFFFE1FFFC000000000001FFFFFFF1FFFE000000000003FFFFFFF1FFFF000000000007FFE003F1FFFF80000000000FFF000070FFFF80000000001FFE000018FFFFC0000000003FF8000008FFFFE0000000003FF00000007FFFE0000000007FE00000007FFFE0000000007FC00000003FFFF000000000FFC00000001FFFF000000000FF800000001FFFF000000000FF8000000007FFF000000001FF0000000003FFF000000001FF0000000020FFF000000001FF00000000101FF000000001FF000000001C01C000000001FE000000001F000000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000003FE00000000000FF800000003FC00000000000FF800000007FC00000000000FFC00000007FC000000000007FC0000000FFC000000000007FE0000000FF8000000000003FF0000001FF8000000000003FF8000003FF0000000000001FFC000007FF0000000000001FFF00001FFE0000000000000FFF80007FFC00000000000007FFF001FFFC00000000000003FFFFFFFFF800000000000001FFFFFFFFF000000000000000FFFFFFFFE0000000000000007FFFFFFF80000000000000001FFFFFFF000000000000000007FFFFFC000000000000000001FFFFE00000000000000000001FFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000^FS\n"
                 +
                 "\n" +
-                "^FO125,36^ADN,18,10^FDMATERIAL DE ACONDICIONADO^FS\n" +
-                "^FO130,86^ADN,18,10^FD" + escapeZpl(nombre) + "^FS\n" +
+                "^FO125,36^ADN,18,10" + fdField("MATERIAL DE ACONDICIONADO") + "\n" +
+                "^FO130,86^ADN,18,10" + fdField(nombre) + "\n" +
                 "\n" +
-                "^FO28,128^ADN,14,8^FDFecha^FS\n" +
-                "^FO28,150^ADN,18,10^FD" + escapeZpl(fechaStr) + "^FS\n" +
-                "^FO158,128^ADN,14,8^FDCódigo^FS\n" +
-                "^FO158,150^ADN,18,10^FD" + escapeZpl(codigo) + "^FS\n" +
-                "^FO388,128^ADN,14,8^FDLote^FS\n" +
-                "^FO388,150^ADN,18,10^FD" + escapeZpl(lote) + "^FS\n" +
+                "^FO28,128^ADN,14,8" + fdField("Fecha") + "\n" +
+                "^FO28,150^ADN,18,10" + fdField(fechaStr) + "\n" +
+                "^FO158,128^ADN,14,8" + fdField("Código") + "\n" +
+                "^FO158,150^ADN,18,10" + fdField(codigo) + "\n" +
+                "^FO388,128^ADN,14,8" + fdField("Lote") + "\n" +
+                "^FO388,150^ADN,18,10" + fdField(lote) + "\n" +
                 "\n" +
-                "^FO28,195^ADN,14,8^FDCaducidad^FS\n" +
-                "^FO28,219^ADN,18,10^FD" + escapeZpl(caducidadStr) + "^FS\n" +
-                "^FO28,265^ADN,14,8^FDReanálisis^FS\n" +
-                "^FO28,289^ADN,18,10^FD" + escapeZpl(reanalisisStr) + "^FS\n" +
-                "^FO28,335^ADN,14,8^FDCantidad por envase^FS\n" +
-                "^FO28,359^ADN,18,10^FD" + escapeZpl(cantidadStr) + "^FS\n" +
+                "^FO28,195^ADN,14,8" + fdField("Caducidad") + "\n" +
+                "^FO28,219^ADN,18,10" + fdField(caducidadStr) + "\n" +
+                "^FO28,265^ADN,14,8" + fdField("Reanálisis") + "\n" +
+                "^FO28,289^ADN,18,10" + fdField(reanalisisStr) + "\n" +
+                "^FO28,335^ADN,14,8" + fdField("Cantidad por envase") + "\n" +
+                "^FO28,359^ADN,18,10" + fdField(cantidadStr) + "\n" +
                 "\n" +
                 qrBlock(qrImageBase64, qrPayload) + "\n" +
                 "\n" +
-                "^FO28,410^ADN,14,8^FDNo. de envases^FS\n" +
-                "^FO28,438^ADN,20,10^FD" + escapeZpl(envaseDisplay) + "^FS\n" +
-                "^FO208,410^ADN,14,8^FDCantidad total^FS\n" +
-                "^FO260,438^ADN,20,10^FD" + escapeZpl(String.valueOf(envaseTotal)) + "^FS\n" +
+                "^FO28,410^ADN,14,8" + fdField("No. de envases") + "\n" +
+                "^FO28,438^ADN,20,10" + fdField(envaseDisplay) + "\n" +
+                "^FO208,410^ADN,14,8" + fdField("Cantidad total") + "\n" +
+                "^FO260,438^ADN,20,10" + fdField(String.valueOf(envaseTotal)) + "\n" +
                 "\n" +
-                "^FO25,503^ADN,7,4^FB748,4,1,L,0^FD" + escapeZpl(documentCode) +
-                " Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgación y/o reproducción total o parcial. " +
-                "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACIÓN.^FS\n" +
+                "^FO25,503^ADN,7,4^FB748,4,1,L,0" + fdField(documentCode
+                        + " Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgación y/o reproducción total o parcial. "
+                        + "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACIÓN.") + "\n" +
                 "\n" +
                 "^XZ\n";
     }
@@ -431,12 +401,72 @@ public class LabelController {
         return "^FO455,190^BQN,2,8\n^FDQA," + qrPayload + "^FS";
     }
 
-    /** Escape ^ and \ to avoid breaking ZPL field commands */
-    private String escapeZpl(String s) {
-        if (s == null)
-            return "";
-        return s.replace("\\", " ").replace("^", " ");
+    /**
+     * Genera el bloque {@code ^FD...^FS} de forma segura para la impresora Zebra.
+     * <p>
+     * Requisitos:
+     * <ul>
+     *   <li>Conserva ASCII imprimible tal cual.</li>
+     *   <li>Convierte caracteres no ASCII (>= 0x80 en Latin-1) a escapes hex compatibles con {@code ^FH\}.
+     *       Ejemplo: {@code ó} (0xF3) => {@code \F3}.</li>
+     *   <li>Reemplaza {@code ^} y {@code \} literales por espacio para no romper comandos ZPL.</li>
+     * </ul>
+     */
+    private String fdField(String s) {
+        EncodedFd encoded = encodeFdFieldContent(s);
+        if (!encoded.needsHex) {
+            return "^FD" + encoded.content + "^FS";
+        }
+        // ^FH\ habilita que la impresora interprete \XX dentro del ^FD como bytes hexadecimales.
+        return "^FH\\^FD" + encoded.content + "^FS";
     }
+
+    private EncodedFd encodeFdFieldContent(String s) {
+        if (s == null) return new EncodedFd("", false);
+
+        boolean needsHex = false;
+        StringBuilder out = new StringBuilder(s.length() + 8);
+
+        for (int i = 0; i < s.length(); ) {
+            int cp = s.codePointAt(i);
+            i += Character.charCount(cp);
+
+            if (cp == '^' || cp == '\\') {
+                out.append(' ');
+                continue;
+            }
+
+            if (cp >= 0x20 && cp <= 0x7E) {
+                out.append((char) cp);
+                continue;
+            }
+
+            if (cp >= 0x80 && cp <= 0xFF) {
+                needsHex = true;
+                out.append('\\').append(hex2(cp));
+                continue;
+            }
+
+            // Caso conservador: caracteres fuera de Latin-1.
+            // Para no perder datos, los codificamos a bytes UTF-8 y los enviamos como escapes hex.
+            // Nota: la interpretación final depende de la configuración ^CI (actualmente ^CI13).
+            needsHex = true;
+            byte[] utf8 = new String(Character.toChars(cp)).getBytes(StandardCharsets.UTF_8);
+            for (byte b : utf8) {
+                out.append('\\').append(hex2(b));
+            }
+        }
+
+        return new EncodedFd(out.toString(), needsHex);
+    }
+
+    private static String hex2(int value) {
+        int v = value & 0xFF;
+        char[] HEX = "0123456789ABCDEF".toCharArray();
+        return "" + HEX[(v >> 4) & 0x0F] + HEX[v & 0x0F];
+    }
+
+    private record EncodedFd(String content, boolean needsHex) {}
 
     private static boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
