@@ -16,8 +16,11 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -30,11 +33,16 @@ import static org.springframework.http.HttpStatus.*;
 @RequestMapping("/api/v1/label")
 public class LabelController {
 
+    private static final Logger log = LoggerFactory.getLogger(LabelController.class);
+
     /** Microsoft Dynamics format: DD/MM/YYYY */
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT);
 
-    /** CP850 + ^CI15: Zebra GK420t multilingual (acentos español); UTF-8/Latin-1 solían verse mal */
-    private static final Charset ZPL_OUT_CHARSET = Charset.forName("IBM850");
+    /**
+     * ^CI13 = ISO 8859-1 (Latin-1), el juego correcto para español en Zebra.
+     * ^CI15 NO es CP850 en el manual ZPL (p.ej. Latin-5); por eso á salía como símbolos sueltos.
+     */
+    private static final Charset ZPL_OUT_CHARSET = StandardCharsets.ISO_8859_1;
 
     private final QrLabelRepository repo;
     private final AuditService auditService;
@@ -169,7 +177,7 @@ public class LabelController {
 
     @PreAuthorize("hasAnyRole('ADMIN','ALMACEN')")
     @GetMapping("/{id}/zpl")
-    public ResponseEntity<String> downloadZpl(
+    public ResponseEntity<byte[]> downloadZpl(
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable String id,
             @RequestParam(required = false) Integer total,
@@ -212,11 +220,14 @@ public class LabelController {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
 
+        String zplText = zplAll.toString();
+        logZplPreOutputDiagnostics(q, zplText);
+        byte[] zplBytes = zplText.getBytes(ZPL_OUT_CHARSET);
         return ResponseEntity
                 .ok()
                 .headers(headers)
                 .contentType(new MediaType("text", "plain", ZPL_OUT_CHARSET))
-                .body(zplAll.toString());
+                .body(zplBytes);
     }
 
     /**
@@ -224,7 +235,7 @@ public class LabelController {
      */
     @PreAuthorize("hasAnyRole('ADMIN','ALMACEN')")
     @PostMapping(value = "/{id}/zpl", consumes = "application/json")
-    public ResponseEntity<String> downloadZplWithGraphic(
+    public ResponseEntity<byte[]> downloadZplWithGraphic(
             @AuthenticationPrincipal AuthPrincipal principal,
             @PathVariable String id,
             @RequestBody(required = false) LabelDto.ZplRequest req) {
@@ -272,11 +283,37 @@ public class LabelController {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
 
+        String zplText = zplAll.toString();
+        logZplPreOutputDiagnostics(q, zplText);
+        byte[] zplBytes = zplText.getBytes(ZPL_OUT_CHARSET);
         return ResponseEntity
                 .ok()
                 .headers(headers)
                 .contentType(new MediaType("text", "plain", ZPL_OUT_CHARSET))
-                .body(zplAll.toString());
+                .body(zplBytes);
+    }
+
+    /**
+     * Diagnóstico temporal: confirma si U+FFFD () ya está en el String JVM antes de codificar a bytes.
+     * Quitar cuando el origen de corrupción esté localizado.
+     */
+    private static void logZplPreOutputDiagnostics(QrLabel q, String zplText) {
+        String nombre = q.getNombre();
+        String literalCodigo = "Código";
+        String literalReanalisis = "Reanálisis";
+        String footerConAcentos = "divulgación y/o reproducción total o parcial. "
+                + "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACIÓN.";
+        log.warn("[ZPL-DIAG] q.getNombre()={} hasU+FFFD={}", nombre, containsReplacementChar(nombre));
+        log.warn("[ZPL-DIAG] literal Código={} hasU+FFFD={}", literalCodigo, containsReplacementChar(literalCodigo));
+        log.warn("[ZPL-DIAG] literal Reanálisis={} hasU+FFFD={}", literalReanalisis,
+                containsReplacementChar(literalReanalisis));
+        log.warn("[ZPL-DIAG] footer(acentos) hasU+FFFD={} snippet={}", containsReplacementChar(footerConAcentos),
+                footerConAcentos);
+        log.warn("[ZPL-DIAG] zplText hasU+FFFD={} length={}", containsReplacementChar(zplText), zplText.length());
+    }
+
+    private static boolean containsReplacementChar(String s) {
+        return s != null && s.indexOf('\uFFFD') >= 0;
     }
 
     private String loteSafe(String lote) {
@@ -306,7 +343,7 @@ public class LabelController {
         return "^XA\n" +
                 "^PW800\n" +
                 "^LL600\n" +
-                "^CI15\n" +
+                "^CI13\n" +
                 "\n" +
                 "^FO8,8^GB790,590,9^FS\n" +
                 "\n" +
@@ -337,14 +374,14 @@ public class LabelController {
                 "\n" +
                 "^FO28,128^ADN,14,8^FDFecha^FS\n" +
                 "^FO28,150^ADN,18,10^FD" + escapeZpl(fechaStr) + "^FS\n" +
-                "^FO158,128^ADN,14,8^FDCodigo^FS\n" +
+                "^FO158,128^ADN,14,8^FDCódigo^FS\n" +
                 "^FO158,150^ADN,18,10^FD" + escapeZpl(codigo) + "^FS\n" +
                 "^FO388,128^ADN,14,8^FDLote^FS\n" +
                 "^FO388,150^ADN,18,10^FD" + escapeZpl(lote) + "^FS\n" +
                 "\n" +
                 "^FO28,195^ADN,14,8^FDCaducidad^FS\n" +
                 "^FO28,219^ADN,18,10^FD" + escapeZpl(caducidadStr) + "^FS\n" +
-                "^FO28,265^ADN,14,8^FDReanalisis^FS\n" +
+                "^FO28,265^ADN,14,8^FDReanálisis^FS\n" +
                 "^FO28,289^ADN,18,10^FD" + escapeZpl(reanalisisStr) + "^FS\n" +
                 "^FO28,335^ADN,14,8^FDCantidad por envase^FS\n" +
                 "^FO28,359^ADN,18,10^FD" + escapeZpl(cantidadStr) + "^FS\n" +
@@ -357,8 +394,8 @@ public class LabelController {
                 "^FO260,438^ADN,20,10^FD" + escapeZpl(String.valueOf(envaseTotal)) + "^FS\n" +
                 "\n" +
                 "^FO25,503^ADN,7,4^FB748,4,1,L,0^FD" + escapeZpl(documentCode) +
-                " Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgacion y/o reproduccion total o parcial. " +
-                "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACION.^FS\n" +
+                " Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgación y/o reproducción total o parcial. " +
+                "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACIÓN.^FS\n" +
                 "\n" +
                 "^XZ\n";
     }
