@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { makeStyles, shorthands, Text } from "@fluentui/react-components";
 import { useAuth } from "../../auth/AuthContext";
@@ -10,17 +9,36 @@ const useStyles = makeStyles({
     height: "100%",
     display: "flex",
     flexDirection: "column",
-    backgroundColor: brand.background,
+    backgroundColor: brand.surface,
   },
   header: {
+<<<<<<< HEAD
     ...shorthands.padding("18px", "16px"),
     borderBottom: `1px solid ${brand.border}`,
+=======
+    ...shorthands.padding("20px", "16px"),
+    borderBottom: `1px solid ${brand.border}`,
   },
-  logoRow: { display: "flex", gap: "10px", alignItems: "center" },
-  logo: { width: "28px", height: "28px", objectFit: "contain" },
-  title: { fontWeight: 600, color: brand.text },
-  subtitle: { color: brand.muted, fontSize: "12px" },
-
+  logoRow: {
+    display: "flex",
+    gap: "10px",
+    alignItems: "center",
+  },
+  logo: {
+    width: "28px",
+    height: "28px",
+    objectFit: "contain",
+  },
+  title: {
+    fontWeight: 600,
+    fontSize: "16px",
+    color: brand.text,
+  },
+  subtitle: {
+    color: brand.muted,
+    fontSize: "12px",
+>>>>>>> origin/cleanup/repo-sanitize
+  },
   nav: {
     display: "flex",
     flexDirection: "column",
@@ -28,51 +46,71 @@ const useStyles = makeStyles({
     rowGap: "2px",
   },
   sectionLabel: {
-    marginTop: "10px",
-    marginBottom: "4px",
+    marginTop: "16px",
+    marginBottom: "6px",
     paddingInline: "12px",
     color: brand.muted,
     fontSize: "11px",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
+    fontWeight: 500,
   },
-
   link: {
     display: "flex",
     alignItems: "center",
     gap: "10px",
     ...shorthands.padding("10px", "12px"),
-    ...shorthands.borderRadius("10px"),
+    borderRadius: "8px",
     color: brand.text,
     textDecorationLine: "none",
+<<<<<<< HEAD
     ...shorthands.border("1px", "solid", "transparent"),
+=======
+    fontSize: "14px",
+    transition: "background-color 0.2s ease, color 0.2s ease",
+>>>>>>> origin/cleanup/repo-sanitize
   },
-
   linkHover: {
     ":hover": {
+<<<<<<< HEAD
       backgroundColor: brand.surface,
       border: `1px solid ${brand.border}`,
+=======
+      backgroundColor: brand.background,
+>>>>>>> origin/cleanup/repo-sanitize
     },
   },
-
   active: {
+<<<<<<< HEAD
     backgroundColor: brand.soft,
     border: `1px solid ${brand.accent}`,
+=======
+    backgroundColor: brand.primarySoft,
+    color: brand.text,
+    fontWeight: 500,
+>>>>>>> origin/cleanup/repo-sanitize
   },
-
   footer: {
     marginTop: "auto",
+<<<<<<< HEAD
     ...shorthands.padding("14px", "16px"),
     borderTop: `1px solid ${brand.border}`,
+=======
+    ...shorthands.padding("16px"),
+    borderTop: `1px solid ${brand.border}`,
   },
-  small: { color: brand.muted, fontSize: "12px" },
+  small: {
+    color: brand.muted,
+    fontSize: "12px",
+>>>>>>> origin/cleanup/repo-sanitize
+  },
 });
 
 export default function Sidebar() {
   const s = useStyles();
   const { state, can, hasRole } = useAuth();
-
   const userLabel = state.status === "authenticated" ? `${state.user.username}` : "—";
+
   return (
     <div className={s.root}>
       <div className={s.header}>
@@ -90,13 +128,11 @@ export default function Sidebar() {
         <NavLink to="/" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
           Panel principal
         </NavLink>
-
         {can("LOOKUP") && (
           <NavLink to="/lookup" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
             Consulta por lote
           </NavLink>
         )}
-
         <NavLink to="/scan-history" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
           Historial de escaneos
         </NavLink>
@@ -107,12 +143,12 @@ export default function Sidebar() {
             Generar etiqueta
           </NavLink>
         )}
-
         {(hasRole("ADMIN") || hasRole("ALMACEN")) && (
           <NavLink to="/register-label" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
             Registrar etiqueta
           </NavLink>
         )}
+
         {hasRole("ADMIN") && (
           <>
             <div className={s.sectionLabel}>Administración</div>

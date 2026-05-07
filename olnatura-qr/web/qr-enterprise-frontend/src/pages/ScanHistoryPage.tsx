@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { Button, Card, Input, Text } from "@fluentui/react-components";
+import { Button, Input, Text } from "@fluentui/react-components";
+import AppCard from "../components/ui/AppCard";
+import { brand } from "../styles/brand";
 import { api, ApiError } from "../api/client";
 import type { ScanEvent } from "../api/types";
 import { useToasts } from "../components/ui/toasts";
@@ -66,17 +68,10 @@ export default function ScanHistoryPage() {
   };
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div>
-        <Text weight="semibold" size={700}>
-          {LABELS.scanHistory}
-        </Text>
-        <div style={{ color: "#6B6B6B", marginTop: 4 }}>
-          Consulta por lote para revisar trazabilidad.
-        </div>
-      </div>
+    <div style={{ display: "grid", gap: 24 }}>
+      <h1 style={{ fontSize: "20px", fontWeight: 600, color: brand.text, margin: 0 }}>{LABELS.scanHistory}</h1>
 
-      <Card style={{ padding: 16, display: "flex", gap: 10, alignItems: "end" }}>
+      <AppCard style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
         <div style={{ flex: 1, display: "grid", gap: 6 }}>
           <Text>Lote</Text>
           <Input
@@ -94,7 +89,7 @@ export default function ScanHistoryPage() {
         >
           Buscar
         </Button>
-      </Card>
+      </AppCard>
 
       {status === "idle" && (
         <EmptyState
@@ -122,12 +117,12 @@ export default function ScanHistoryPage() {
             hint={LABELS.noRecords}
           />
         ) : (
-          <Card style={{ padding: 16 }}>
+          <AppCard>
             <Text weight="semibold">{LABELS.scanHistory}</Text>
             <div style={{ marginTop: 12 }}>
               <ScanHistoryTable events={events} />
             </div>
-          </Card>
+          </AppCard>
         )
       )}
     </div>

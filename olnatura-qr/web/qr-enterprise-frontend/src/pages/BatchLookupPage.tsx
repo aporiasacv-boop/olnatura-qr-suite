@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Button,
-  Card,
   Dropdown,
   Input,
   Option,
@@ -14,7 +13,11 @@ import {
   DialogContent,
   DialogActions,
   Link,
+  makeStyles,
+  shorthands,
 } from "@fluentui/react-components";
+import AppCard from "../components/ui/AppCard";
+import { brand } from "../styles/brand";
 import { API_BASE, api, ApiError } from "../api/client";
 import type { QrResponse, ScanEvent } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
@@ -151,16 +154,34 @@ function statusToDisplayLabel(backendValue: string): string {
   return opt ? opt.label : (backendValue ?? "—");
 }
 
-const DEV_METRICS = import.meta.env.DEV;
-const STORAGE_KEY = "qr_suite_metrics_v1";
-
-type LoteMetrics = {
-  lookupAt: number;
-  firstZplAt: number | null;
-  zplCount: number;
-};
+const useStyles = makeStyles({
+  page: { display: "grid", gap: "24px" },
+  title: { fontSize: "20px", fontWeight: 600, color: brand.text },
+  searchCard: {
+    ...shorthands.padding("16px"),
+    display: "flex",
+    gap: "12px",
+    alignItems: "flex-end",
+  },
+  searchInput: { flex: 1 },
+  resultGrid: { display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "24px" },
+  dataGrid: {
+    marginTop: "12px",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+  fieldBox: {
+    ...shorthands.border("1px", "solid", brand.border),
+    ...shorthands.borderRadius("10px"),
+    ...shorthands.padding("10px"),
+  },
+  fieldLabel: { color: brand.muted, fontSize: "12px" },
+  fieldValue: { marginTop: "4px", fontWeight: 600 },
+});
 
 export default function BatchLookupPage() {
+  const s = useStyles();
   const { can, hasRole } = useAuth();
   const toasts = useToasts();
 
@@ -177,37 +198,7 @@ export default function BatchLookupPage() {
   const [zplPrintFrom, setZplPrintFrom] = useState<string>("");
   const [zplPrintTo, setZplPrintTo] = useState<string>("");
 
-  const [sessionMetrics, setSessionMetrics] = useState<Map<string, LoteMetrics>>(() => {
-    if (!DEV_METRICS) return new Map();
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return new Map();
-      const parsed = JSON.parse(raw);
-      const arr = Array.isArray(parsed) ? parsed : [];
-      const entries = arr
-        .filter((e): e is [string, unknown] => Array.isArray(e) && e.length === 2 && typeof e[0] === "string")
-        .map(([k, v]) => {
-          const o = v && typeof v === "object" ? (v as Record<string, unknown>) : {};
-          return [k, {
-            lookupAt: typeof o.lookupAt === "number" ? o.lookupAt : 0,
-            firstZplAt: typeof o.firstZplAt === "number" ? o.firstZplAt : null,
-            zplCount: typeof o.zplCount === "number" ? o.zplCount : 0,
-          }] as [string, LoteMetrics];
-        });
-      return new Map(entries);
-    } catch {
-      return new Map();
-    }
-  });
-
   const loteTrim = useMemo(() => lote.trim(), [lote]);
-
-  useEffect(() => {
-    if (!DEV_METRICS) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(sessionMetrics.entries())));
-    } catch { /* ignore */ }
-  }, [sessionMetrics]);
 
   // Load batch data
   const load = async () => {
@@ -227,15 +218,6 @@ export default function BatchLookupPage() {
 
       setStatus("ok");
 
-      if (DEV_METRICS) {
-        const lookupAt = Date.now();
-        setSessionMetrics((prev) => {
-          const next = new Map(prev);
-          next.set(loteTrim, { lookupAt, firstZplAt: null, zplCount: 0 });
-          return next;
-        });
-        console.log("[ZPL Metrics] lookup recorded", { lote: loteTrim, lookupAt: new Date(lookupAt).toISOString() });
-      }
     } catch (e) {
       const ae = e as ApiError;
 
@@ -325,7 +307,6 @@ export default function BatchLookupPage() {
 
   // Derived values
   const labelEnvase = `${readLabel(data, "envaseNum")} / ${readLabel(data, "envaseTotal")}`;
-  const envaseNum = parseInt(String((data as any)?.label?.envaseNum ?? 1), 10) || 1;
   const envaseTotal = parseInt(String((data as any)?.label?.envaseTotal ?? 1), 10) || 1;
 
   useEffect(() => {
@@ -358,20 +339,6 @@ export default function BatchLookupPage() {
   const handleZplDownload = async () => {
     if (!loteTrim) return;
 
-    if (DEV_METRICS) {
-      setSessionMetrics((prev) => {
-        const next = new Map(prev);
-        const cur = next.get(loteTrim) ?? { lookupAt: 0, firstZplAt: null, zplCount: 0 };
-        const isFirst = cur.firstZplAt === null;
-        const firstZplAt = cur.firstZplAt ?? Date.now();
-        const newCount = cur.zplCount + 1;
-        next.set(loteTrim, { ...cur, firstZplAt, zplCount: newCount });
-        if (isFirst) console.log("[ZPL Metrics] first ZPL click", { lote: loteTrim, firstZplAt: new Date(firstZplAt).toISOString() });
-        else if (newCount > 1) console.log("[ZPL Metrics] reprint detected", { lote: loteTrim, zplDownloadCount: newCount });
-        return next;
-      });
-    }
-
     const total = parseInt(zplTotalEnvases, 10) || envaseTotal;
     const from = parseInt(zplPrintFrom, 10) || 1;
     const to = parseInt(zplPrintTo, 10) || total;
@@ -380,29 +347,6 @@ export default function BatchLookupPage() {
       printFrom: Math.max(1, Math.min(from, total)),
       printTo: Math.max(1, Math.min(to, total)),
     });
-  };
-
-  const clearSessionMetrics = () => {
-    setSessionMetrics(new Map());
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
-  };
-
-  const exportSessionMetrics = () => {
-    const arr = Array.from(sessionMetrics.entries()).map(([loteKey, m]) => ({
-      lote: loteKey,
-      lookupAt: m.lookupAt ? new Date(m.lookupAt).toISOString() : null,
-      firstZplAt: m.firstZplAt ? new Date(m.firstZplAt).toISOString() : null,
-      zplCount: m.zplCount,
-    }));
-    const blob = new Blob([JSON.stringify(arr, null, 2)], { type: "application/json" });
-    const href = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = href;
-    a.download = "qr_metrics_session.json";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(href);
   };
 
   const handleCopy = async (label: string, value: string) => {
@@ -424,19 +368,13 @@ export default function BatchLookupPage() {
     }
   };
 
-  // Render
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div>
-        <Text weight="semibold" size={700}>{LABELS.lookup}</Text>
-        <div style={{ color: "#6B6B6B", marginTop: 4 }}>
-          Visualiza datos de la etiqueta y estado actual del lote.
-        </div>
-      </div>
+    <div className={s.page}>
+      <h1 className={s.title}>{LABELS.lookup}</h1>
 
-      <Card style={{ padding: 16, display: "flex", gap: 10, alignItems: "end" }}>
-        <div style={{ flex: 1, display: "grid", gap: 6 }}>
-          <Text>Lote</Text>
+      <AppCard className={s.searchCard}>
+        <div className={s.searchInput} style={{ display: "grid", gap: 6 }}>
+          <Text style={{ fontSize: 14, fontWeight: 500 }}>Lote</Text>
           <Input
             id="lote"
             name="lote"
@@ -465,7 +403,7 @@ export default function BatchLookupPage() {
             {LABELS.registerScan}
           </Button>
         )}
-      </Card>
+      </AppCard>
 
       {status === "loading" && <LoadingState label="Consultando lote…" />}
 
@@ -474,11 +412,10 @@ export default function BatchLookupPage() {
       )}
 
       {status === "ok" && data && (
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 14 }}>
-          <Card style={{ padding: 16 }}>
+        <div className={s.resultGrid}>
+          <AppCard>
             <Text weight="semibold">{LABELS.labelData}</Text>
-
-            <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div className={s.dataGrid}>
               <Field label="Tipo material" value={readLabel(data, "tipoMaterial")} />
               <Field label="Nombre" value={readLabel(data, "nombre")} />
               <CopyField
@@ -497,15 +434,11 @@ export default function BatchLookupPage() {
               <Field label={LABELS.envase} value={labelEnvase} />
             </div>
 
-            <div style={{ marginTop: 14, color: "#6B6B6B", fontSize: 12 }}>
-              Etiqueta PNG: disponible en registrar etiqueta o generar etiqueta.
-            </div>
-
             {canDownloadZpl && (
               <div style={{ marginTop: 10 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
                   <div>
-                    <Text style={{ fontSize: 12, color: "#6B6B6B" }}>Total envases</Text>
+                    <Text style={{ fontSize: 12, color: brand.muted }}>Total envases</Text>
                     <Input
                       type="number"
                       min={1}
@@ -515,7 +448,7 @@ export default function BatchLookupPage() {
                     />
                   </div>
                   <div>
-                    <Text style={{ fontSize: 12, color: "#6B6B6B" }}>Imprimir desde</Text>
+                    <Text style={{ fontSize: 12, color: brand.muted }}>Imprimir desde</Text>
                     <Input
                       type="number"
                       min={1}
@@ -525,7 +458,7 @@ export default function BatchLookupPage() {
                     />
                   </div>
                   <div>
-                    <Text style={{ fontSize: 12, color: "#6B6B6B" }}>Imprimir hasta</Text>
+                    <Text style={{ fontSize: 12, color: brand.muted }}>Imprimir hasta</Text>
                     <Input
                       type="number"
                       min={1}
@@ -542,16 +475,16 @@ export default function BatchLookupPage() {
                 >
                   {LABELS.downloadZpl}
                 </Button>
-                <Text style={{ display: "block", marginTop: 4, color: "#6B6B6B", fontSize: 12 }}>
+                <Text style={{ display: "block", marginTop: 4, color: brand.muted, fontSize: 12 }}>
                   Archivo para impresora Zebra.{" "}
                   <Link onClick={() => setZplHelpOpen(true)}>Cómo imprimir</Link>
                 </Text>
               </div>
             )}
-          </Card>
+          </AppCard>
 
-          <div style={{ display: "grid", gap: 14 }}>
-            <Card style={{ padding: 16 }}>
+          <div style={{ display: "grid", gap: 24 }}>
+            <AppCard>
               <Text weight="semibold">{LABELS.dynamicState}</Text>
 
               <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
@@ -586,7 +519,7 @@ export default function BatchLookupPage() {
                     </>
                   ) : (
                     !canChangeStatus ? null : (
-                      <Text style={{ color: "#6B6B6B", fontSize: 12 }}>
+                      <Text style={{ color: brand.muted, fontSize: 12 }}>
                         Sin opciones disponibles
                       </Text>
                     )
@@ -597,9 +530,9 @@ export default function BatchLookupPage() {
                 <Field label={LABELS.cantidad} value={dynamicCantidad} />
                 <Field label={LABELS.fuente} value={fuenteDisplayLabel} />
               </div>
-            </Card>
+            </AppCard>
 
-            <Card style={{ padding: 16 }}>
+            <AppCard>
               <Text weight="semibold">{LABELS.scanHistory}</Text>
               <div style={{ marginTop: 12 }}>
                 {scans === null ? null : scans.length === 0 ? (
@@ -623,7 +556,7 @@ export default function BatchLookupPage() {
                   </Button>
                 </div>
               )}
-            </Card>
+            </AppCard>
           </div>
         </div>
       )}
@@ -631,37 +564,6 @@ export default function BatchLookupPage() {
       {status === "idle" && (
         <EmptyState title={LABELS.readyToLookup} hint="Ingresa un lote y presiona Buscar." />
       )}
-
-      {DEV_METRICS && loteTrim && (() => {
-        const m = sessionMetrics.get(loteTrim);
-        const fmt = (ts: number) => new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-        const timeToFirstLabelSeconds = m?.firstZplAt && m?.lookupAt ? Math.round((m.firstZplAt - m.lookupAt) / 1000) : null;
-        const reprints = m ? Math.max(0, m.zplCount - 1) : 0;
-        return (
-          <Card style={{ padding: 12, background: "#F8F9FA", border: "1px dashed #CCC" }}>
-            <Text weight="semibold" size={500}>Session metrics (dev)</Text>
-            {m ? (
-              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4, fontSize: 13 }}>
-                <div>Lookup: {fmt(m.lookupAt)}</div>
-                <div>First label: {m.firstZplAt ? fmt(m.firstZplAt) : "—"}</div>
-                <div>Time to label: {timeToFirstLabelSeconds !== null ? `${timeToFirstLabelSeconds} s` : "—"}</div>
-                <div>ZPL downloads: {m.zplCount}</div>
-                <div>Reprints: {reprints}</div>
-              </div>
-            ) : (
-              <Text style={{ marginTop: 8, color: "#6B6B6B", fontSize: 12 }}>No metrics yet. Perform a lookup and download ZPL.</Text>
-            )}
-            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-              <Button appearance="subtle" size="small" onClick={clearSessionMetrics}>
-                Clear session metrics
-              </Button>
-              <Button appearance="subtle" size="small" onClick={exportSessionMetrics}>
-                Export metrics (JSON)
-              </Button>
-            </div>
-          </Card>
-        );
-      })()}
 
       <Dialog open={zplHelpOpen} onOpenChange={(_, data) => setZplHelpOpen(data.open)}>
         <DialogSurface>
@@ -692,62 +594,25 @@ export default function BatchLookupPage() {
   );
 }
 
-// Sub-components
-function Field({
-  label,
-  value,
-  tooltip,
-}: {
-  label: string;
-  value: React.ReactNode;
-  tooltip?: string;
-}) {
+function Field({ label, value, tooltip }: { label: string; value: React.ReactNode; tooltip?: string }) {
   const labelNode = tooltip ? (
-    <Tooltip content={tooltip} relationship="label">
-      <span>{label}</span>
-    </Tooltip>
-  ) : (
-    label
-  );
-
+    <Tooltip content={tooltip} relationship="label"><span>{label}</span></Tooltip>
+  ) : label;
   return (
-    <div style={{ border: "1px solid #E6E6E6", borderRadius: 10, padding: 10 }}>
-      <div style={{ color: "#6B6B6B", fontSize: 12 }}>{labelNode}</div>
+    <div style={{ border: `1px solid ${brand.border}`, borderRadius: 10, padding: 10 }}>
+      <div style={{ color: brand.muted, fontSize: 12 }}>{labelNode}</div>
       <div style={{ marginTop: 4, fontWeight: 600 }}>{value}</div>
     </div>
   );
 }
 
-function CopyField({
-  label,
-  value,
-  onCopy,
-}: {
-  label: string;
-  value: string;
-  onCopy: (label: string, value: string) => void;
-}) {
+function CopyField({ label, value, onCopy }: { label: string; value: string; onCopy: (l: string, v: string) => void }) {
   const display = value ?? "—";
   return (
-    <div style={{ border: "1px solid #E6E6E6", borderRadius: 10, padding: 10 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          color: "#6B6B6B",
-          fontSize: 12,
-        }}
-      >
+    <div style={{ border: `1px solid ${brand.border}`, borderRadius: 10, padding: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, color: brand.muted, fontSize: 12 }}>
         <span>{label}</span>
-        <Button
-          appearance="subtle"
-          size="small"
-          onClick={() => onCopy(label, display)}
-        >
-          Copiar
-        </Button>
+        <Button appearance="subtle" size="small" onClick={() => onCopy(label, display)}>Copiar</Button>
       </div>
       <div style={{ marginTop: 4, fontWeight: 600, wordBreak: "break-all" }}>{display}</div>
     </div>

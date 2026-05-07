@@ -1,4 +1,3 @@
-import React from "react";
 import { LABELS, formatDateTime } from "../../utils/displayLabels";
 
 function pick(ev: any, keys: string[], fallback = "—") {

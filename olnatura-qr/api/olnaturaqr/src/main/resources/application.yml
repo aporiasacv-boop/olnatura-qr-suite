@@ -1,5 +1,5 @@
 server:
-  port: 3001
+  port: ${PORT:8080}
   address: 0.0.0.0
 
 spring:
@@ -20,6 +20,12 @@ spring:
 app:
   cors:
     allowed-origins: "http://localhost:5173,http://localhost:3000,http://192.168.41.177:5173,http://192.168.41.177:3000,http://192.168.41.206:3000,http://192.168.41.206:5173,http://192.168.41.230:5173,http://192.168.41.230:3000"
+  dynamics:
+    mode: ${APP_DYNAMICS_MODE:real}
+    base-url: ${APP_DYNAMICS_BASE_URL:https://olnatura-production.operations.dynamics.com}
+    bearer-token: ${APP_DYNAMICS_BEARER_TOKEN:}
+    connect-timeout: ${APP_DYNAMICS_CONNECT_TIMEOUT:3s}
+    read-timeout: ${APP_DYNAMICS_READ_TIMEOUT:10s}
 
   auth:
     cookie:

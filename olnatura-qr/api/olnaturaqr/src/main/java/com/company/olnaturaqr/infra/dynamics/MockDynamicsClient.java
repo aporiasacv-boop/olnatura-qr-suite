@@ -1,21 +1,15 @@
 package com.company.olnaturaqr.infra.dynamics;
 
 import com.company.olnaturaqr.support.qr.LoteExtractor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class MockDynamicsClient {
-
-    public record DynamicCard(
-            String status,
-            double cantidad,
-            String uom,
-            String ubicacion,
-            String fuente
-    ) {}
+@ConditionalOnProperty(prefix = "app.dynamics", name = "mode", havingValue = "mock", matchIfMissing = true)
+public class MockDynamicsClient implements DynamicsClient {
 
     private final Map<String, DynamicCard> fake = Map.ofEntries(
             Map.entry("260112-MES003456",
@@ -26,6 +20,7 @@ public class MockDynamicsClient {
                     new DynamicCard("LIBERADO", 20.0, "kg", "Almacén secundario", "MOCK_DYNAMICS"))
     );
 
+    @Override
     public Optional<DynamicCard> fetchByLote(String raw) {
         return LoteExtractor.extract(raw)
                 .flatMap(l -> Optional.ofNullable(fake.get(l)));

@@ -1,12 +1,11 @@
 import { pushToast } from "../components/ui/toasts";
 
 const raw = import.meta.env.VITE_API_BASE_URL;
+
 export const API_BASE =
-  raw === ""
-    ? ""
-    : typeof raw === "string" && raw.trim().length > 0
-      ? raw.trim().replace(/\/+$/, "")
-      : "http://localhost:3001";
+  typeof raw === "string" && raw.trim().length > 0
+    ? raw.trim().replace(/\/+$/, "")
+    : "";
 
 // Api error class
 export class ApiError extends Error {

@@ -1,21 +1,42 @@
 import { useNavigate } from "react-router-dom";
-import { Card, Text, makeStyles, shorthands } from "@fluentui/react-components";
+import { makeStyles, shorthands } from "@fluentui/react-components";
 import { useAuth } from "../auth/AuthContext";
+import AppCard from "../components/ui/AppCard";
+import { brand } from "../styles/brand";
 
 const useStyles = makeStyles({
+  page: {
+    display: "grid",
+    gap: "24px",
+  },
+  title: {
+    fontSize: "20px",
+    fontWeight: 600,
+    color: brand.text,
+  },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(240px, 1fr))",
-    ...shorthands.gap("14px"),
+    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+    ...shorthands.gap("16px"),
   },
   card: {
-    ...shorthands.padding("16px"),
-    cursor: "pointer",
-    ...shorthands.borderRadius("12px"),
-    border: "1px solid #E6E6E6",
+    ...shorthands.padding("20px"),
+    transition: "box-shadow 0.2s ease",
+    ":hover": {
+      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    },
   },
-  title: { marginBottom: "4px" },
-  desc: { color: "#6B6B6B" },
+  cardTitle: {
+    fontSize: "16px",
+    fontWeight: 600,
+    color: brand.text,
+    marginBottom: "8px",
+  },
+  cardDesc: {
+    fontSize: "14px",
+    color: brand.muted,
+    lineHeight: 1.5,
+  },
 });
 
 export default function DashboardPage() {
@@ -24,51 +45,49 @@ export default function DashboardPage() {
   const { can, hasRole } = useAuth();
 
   return (
-    <div style={{ display: "grid", rowGap: "14px" }}>
-      <div>
-        <Text weight="semibold" size={700}>Panel principal</Text>
-        <div style={{ color: "#6B6B6B", marginTop: 4 }}>
-          Acciones rápidas para operación y trazabilidad.
-        </div>
-      </div>
+    <div className={s.page}>
+      <h1 className={s.title}>Panel principal</h1>
 
       <div className={s.grid}>
         {can("LOOKUP") && (
-          <Card
+          <AppCard
+            clickable
             className={s.card}
             onClick={() => nav("/lookup")}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === "Enter" && nav("/lookup")}
           >
-            <Text weight="semibold" className={s.title}>Buscar lote</Text>
-            <div className={s.desc}>Consulta etiqueta, estado y ubicación del lote.</div>
-          </Card>
+            <div className={s.cardTitle}>Buscar lote</div>
+            <div className={s.cardDesc}>Consulta etiqueta, estado y ubicación del lote.</div>
+          </AppCard>
         )}
 
         {(hasRole("ADMIN") || hasRole("ALMACEN")) && (
-          <Card
+          <AppCard
+            clickable
             className={s.card}
             onClick={() => nav("/register-label")}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === "Enter" && nav("/register-label")}
           >
-            <Text weight="semibold" className={s.title}>Registrar etiqueta</Text>
-            <div className={s.desc}>Registrar nueva etiqueta en el sistema.</div>
-          </Card>
+            <div className={s.cardTitle}>Registrar etiqueta</div>
+            <div className={s.cardDesc}>Registrar nueva etiqueta en el sistema.</div>
+          </AppCard>
         )}
 
-        <Card
+        <AppCard
+          clickable
           className={s.card}
           onClick={() => nav("/scan-history")}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => e.key === "Enter" && nav("/scan-history")}
         >
-          <Text weight="semibold" className={s.title}>Historial de escaneos</Text>
-          <div className={s.desc}>Revisa eventos por lote (filtro).</div>
-        </Card>
+          <div className={s.cardTitle}>Historial de escaneos</div>
+          <div className={s.cardDesc}>Revisa eventos por lote.</div>
+        </AppCard>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import { router } from "./app/router";
 import { brandTheme } from "./styles/brand";
 import { ToastsProvider } from "./components/ui/toasts";
 import { AuthProvider } from "./auth/AuthContext";
+import "./styles/global.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

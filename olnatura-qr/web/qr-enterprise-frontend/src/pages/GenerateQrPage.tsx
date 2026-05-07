@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { Button, Card, Input, Text, makeStyles, shorthands } from "@fluentui/react-components";
+import { Button, Input, Text, makeStyles, shorthands } from "@fluentui/react-components";
+import AppCard from "../components/ui/AppCard";
+import { brand } from "../styles/brand";
 import { api, ApiError } from "../api/client";
 
 function logAudit(actionType: string, lote: string | null) {
@@ -15,21 +17,21 @@ import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
 import LabelPreview from "../components/label/LabelPreview";
 
 const useStyles = makeStyles({
-  wrap: { display: "grid", gap: "14px", maxWidth: "600px" },
-  row: { display: "grid", gap: "6px" },
+  wrap: { display: "grid", gap: "24px", maxWidth: "600px" },
+  title: { fontSize: "20px", fontWeight: 600, color: brand.text },
+  row: { display: "grid", gap: "8px" },
+  label: { fontSize: "14px", fontWeight: 500, color: brand.text2 },
   preview: {
     display: "grid",
     placeItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: brand.surface,
     borderRadius: "12px",
     ...shorthands.padding("16px"),
-    boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-    border: "1px solid #E5E7EB",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    border: `1px solid ${brand.border}`,
   },
-  img: { maxWidth: "100%", height: "auto", objectFit: "contain" },
   actions: { display: "flex", gap: "10px", flexWrap: "wrap" },
-  labelText: { fontSize: "12px", color: "#6B7280" },
-  labelValue: { fontSize: "14px", fontWeight: 600 },
+  error: { color: brand.dangerFg, fontSize: "13px" },
 });
 
 export default function GenerateQrPage() {
@@ -37,6 +39,7 @@ export default function GenerateQrPage() {
   const previewRef = useRef<HTMLDivElement>(null);
   const [lote, setLote] = useState("");
   const [labelData, setLabelData] = useState<QrResponse["label"] | null>(null);
+  const [dynamicData, setDynamicData] = useState<QrResponse["dynamic"] | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +60,7 @@ export default function GenerateQrPage() {
     setError(null);
     setQrDataUrl(null);
     setLabelData(null);
+    setDynamicData(null);
 
     try {
       const qrResponse = await api<QrResponse>(`/qr/${encodeURIComponent(v)}`, { toast: false });
@@ -68,6 +72,7 @@ export default function GenerateQrPage() {
       }
 
       setLabelData(label);
+      setDynamicData(qrResponse?.dynamic ?? null);
 
       const payload = label.publicToken
         ? `OLNQR:1:${label.publicToken}`
@@ -114,17 +119,12 @@ export default function GenerateQrPage() {
 
   return (
     <div className={s.wrap}>
-      <Text size={600} weight="semibold">
-        Generar etiqueta imprimible
-      </Text>
-      <Text size={300} style={{ opacity: 0.75 }}>
-        Solo ADMIN/ALMACÉN. Busca por lote y genera la etiqueta con datos estáticos y QR con logo. El estatus no se imprime.
-      </Text>
+      <h1 className={s.title}>Generar etiqueta imprimible</h1>
 
-      <Card>
-        <div style={{ padding: 16, display: "grid", gap: 12 }}>
+      <AppCard>
+        <div style={{ display: "grid", gap: 16 }}>
           <div className={s.row}>
-            <Text>Lote</Text>
+            <span className={s.label}>Lote</span>
             <Input
               value={lote}
               onChange={(_, d) => setLote(d.value)}
@@ -144,7 +144,7 @@ export default function GenerateQrPage() {
             </Button>
           </div>
 
-          {error ? <Text style={{ color: "#B10E1C" }}>{error}</Text> : null}
+          {error ? <div className={s.error}>{error}</div> : null}
 
           <div ref={previewRef} className={s.preview} style={{ overflowX: "auto" }}>
             {labelData && qrDataUrl ? (
@@ -178,7 +178,14 @@ export default function GenerateQrPage() {
                         ? ((labelData as any).fechaValor ?? labelData.reanalisis ?? "")
                         : ""
                     }
-                    cantidad="N/A"
+                    cantidad={(() => {
+                      const manual = String((labelData as { cantidadPorEnvase?: string })?.cantidadPorEnvase ?? "").trim();
+                      if (manual) return manual;
+                      const d = dynamicData as { cantidad?: number | null; uom?: string | null } | null;
+                      if (d != null && d.cantidad != null && typeof d.cantidad === "number")
+                        return `${d.cantidad}${d.uom && String(d.uom).trim() ? " " + String(d.uom).trim() : ""}`;
+                      return "N/A";
+                    })()}
                     envaseNum={labelData.envaseNum ?? "—"}
                     envaseTotal={labelData.envaseTotal ?? "—"}
                     qrData={qrDataUrl}
@@ -188,11 +195,11 @@ export default function GenerateQrPage() {
                 </div>
               </div>
             ) : (
-              <Text style={{ opacity: 0.6 }}>Vista previa aquí</Text>
+              <Text style={{ opacity: 0.6 }}>Sin vista previa</Text>
             )}
           </div>
         </div>
-      </Card>
+      </AppCard>
     </div>
   );
 }

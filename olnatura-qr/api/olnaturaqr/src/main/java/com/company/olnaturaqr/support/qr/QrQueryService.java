@@ -2,7 +2,7 @@ package com.company.olnaturaqr.support.qr;
 
 import com.company.olnaturaqr.api.QrDto;
 import com.company.olnaturaqr.domain.qr.QrLabel;
-import com.company.olnaturaqr.infra.dynamics.MockDynamicsClient;
+import com.company.olnaturaqr.infra.dynamics.DynamicsClient;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
 import com.company.olnaturaqr.support.workflow.WorkflowTransitions;
@@ -20,9 +20,9 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class QrQueryService {
 
     private final QrLabelRepository qrLabelRepository;
-    private final MockDynamicsClient dynamics;
+    private final DynamicsClient dynamics;
 
-    public QrQueryService(QrLabelRepository qrLabelRepository, MockDynamicsClient dynamics) {
+    public QrQueryService(QrLabelRepository qrLabelRepository, DynamicsClient dynamics) {
         this.qrLabelRepository = qrLabelRepository;
         this.dynamics = dynamics;
     }
@@ -54,7 +54,8 @@ public class QrQueryService {
                 label.getCaducidad(),
                 label.getReanalisis(),
                 label.getEnvaseNum(),
-                label.getEnvaseTotal()
+                label.getEnvaseTotal(),
+                label.getCantidadPorEnvase()
         );
 
         String statusOverride = normalizeStatus(label.getStatusDinamico());
@@ -71,7 +72,7 @@ public class QrQueryService {
                 .orElseGet(() -> new QrDto.Dynamic(
                         statusOverride,
                         null,
-                        null,
+                        "N/A",
                         null,
                         "DB_ONLY"
                 ));

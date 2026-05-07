@@ -5,6 +5,7 @@ import AppShell from "../components/layout/AppShell";
 import LoginPage from "../pages/LoginPage";
 import DashboardPage from "../pages/DashboardPage";
 import NotFoundPage from "../pages/NotFoundPage";
+import RegisterRequestPage from "../pages/RegisterRequestPage";
 
 import RequestAccessPage from "../pages/RequestAccessPage";
 import AdminApprovalPage from "../pages/AdminApprovalPage";
@@ -14,7 +15,10 @@ import BatchLookupPage from "../pages/BatchLookupPage";
 import ScanHistoryPage from "../pages/ScanHistoryPage";
 import RegisterLabelPage from "../pages/RegisterLabelPage";
 import GenerateQrPage from "../pages/GenerateQrPage";
+<<<<<<< HEAD
 import LabelPreviewTestPage from "../pages/LabelPreviewTestPage";
+=======
+>>>>>>> origin/cleanup/repo-sanitize
 
 import { RequireAuth, RequireAdmin } from "../auth/guards";
 import { RequireRole } from "../auth/RequireRole";
@@ -27,6 +31,10 @@ export const router = createBrowserRouter([
   {
     path: "/request-access",
     element: <RequestAccessPage />,
+  },
+  {
+    path: "/register-request",
+    element: <RegisterRequestPage />,
   },
 
   {
@@ -64,11 +72,6 @@ export const router = createBrowserRouter([
             <RegisterLabelPage />
           </RequireRole>
         ),
-      },
-
-      {
-        path: "label-preview-test",
-        element: <LabelPreviewTestPage />,
       },
 
       {

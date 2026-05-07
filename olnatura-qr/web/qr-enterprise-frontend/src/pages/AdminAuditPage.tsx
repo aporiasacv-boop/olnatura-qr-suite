@@ -1,9 +1,7 @@
 import * as React from "react";
 import {
   Button,
-  Card,
   makeStyles,
-  shorthands,
   Table,
   TableBody,
   TableCell,
@@ -14,15 +12,43 @@ import {
 } from "@fluentui/react-components";
 import { api, ApiError } from "../api/client";
 import { useToasts } from "../components/ui/toasts";
+import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
-import { LABELS, formatDateTime, actionTypeDisplay } from "../utils/displayLabels";
+import { LABELS, formatDateTime, actionTypeDisplay, formatAuditDetail } from "../utils/displayLabels";
+
+function AuditDetailCell({
+  metadata,
+  deviceId,
+}: {
+  metadata?: Record<string, unknown> | string | null;
+  deviceId?: string | null;
+}) {
+  const entries = formatAuditDetail(metadata, deviceId);
+  if (entries.length === 0) return <span style={{ color: brand.muted }}>—</span>;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 160 }}>
+      {entries.map(({ label, value }) => (
+        <div
+          key={label}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "4px 8px",
+            fontSize: 13,
+            lineHeight: 1.35,
+          }}
+        >
+          <span style={{ fontWeight: 600, color: brand.muted }}>{label}:</span>
+          <span style={{ color: brand.text }}>{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const useStyles = makeStyles({
-  wrap: { display: "grid", rowGap: "12px" },
-  card: {
-    ...shorthands.border("1px", "solid", brand.border),
-    ...shorthands.borderRadius("14px"),
-  },
+  wrap: { display: "grid", gap: "24px" },
+  title: { fontSize: "20px", fontWeight: 600, color: brand.text },
   headerRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -84,21 +110,14 @@ export default function AdminAuditPage() {
   return (
     <div className={s.wrap}>
       <div className={s.headerRow}>
-        <div>
-          <Text weight="semibold" size={600}>
-            {LABELS.auditLog}
-          </Text>
-          <div className={s.muted}>
-            <Text size={300}>Acciones registradas en el sistema</Text>
-          </div>
-        </div>
+        <h1 className={s.title}>{LABELS.auditLog}</h1>
         <Button appearance="primary" onClick={load} disabled={busy}>
           {busy ? "Cargando…" : "Actualizar"}
         </Button>
       </div>
 
-      <Card className={s.card}>
-        <div style={{ padding: 12, overflowX: "auto" }}>
+      <AppCard>
+        <div style={{ overflowX: "auto" }}>
           {events.length === 0 ? (
             <div style={{ padding: 24, textAlign: "center", color: brand.muted }}>
               {LABELS.noRecords}
@@ -127,9 +146,7 @@ export default function AdminAuditPage() {
                     </TableCell>
                     <TableCell>{e.lote ?? "-"}</TableCell>
                     <TableCell>
-                      {e.metadata && Object.keys(e.metadata).length > 0
-                        ? JSON.stringify(e.metadata)
-                        : "—"}
+                      <AuditDetailCell metadata={e.metadata} deviceId={e.deviceId} />
                     </TableCell>
                   </TableRow>
                 );
@@ -157,7 +174,7 @@ export default function AdminAuditPage() {
             </div>
           )}
         </div>
-      </Card>
+      </AppCard>
     </div>
   );
 }

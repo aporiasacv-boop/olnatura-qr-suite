@@ -2,61 +2,91 @@ import { useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Button,
-  Card,
-  CardHeader,
-  CardPreview,
   Input,
-  Text,
   makeStyles,
   shorthands,
 } from "@fluentui/react-components";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
+import { brand } from "../styles/brand";
 
 const useStyles = makeStyles({
   root: {
     minHeight: "100vh",
     display: "grid",
-    gridTemplateRows: "1fr auto 1fr",
-    backgroundColor: "#F6F7F8",
+    placeItems: "center",
+    backgroundColor: brand.background,
     ...shorthands.padding("24px"),
   },
-  center: {
-    gridRow: 2,
-    display: "flex",
-    justifyContent: "center",
-  },
   card: {
-    width: "460px",
+    width: "420px",
     maxWidth: "100%",
+    backgroundColor: brand.surface,
+    borderRadius: "12px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+    ...shorthands.border("1px", "solid", brand.border),
+    ...shorthands.padding("24px"),
   },
-  inner: {
-    display: "grid",
-    rowGap: "12px",
-    ...shorthands.padding("20px"),
+  header: {
+    marginBottom: "24px",
   },
-  row: {
-    display: "grid",
-    rowGap: "6px",
+  title: {
+    fontSize: "20px",
+    fontWeight: 600,
+    color: brand.text,
   },
-  meta: {
-    color: "#6B6B6B",
-    fontSize: "12px",
-    ...shorthands.margin("8px", "0", "0"),
-  },
-  err: {
-    color: "#B10E1C",
+  subtitle: {
+    fontSize: "14px",
+    color: brand.muted,
+    marginTop: "4px",
   },
   brandRow: {
     display: "flex",
     gap: "10px",
     alignItems: "center",
+    marginBottom: "20px",
   },
   logo: {
-    width: "28px",
-    height: "28px",
+    width: "32px",
+    height: "32px",
     objectFit: "contain",
-    display: "block",
+  },
+  form: {
+    display: "grid",
+    rowGap: "16px",
+  },
+  row: {
+    display: "grid",
+    rowGap: "8px",
+  },
+  label: {
+    fontSize: "14px",
+    fontWeight: 500,
+    color: brand.text2,
+  },
+  input: {
+    minHeight: "40px",
+    width: "100%",
+  },
+  err: {
+    color: brand.dangerFg,
+    fontSize: "13px",
+  },
+  primaryButton: {
+    width: "100%",
+    minHeight: "40px",
+    borderRadius: "8px",
+  },
+  secondaryButton: {
+    width: "100%",
+    minHeight: "40px",
+    borderRadius: "8px",
+  },
+  meta: {
+    color: brand.muted,
+    fontSize: "12px",
+    textAlign: "center",
+    marginTop: "16px",
   },
 });
 
@@ -94,64 +124,67 @@ export default function LoginPage() {
 
   return (
     <div className={s.root}>
-      <div className={s.center}>
-        <Card className={s.card}>
-          <CardHeader
-            header={
-              <Text weight="semibold" size={600}>
-                Sistema Olnatura
-              </Text>
-            }
-            description={<Text size={300}>Plataforma de trazabilidad QR</Text>}
-          />
-          <CardPreview>
-            <div className={s.inner}>
-              <div className={s.brandRow}>
-                <img
-                  src="/logo-olnatura.png"
-                  alt="Logo"
-                  className={s.logo}
-                />
-                <Text weight="semibold">Acceso</Text>
-              </div>
-
-              <form onSubmit={onSubmit} style={{ display: "grid", rowGap: "12px" }}>
-                <div className={s.row}>
-                  <Text>Usuario</Text>
-                  <Input
-                    value={username}
-                    onChange={(_, d) => setUsername(d.value)}
-                    placeholder="Ingresa tu usuario"
-                  />
-                </div>
-
-                <div className={s.row}>
-                  <Text>Contraseña</Text>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(_, d) => setPassword(d.value)}
-                    placeholder="Ingresa tu contraseña"
-                  />
-                </div>
-
-                {error ? <div className={s.err}>{error}</div> : null}
-
-                <Button
-                  appearance="primary"
-                  type="submit"
-                  disabled={busy || !username || !password}
-                >
-                  {busy ? "Iniciando sesión…" : "Iniciar sesión"}
-                </Button>
-
-                <div className={s.meta}>
-                  <Text>© 2026 OLNATURA. Todos los derechos reservados.</Text>
-                </div>
-              </form>
+      <div className={s.card}>
+        <div className={s.header}>
+          <div className={s.brandRow}>
+            <img src="/logo-olnatura.png" alt="Logo" className={s.logo} />
+            <div>
+              <div className={s.title}>Sistema Olnatura</div>
+              <div className={s.subtitle}>Plataforma de trazabilidad QR</div>
             </div>
-          </CardPreview>
-        </Card>
+          </div>
+        </div>
+
+        <form onSubmit={onSubmit} className={s.form}>
+          <div className={s.row}>
+            <span className={s.label}>Usuario</span>
+            <Input
+              appearance="outline"
+              size="large"
+              className={s.input}
+              value={username}
+              onChange={(_, d) => setUsername(d.value)}
+              placeholder="Ingresa tu usuario"
+            />
+          </div>
+
+          <div className={s.row}>
+            <span className={s.label}>Contraseña</span>
+            <Input
+              appearance="outline"
+              size="large"
+              className={s.input}
+              type="password"
+              value={password}
+              onChange={(_, d) => setPassword(d.value)}
+              placeholder="Ingresa tu contraseña"
+            />
+          </div>
+
+          {error ? <div className={s.err}>{error}</div> : null}
+
+          <Button
+            className={s.primaryButton}
+            appearance="primary"
+            size="large"
+            type="submit"
+            disabled={busy || !username || !password}
+          >
+            {busy ? "Iniciando sesión..." : "Iniciar sesión"}
+          </Button>
+
+          <Button
+            className={s.secondaryButton}
+            appearance="secondary"
+            size="large"
+            type="button"
+            onClick={() => nav("/register-request")}
+          >
+            Crear usuario
+          </Button>
+
+          <div className={s.meta}>© 2026 OLNATURA. Todos los derechos reservados.</div>
+        </form>
       </div>
     </div>
   );
