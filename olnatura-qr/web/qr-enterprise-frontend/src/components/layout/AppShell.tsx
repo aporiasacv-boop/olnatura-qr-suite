@@ -13,11 +13,7 @@ const useStyles = makeStyles({
     backgroundColor: brand.background,
   },
   sidebar: {
-<<<<<<< HEAD
     backgroundColor: brand.background,
-=======
-    backgroundColor: brand.surface,
->>>>>>> origin/cleanup/repo-sanitize
     borderRight: `1px solid ${brand.border}`,
   },
   main: {

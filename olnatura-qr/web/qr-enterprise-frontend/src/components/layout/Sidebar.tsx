@@ -12,32 +12,8 @@ const useStyles = makeStyles({
     backgroundColor: brand.surface,
   },
   header: {
-<<<<<<< HEAD
     ...shorthands.padding("18px", "16px"),
     borderBottom: `1px solid ${brand.border}`,
-=======
-    ...shorthands.padding("20px", "16px"),
-    borderBottom: `1px solid ${brand.border}`,
-  },
-  logoRow: {
-    display: "flex",
-    gap: "10px",
-    alignItems: "center",
-  },
-  logo: {
-    width: "28px",
-    height: "28px",
-    objectFit: "contain",
-  },
-  title: {
-    fontWeight: 600,
-    fontSize: "16px",
-    color: brand.text,
-  },
-  subtitle: {
-    color: brand.muted,
-    fontSize: "12px",
->>>>>>> origin/cleanup/repo-sanitize
   },
   nav: {
     display: "flex",
@@ -63,32 +39,18 @@ const useStyles = makeStyles({
     borderRadius: "8px",
     color: brand.text,
     textDecorationLine: "none",
-<<<<<<< HEAD
-    ...shorthands.border("1px", "solid", "transparent"),
-=======
     fontSize: "14px",
     transition: "background-color 0.2s ease, color 0.2s ease",
->>>>>>> origin/cleanup/repo-sanitize
   },
   linkHover: {
     ":hover": {
-<<<<<<< HEAD
-      backgroundColor: brand.surface,
-      border: `1px solid ${brand.border}`,
-=======
       backgroundColor: brand.background,
->>>>>>> origin/cleanup/repo-sanitize
     },
   },
   active: {
-<<<<<<< HEAD
-    backgroundColor: brand.soft,
-    border: `1px solid ${brand.accent}`,
-=======
     backgroundColor: brand.primarySoft,
     color: brand.text,
     fontWeight: 500,
->>>>>>> origin/cleanup/repo-sanitize
   },
   footer: {
     marginTop: "auto",
