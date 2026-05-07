@@ -17,12 +17,6 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-
 app:
   cors:
     allowed-origins: "http://localhost:5173,http://localhost:3000,http://192.168.41.177:5173,http://192.168.41.177:3000,http://192.168.41.206:3000,http://192.168.41.206:5173,http://192.168.41.230:5173,http://192.168.41.230:3000"
@@ -37,11 +31,3 @@ app:
 jwt:
   secret: ${JWT_SECRET:dev-secret-change-me-please-dev-secret-change-me}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
-
-# app:
-# cors:
-#   allowed-origins: "https://tu-frontend.azurewebsites.net"
-# auth:
-#   cookie:
-#     secure: true
-#     same-site: "None"

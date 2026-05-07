@@ -26,7 +26,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✅ Usa applicationContext para todo lo que vive más que la Activity
         val sessionManager = SessionManager(applicationContext)
         val cookieJar = PersistentCookieJar(applicationContext)
 

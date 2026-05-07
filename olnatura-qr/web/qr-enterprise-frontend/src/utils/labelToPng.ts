@@ -1,7 +1,4 @@
 /**
- * Renderiza una etiqueta imprimible (campos estáticos + QR) a PNG.
- * Usa formato DD/MM/YYYY (Microsoft Dynamics).
- * NO incluye estatus (es dinámico).
  * @deprecated Prefer LabelPreview + exportLabelPreviewToPng for React flows
  */
 
@@ -15,9 +12,9 @@ export type LabelData = {
   codigo?: string;
   lote?: string;
   fechaEntrada?: string;
-  /** Tipo de fecha a mostrar: solo uno visible/imprimible */
+
   fechaTipo?: FechaTipo;
-  /** Valor de la fecha (usado según fechaTipo) */
+  
   fechaValor?: string;
   /** @deprecated Legacy: si no hay fechaTipo/fechaValor, se usa para inferir */
   caducidad?: string;
@@ -58,9 +55,7 @@ function row(
   ctx.fillText(value || "—", x, y + 18);
 }
 
-/**
- * Genera PNG de etiqueta (solo datos estáticos, sin estatus).
- */
+
 export async function renderLabelToPng(
   label: LabelData,
   qrDataUrl: string

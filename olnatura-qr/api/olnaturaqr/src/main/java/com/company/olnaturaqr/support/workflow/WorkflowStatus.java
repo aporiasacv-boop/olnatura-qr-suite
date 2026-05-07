@@ -4,10 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Valid workflow statuses (backend values in English).
- * Used for validation and as source of truth.
- */
+
 public final class WorkflowStatus {
 
     public static final String PENDING = "PENDING";
@@ -23,14 +20,13 @@ public final class WorkflowStatus {
 
     private WorkflowStatus() {}
 
-    /** Returns normalized status or DESCONOCIDO if invalid. */
     public static String normalize(String raw) {
         if (raw == null || raw.isBlank()) return DESCONOCIDO;
         String s = raw.trim().toUpperCase(Locale.ROOT);
         return VALID.contains(s) ? s : DESCONOCIDO;
     }
 
-    /** Returns true if the raw string is a valid backend status. */
+
     public static boolean isValid(String raw) {
         if (raw == null || raw.isBlank()) return false;
         return VALID.contains(raw.trim().toUpperCase(Locale.ROOT));

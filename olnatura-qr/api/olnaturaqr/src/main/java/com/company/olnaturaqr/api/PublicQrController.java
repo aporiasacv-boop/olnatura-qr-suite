@@ -10,11 +10,6 @@ public class PublicQrController {
     @GetMapping(value = "/{lote}", produces = MediaType.TEXT_HTML_VALUE)
     public String landing(@PathVariable String lote) {
 
-        // Importante:
-        // - NO consultamos DB
-        // - NO consultamos Dynamics
-        // - NO mostramos el lote ni nada
-        // - Siempre responde lo mismo
 
         return """
         <!doctype html>

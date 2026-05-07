@@ -8,10 +8,7 @@ import org.springframework.web.servlet.resource.PathResourceResolver;
 
 import java.io.IOException;
 
-/**
- * Serves the built React SPA from /static. Falls back to index.html for client-side routing.
- * API routes (/api/**) are handled by controllers and take precedence.
- */
+
 @Configuration
 public class SpaWebConfig implements WebMvcConfigurer {
 

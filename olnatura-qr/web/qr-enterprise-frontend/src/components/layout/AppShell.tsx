@@ -15,7 +15,7 @@ const useStyles = makeStyles({
   },
   sidebar: {
     backgroundColor: brand.background,
-    borderRight: `1px solid ${brand.border}`, // ✅ una sola prop
+    borderRight: `1px solid ${brand.border}`,
   },
   main: {
     display: "grid",
@@ -31,7 +31,7 @@ const useStyles = makeStyles({
   surface: {
     backgroundColor: brand.surface,
     ...shorthands.borderRadius("14px"),
-    ...shorthands.border("1px", "solid", brand.border), // ✅ shorthand
+    ...shorthands.border("1px", "solid", brand.border),
     ...shorthands.padding("16px"),
     minHeight: "100%",
   },

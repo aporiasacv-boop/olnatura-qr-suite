@@ -1,7 +1,4 @@
-/**
- * LabelPreview - warehouse label preview aligned to Zebra structure.
- * Fixed 800x600 layout, strong block borders, QR panel on right.
- */
+
 
 import { formatDateDDMMYYYY } from "../../utils/dateFormat";
 
@@ -16,7 +13,7 @@ export type LabelPreviewProps = {
   envaseNum: number | string;
   envaseTotal: number | string;
   qrData: string | null;
-  /** Logo en esquina (sin logo en QR). Ruta por defecto: /logo-olnatura.png */
+ 
   logoUrl?: string;
   documentCode?: string;
 };

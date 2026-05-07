@@ -15,9 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Genera PDF de historial de trazabilidad (audit_events) para un lote.
- */
+
 @Service
 public class AuditPdfService {
 

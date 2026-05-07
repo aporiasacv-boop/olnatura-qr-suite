@@ -13,11 +13,11 @@ import AdminAuditPage from "../pages/AdminAuditPage";
 import BatchLookupPage from "../pages/BatchLookupPage";
 import ScanHistoryPage from "../pages/ScanHistoryPage";
 import RegisterLabelPage from "../pages/RegisterLabelPage";
-import GenerateQrPage from "../pages/GenerateQrPage"; // 👈 NUEVO
+import GenerateQrPage from "../pages/GenerateQrPage";
 import LabelPreviewTestPage from "../pages/LabelPreviewTestPage";
 
 import { RequireAuth, RequireAdmin } from "../auth/guards";
-import { RequireRole } from "../auth/RequireRole"; // 👈 NUEVO
+import { RequireRole } from "../auth/RequireRole";
 
 export const router = createBrowserRouter([
   {

@@ -109,9 +109,7 @@ public ResponseEntity<UserDto.LoginResponse> login(
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Contrato estable: GET /auth/me -> {id, username, roles}
-     */
+   
     @GetMapping("/me")
     public ResponseEntity<?> me(@AuthenticationPrincipal AuthPrincipal principal) {
         if (principal == null) {

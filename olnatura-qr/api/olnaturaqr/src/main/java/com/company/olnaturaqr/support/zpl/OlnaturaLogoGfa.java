@@ -1,9 +1,6 @@
 package com.company.olnaturaqr.support.zpl;
 
-/**
- * Olnatura logo as ZPL ^GFA for QR overlay.
- * Provides a small 40x40 graphic centered over the QR area.
- */
+
 public final class OlnaturaLogoGfa {
 
     private static final int SRC_W = 208;
@@ -11,7 +8,7 @@ public final class OlnaturaLogoGfa {
     private static final int SRC_BPR = 26;
     private static final int OUT_SIZE = 40;
 
-    /** Raw hex of original logo (208x203, 5278 bytes). */
+
     private static final String RAW_HEX = (
         "0000000000000000000000000000000000000000000000000000" +
         "0000000000000000000000000000000000000000000000000000" +
@@ -180,18 +177,13 @@ public final class OlnaturaLogoGfa {
 
     private OlnaturaLogoGfa() {}
 
-    /**
-     * Returns ZPL ^GFA for a white filled rectangle (all zeros = white in 1-bit).
-     */
     public static String whiteRectGfa(int size) {
         int bpr = (size + 7) / 8;
         int total = bpr * size;
         return String.format("^GFA,%d,%d,%d,%s", total, bpr, bpr, "0".repeat(total * 2));
     }
 
-    /**
-     * Returns ZPL ^GFA for a small 40x40 logo overlay (subsampled from original).
-     */
+
     public static String smallOverlayGfa() {
         int bprOut = (OUT_SIZE + 7) / 8;
         int totalOut = bprOut * OUT_SIZE;

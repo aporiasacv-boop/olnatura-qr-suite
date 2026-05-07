@@ -44,7 +44,6 @@ public class JwtTokenProvider {
         return claims.getSubject();
     }
 
-    // ✅ Para JwtCookieAuthFilter: retorna UUID directo
     public UUID getUserId(String token) {
         String sub = getUserIdFromToken(token);
         if (sub == null || sub.isBlank()) return null;

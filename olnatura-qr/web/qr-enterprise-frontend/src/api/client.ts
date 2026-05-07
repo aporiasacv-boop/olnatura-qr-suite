@@ -1,6 +1,5 @@
 import { pushToast } from "../components/ui/toasts";
 
-// API base URL - use "" for same-origin (when served from backend), or absolute URL for dev
 const raw = import.meta.env.VITE_API_BASE_URL;
 export const API_BASE =
   raw === ""
@@ -31,10 +30,8 @@ export type ApiOptions = {
   headers?: Record<string, string>;
   signal?: AbortSignal;
 
-  // Toast global automático si hay error HTTP (default true)
   toast?: boolean;
 
-  // Personaliza el título del toast
   toastTitle?: string;
 };
 

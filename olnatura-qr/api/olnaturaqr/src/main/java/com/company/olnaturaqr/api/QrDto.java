@@ -32,7 +32,7 @@ public class QrDto {
             String fuente
     ) {}
 
-    /** label and dynamic unchanged; optional fields for web client (Android ignores). */
+ 
     public record Response(
             Label label,
             Dynamic dynamic,

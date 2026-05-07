@@ -71,9 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await api<void>("/auth/logout", { method: "POST" });
     } catch (err) {
-      // si falla igual limpiamos localmente
       const _ae = err as ApiError;
-      // (puedes loggear si quieres)
     } finally {
       setAnonymous();
     }

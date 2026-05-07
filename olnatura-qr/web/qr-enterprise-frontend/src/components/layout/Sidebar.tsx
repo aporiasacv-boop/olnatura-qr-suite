@@ -14,7 +14,7 @@ const useStyles = makeStyles({
   },
   header: {
     ...shorthands.padding("18px", "16px"),
-    borderBottom: `1px solid ${brand.border}`, // ✅ una sola prop
+    borderBottom: `1px solid ${brand.border}`,
   },
   logoRow: { display: "flex", gap: "10px", alignItems: "center" },
   logo: { width: "28px", height: "28px", objectFit: "contain" },
@@ -45,25 +45,25 @@ const useStyles = makeStyles({
     ...shorthands.borderRadius("10px"),
     color: brand.text,
     textDecorationLine: "none",
-    ...shorthands.border("1px", "solid", "transparent"), // ✅ shorthand
+    ...shorthands.border("1px", "solid", "transparent"),
   },
 
   linkHover: {
     ":hover": {
       backgroundColor: brand.surface,
-      border: `1px solid ${brand.border}`, // ✅ una sola prop
+      border: `1px solid ${brand.border}`,
     },
   },
 
   active: {
     backgroundColor: brand.soft,
-    border: `1px solid ${brand.accent}`, // ✅ una sola prop
+    border: `1px solid ${brand.accent}`,
   },
 
   footer: {
     marginTop: "auto",
     ...shorthands.padding("14px", "16px"),
-    borderTop: `1px solid ${brand.border}`, // ✅ una sola prop
+    borderTop: `1px solid ${brand.border}`,
   },
   small: { color: brand.muted, fontSize: "12px" },
 });

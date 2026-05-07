@@ -1,15 +1,8 @@
-/**
- * Date formatting for Microsoft Dynamics compatibility: DD/MM/YYYY
- * Example: 11/09/2025
- * Used in label preview, PNG export, ZPL, and form display.
- * All dates shown to users must use this format.
- */
+
 
 const DDMMYYYY_REGEX = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
 
-/**
- * Format any date string (YYYY-MM-DD or DD/MM/YYYY) to DD/MM/YYYY for display
- */
+
 export function formatDateDDMMYYYY(isoOrLocal: string | null | undefined): string {
   if (!isoOrLocal || typeof isoOrLocal !== "string") return "";
   const trimmed = isoOrLocal.trim();
@@ -22,9 +15,7 @@ export function formatDateDDMMYYYY(isoOrLocal: string | null | undefined): strin
   return `${day}/${month}/${year}`;
 }
 
-/**
- * Parse DD/MM/YYYY to ISO string (YYYY-MM-DD) for API
- */
+
 export function parseDDMMYYYYToISO(input: string | null | undefined): string {
   if (!input || typeof input !== "string") return "";
   const m = input.trim().match(DDMMYYYY_REGEX);
@@ -40,9 +31,7 @@ export function parseDDMMYYYYToISO(input: string | null | undefined): string {
   return date.toISOString().slice(0, 10);
 }
 
-/**
- * Parse YYYY-MM-DD or DD/MM/YYYY to Date
- */
+
 function parseToDate(s: string): Date | null {
   const iso = /^\d{4}-\d{2}-\d{2}/.test(s);
   if (iso) return new Date(s);
@@ -54,18 +43,14 @@ function parseToDate(s: string): Date | null {
   return new Date(s);
 }
 
-/**
- * Validate DD/MM/YYYY format
- */
+
 export function isValidDDMMYYYY(input: string | null | undefined): boolean {
   if (!input || typeof input !== "string") return false;
   const iso = parseDDMMYYYYToISO(input.trim());
   return iso.length === 10;
 }
 
-/**
- * Convert ISO (YYYY-MM-DD) from API to display string DD/MM/YYYY
- */
+
 export function isoToDisplay(iso: string | null | undefined): string {
   return formatDateDDMMYYYY(iso);
 }

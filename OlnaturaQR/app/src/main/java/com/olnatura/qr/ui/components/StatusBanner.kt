@@ -15,14 +15,20 @@ import androidx.compose.ui.unit.dp
 import com.olnatura.qr.ui.theme.OlnSuccessBg
 import com.olnatura.qr.ui.theme.OlnSuccessText
 
+private fun normalizeStatusText(text: String): String {
+    return if (text.trim().equals("Materia prima verificada", ignoreCase = true)) {
+        "Insumo verificado"
+    } else {
+        text
+    }
+}
+
 @Composable
 fun SuccessBanner(text: String, modifier: Modifier = Modifier) {
     StatusBanner(text = text, bgColor = OlnSuccessBg, textColor = OlnSuccessText, modifier = modifier)
 }
 
-/**
- * Muestra el estatus dinámico (APROBADO/LIBERADO, RECHAZADO, CUARENTENA, etc.) con color según tipo.
- */
+
 @Composable
 fun StatusBanner(
     text: String,
@@ -45,7 +51,7 @@ fun StatusBanner(
                 icon()
                 Spacer(Modifier.width(8.dp))
             }
-            Text(text, color = textColor)
+            Text(normalizeStatusText(text), color = textColor)
         }
     }
 }

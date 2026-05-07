@@ -6,10 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.util.Base64;
 
-/**
- * Converts a PNG image (e.g. QR with logo) to ZPL ^GFA graphic format.
- * Output is 1-bit monochrome, hex-encoded for Zebra printers.
- */
+
 public final class ZplGraphicUtil {
 
     private ZplGraphicUtil() {}

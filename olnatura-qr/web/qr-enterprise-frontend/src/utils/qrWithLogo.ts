@@ -1,9 +1,3 @@
-/**
- * Genera un QR con logo centrado (overlay).
- * - Error correction H (tolerancia para el hueco del logo).
- * - Badge visible: fondo blanco + borde verde + sombra (para que el logo claro SÍ se note).
- */
-
 import * as QRCode from "qrcode";
 
 export type QrWithLogoOptions = {
@@ -35,7 +29,6 @@ const DEFAULTS: Required<Omit<QrWithLogoOptions, "logoUrl">> = {
   debug: false,
 };
 
-/** Genera un QR plano (sin logo) para preview alineado con ZPL nativo. */
 export async function generateQrPlain(
   payload: string,
   opts: { width?: number; margin?: number; errorCorrectionLevel?: "L" | "M" | "Q" | "H" } = {}

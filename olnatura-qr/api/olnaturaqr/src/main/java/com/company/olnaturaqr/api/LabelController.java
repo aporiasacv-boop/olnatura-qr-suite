@@ -27,7 +27,7 @@ import static org.springframework.http.HttpStatus.*;
 @RequestMapping("/api/v1/label")
 public class LabelController {
 
-    /** Microsoft Dynamics format: DD/MM/YYYY */
+
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT);
 
     private final QrLabelRepository repo;
@@ -210,9 +210,7 @@ public class LabelController {
                 .headers(headers)
                 .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
                 .body(zplAll.toString());
-    }
 
-    /** POST: same as GET but accepts qrImageBase64 to embed QR+logo as ^GF graphic */
     @PreAuthorize("hasAnyRole('ADMIN','ALMACEN')")
     @PostMapping(value = "/{id}/zpl", consumes = "application/json")
     public ResponseEntity<String> downloadZplWithGraphic(
@@ -379,7 +377,7 @@ public class LabelController {
         return "^FO455,190^BQN,2,8\n^FDQA," + qrPayload + "^FS";
     }
 
-    /** Escape ^ and \ to avoid breaking ZPL field commands */
+ 
     private String escapeZpl(String s) {
         if (s == null) return "";
         return s.replace("\\", " ").replace("^", " ");

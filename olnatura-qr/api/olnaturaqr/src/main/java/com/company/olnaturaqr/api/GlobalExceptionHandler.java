@@ -14,9 +14,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Normaliza errores en JSON: timestamp, path, status, error, message (en español).
- */
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
 

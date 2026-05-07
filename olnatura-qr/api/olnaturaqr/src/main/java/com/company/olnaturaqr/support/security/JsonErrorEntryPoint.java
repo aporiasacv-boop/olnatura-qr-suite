@@ -12,9 +12,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import java.io.IOException;
 import java.util.Map;
 
-/**
- * Devuelve errores 401/403 en JSON: { "message": "...", "code": "..." }
- */
+
 public class JsonErrorEntryPoint implements AuthenticationEntryPoint, AccessDeniedHandler {
 
     private static final String UNAUTHORIZED_MESSAGE = "No autenticado. Inicia sesión.";

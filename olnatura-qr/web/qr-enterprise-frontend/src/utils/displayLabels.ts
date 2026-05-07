@@ -1,8 +1,4 @@
-/**
- * Frontend-only display label mappings.
- * Maps internal/technical keys to business-friendly Spanish labels.
- * Does NOT change backend fields, DTO keys, or API contracts.
- */
+
 
 export const LABELS = {
   // Section headers
@@ -40,7 +36,7 @@ export const LABELS = {
   detalle: "Detalle",
 } as const;
 
-/** Map fuente (source) technical value to friendly Spanish label */
+
 export function fuenteDisplay(fuente: string | null | undefined): string {
   if (!fuente || typeof fuente !== "string") return LABELS.noData;
   const v = fuente.trim().toUpperCase();
@@ -49,7 +45,7 @@ export function fuenteDisplay(fuente: string | null | undefined): string {
   return fuente;
 }
 
-/** Map audit actionType (backend key) to friendly Spanish label */
+
 export function actionTypeDisplay(actionType: string | null | undefined): string {
   if (!actionType) return LABELS.noData;
   const v = actionType.trim().toUpperCase();
@@ -66,7 +62,7 @@ export function actionTypeDisplay(actionType: string | null | undefined): string
   return map[v] ?? actionType;
 }
 
-/** Format ISO date string for display: DD/MM/YYYY HH:mm */
+
 export function formatDateTime(iso: string | null | undefined): { date: string; time: string } {
   if (!iso) return { date: LABELS.noData, time: LABELS.noData };
   try {

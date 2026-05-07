@@ -239,7 +239,6 @@ export default function BatchLookupPage() {
     } catch (e) {
       const ae = e as ApiError;
 
-      // ✅ Aquí NO hacemos toast para no duplicar UX.
       setErr({
         title: ae.status === 404 ? "Lote no encontrado" : "Error al consultar",
         detail:

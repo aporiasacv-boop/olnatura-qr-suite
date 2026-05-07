@@ -8,10 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.util.Map;
 
-/**
- * Unauthenticated connectivity check for network diagnostics.
- * Use from another PC to verify backend is reachable (firewall/subnet testing).
- */
+
 @RestController
 @RequestMapping("/api/v1/public")
 public class PublicConnectivityController {

@@ -18,7 +18,7 @@ export type ToastItem = {
   message?: string;
   error?: unknown;
 
-  /** evita spam (opcional) */
+
   dedupeKey?: string;
 };
 
@@ -30,7 +30,7 @@ const ToastsContext = React.createContext<ToastsContextValue | null>(null);
 
 const TOASTER_ID = "global-toaster";
 
-/** Bridge global: permite disparar toast desde client.ts sin hooks */
+
 let globalPush: ((t: ToastItem) => void) | null = null;
 
 export function pushToast(t: ToastItem) {

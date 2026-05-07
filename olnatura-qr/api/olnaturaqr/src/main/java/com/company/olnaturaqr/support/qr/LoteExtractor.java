@@ -6,9 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.Optional;
 
-/**
- * Extrae el lote de un string raw (JSON, URL, o texto plano).
- */
 public final class LoteExtractor {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -20,10 +17,7 @@ public final class LoteExtractor {
     /** Canonical format for new QR codes. */
     private static final String PREFIX = "OLNQR:1:";
 
-    /**
-     * Extracts identifier (lote or token) from raw QR content.
-     * Supports: OLNQR:1:&lt;token&gt;, JSON, URL, plain text.
-     */
+
     public static Optional<String> extract(String raw) {
         if (raw == null || raw.isBlank()) return Optional.empty();
         String t = raw.trim();

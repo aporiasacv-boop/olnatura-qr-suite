@@ -5,10 +5,7 @@ import org.json.JSONObject
 
 private const val PREFIX = "OLNQR:1:"
 
-/**
- * Extrae el identificador (lote o token) del contenido escaneado del QR.
- * Soporta: OLNQR:1:&lt;token&gt;, JSON, URL con path /qr/{lote}, texto plano.
- */
+
 object LoteExtractor {
 
     /**
