@@ -1,0 +1,128 @@
+/* ============================
+   DESIGN TOKENS
+   ============================ */
+
+:root {
+  /* Spacing (8px base) */
+  --spacing-1: 8px;
+  --spacing-2: 16px;
+  --spacing-3: 24px;
+
+  /* Typography */
+  --font-title: 20px;
+  --font-label: 14px;
+  --font-input: 14px;
+  --font-body: 14px;
+  --font-small: 12px;
+
+  /* Radius */
+  --radius-input: 8px;
+  --radius-button: 8px;
+  --radius-card: 12px;
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+
+  /* Colors (from brand) */
+  --color-bg: #FDFBEB;
+  --color-surface: #FFFFFF;
+  --color-border: #E5E7EB;
+  --color-text: #1F2937;
+  --color-muted: #6B7280;
+  --color-primary: #9CAF47;
+}
+
+/* ============================
+   GLOBAL RESET & STABILITY
+   ============================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================
+   TYPOGRAPHY
+   ============================ */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: var(--font-title);
+}
+
+p { margin: 0; line-height: 1.5; }
+small { font-size: var(--font-small); color: var(--color-muted); }
+
+/* ============================
+   LINKS & INTERACTION
+   ============================ */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+button, [role="button"] {
+  cursor: pointer;
+  transition: opacity var(--transition-fast), background-color var(--transition-fast);
+}
+
+button:hover:not(:disabled), [role="button"]:hover {
+  opacity: 0.9;
+}
+
+/* ============================
+   FORMS
+   ============================ */
+
+input, button, textarea, select {
+  font-family: inherit;
+}
+
+/* ============================
+   IMAGES
+   ============================ */
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* ============================
+   SCROLLBAR
+   ============================ */
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #F1F2EE; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }

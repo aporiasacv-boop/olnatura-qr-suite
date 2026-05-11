@@ -1,0 +1,180 @@
+import * as React from "react";
+import {
+  Button,
+  makeStyles,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
+  Text,
+} from "@fluentui/react-components";
+import { api, ApiError } from "../api/client";
+import { useToasts } from "../components/ui/toasts";
+import AppCard from "../components/ui/AppCard";
+import { brand } from "../styles/brand";
+import { LABELS, formatDateTime, actionTypeDisplay, formatAuditDetail } from "../utils/displayLabels";
+
+function AuditDetailCell({
+  metadata,
+  deviceId,
+}: {
+  metadata?: Record<string, unknown> | string | null;
+  deviceId?: string | null;
+}) {
+  const entries = formatAuditDetail(metadata, deviceId);
+  if (entries.length === 0) return <span style={{ color: brand.muted }}>—</span>;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 160 }}>
+      {entries.map(({ label, value }) => (
+        <div
+          key={label}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "4px 8px",
+            fontSize: 13,
+            lineHeight: 1.35,
+          }}
+        >
+          <span style={{ fontWeight: 600, color: brand.muted }}>{label}:</span>
+          <span style={{ color: brand.text }}>{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const useStyles = makeStyles({
+  wrap: { display: "grid", gap: "24px" },
+  title: { fontSize: "20px", fontWeight: 600, color: brand.text },
+  headerRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    flexWrap: "wrap",
+  },
+  muted: { color: brand.muted },
+});
+
+type AuditEvent = {
+  id: string;
+  createdAt: string;
+  actorId?: string;
+  actorEmail?: string;
+  actorRol?: string;
+  actionType: string;
+  lote?: string;
+  metadata?: Record<string, unknown>;
+  deviceId?: string;
+};
+
+export default function AdminAuditPage() {
+  const s = useStyles();
+  const toasts = useToasts();
+  const [events, setEvents] = React.useState<AuditEvent[]>([]);
+  const [busy, setBusy] = React.useState(false);
+  const [page, setPage] = React.useState(0);
+  const [totalPages, setTotalPages] = React.useState(0);
+
+  const load = React.useCallback(async () => {
+    setBusy(true);
+    try {
+      const res = await api<{ content: AuditEvent[]; totalPages: number }>(
+        `/audit?page=${page}&size=30`,
+        { toast: false }
+      );
+      const data = res as { content?: AuditEvent[]; totalPages?: number };
+      setEvents(Array.isArray(data?.content) ? data.content : []);
+      setTotalPages(data?.totalPages ?? 0);
+    } catch (err) {
+      const ae = err as ApiError;
+      toasts.push({
+        intent: "error",
+        title: "Error al cargar historial",
+        message: ae?.message ?? "Revisa permisos.",
+        error: ae,
+      });
+      setEvents([]);
+    } finally {
+      setBusy(false);
+    }
+  }, [page, toasts]);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  return (
+    <div className={s.wrap}>
+      <div className={s.headerRow}>
+        <h1 className={s.title}>{LABELS.auditLog}</h1>
+        <Button appearance="primary" onClick={load} disabled={busy}>
+          {busy ? "Cargando…" : "Actualizar"}
+        </Button>
+      </div>
+
+      <AppCard>
+        <div style={{ overflowX: "auto" }}>
+          {events.length === 0 ? (
+            <div style={{ padding: 24, textAlign: "center", color: brand.muted }}>
+              {LABELS.noRecords}
+            </div>
+          ) : (
+            <Table aria-label={LABELS.auditLog}>
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell>{LABELS.fecha}</TableHeaderCell>
+                  <TableHeaderCell>{LABELS.accion}</TableHeaderCell>
+                  <TableHeaderCell>Actor</TableHeaderCell>
+                  <TableHeaderCell>Lote</TableHeaderCell>
+                  <TableHeaderCell>{LABELS.detalle}</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {events.map((e) => {
+                  const { date, time } = formatDateTime(e.createdAt);
+                  const dateTimeStr = date !== LABELS.noData && time !== LABELS.noData ? `${date} ${time}` : "—";
+                  return (
+                  <TableRow key={e.id}>
+                    <TableCell>{dateTimeStr}</TableCell>
+                    <TableCell>{actionTypeDisplay(e.actionType)}</TableCell>
+                    <TableCell>
+                      {e.actorRol ?? "-"} {e.actorEmail ? `(${e.actorEmail})` : ""}
+                    </TableCell>
+                    <TableCell>{e.lote ?? "-"}</TableCell>
+                    <TableCell>
+                      <AuditDetailCell metadata={e.metadata} deviceId={e.deviceId} />
+                    </TableCell>
+                  </TableRow>
+                );
+                })}
+              </TableBody>
+            </Table>
+          )}
+          {totalPages > 1 && (
+            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+              <Button
+                appearance="subtle"
+                disabled={page <= 0 || busy}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                Anterior
+              </Button>
+              <Text size={300}>Página {page + 1} de {totalPages}</Text>
+              <Button
+                appearance="subtle"
+                disabled={page >= totalPages - 1 || busy}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Siguiente
+              </Button>
+            </div>
+          )}
+        </div>
+      </AppCard>
+    </div>
+  );
+}

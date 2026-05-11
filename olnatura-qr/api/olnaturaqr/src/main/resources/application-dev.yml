@@ -1,0 +1,21 @@
+server:
+  error:
+    include-message: always
+    include-stacktrace: always
+    include-exception: true
+    include-binding-errors: always
+
+app:
+  cors:
+    allowed-origins: "http://localhost:5173,http://localhost:3000"
+
+  auth:
+    cookie:
+      secure: false
+      same-site: "Lax"
+  bootstrap:
+    admin:
+      enabled: true
+      username: admin
+      email: admin@olnatura.local
+      password: Admin123!

@@ -1,0 +1,77 @@
+package com.company.olnaturaqr.api;
+
+import com.company.olnaturaqr.domain.qr.QrLabel;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
+
+public class LabelDto {
+
+    public record CreateRequest(
+            String tipoMaterial,
+            String nombre,
+            String codigo,
+            String lote,
+            String fechaEntrada,
+            String caducidad,
+            String reanalisis,
+            int envaseNum,
+            int envaseTotal,
+            String documentCode,
+            String cantidadPorEnvase
+    ) {}
+
+    public record LabelView(
+            UUID id,
+            String tipoMaterial,
+            String nombre,
+            String codigo,
+            String lote,
+            String publicToken,
+            LocalDate fechaEntrada,
+            LocalDate caducidad,
+            LocalDate reanalisis,
+            int envaseNum,
+            int envaseTotal,
+            String cantidadPorEnvase,
+            String statusDinamico,
+            String documentCode,
+            Instant createdAt
+    ) {
+        public static LabelView from(QrLabel q) {
+            return new LabelView(
+                    q.getId(),
+                    q.getTipoMaterial(),
+                    q.getNombre(),
+                    q.getCodigo(),
+                    q.getLote(),
+                    q.getPublicToken(),
+                    q.getFechaEntrada(),
+                    q.getCaducidad(),
+                    q.getReanalisis(),
+                    q.getEnvaseNum(),
+                    q.getEnvaseTotal(),
+                    q.getCantidadPorEnvase(),
+                    q.getStatusDinamico(),
+                    q.getDocumentCode(),
+                    q.getCreatedAt()
+            );
+        }
+    }
+
+    public record CreateResponse(
+            UUID id,
+            String status,
+            String qrUrl,
+            String publicToken,
+            LabelView label
+    ) {}
+
+    public record StatusRequest(String status) {}
+
+    public record StatusResponse(UUID id, String status) {}
+
+ 
+    public record ZplRequest(Integer total, Integer from, Integer to, String qrImageBase64) {}
+}

@@ -1,0 +1,40 @@
+package com.olnatura.qr.ui.screen.scanner
+
+import androidx.lifecycle.ViewModel
+import com.olnatura.qr.core.util.LoteExtractor
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
+data class ScannerState(
+    val lastRaw: String? = null,
+    val error: String? = null,
+    val isProcessing: Boolean = false
+)
+
+class ScannerViewModel : ViewModel() {
+    private val _state = MutableStateFlow(ScannerState())
+    val state = _state.asStateFlow()
+
+    /** Reinicia el estado para permitir un nuevo escaneo al volver a la pantalla. */
+    fun resetForNewScan() {
+        _state.update {
+            it.copy(lastRaw = null, error = null, isProcessing = false)
+        }
+    }
+
+    fun consumeQr(raw: String, onLote: (String) -> Unit) {
+        if (_state.value.isProcessing) return
+        if (_state.value.lastRaw == raw) return
+        _state.update { it.copy(lastRaw = raw, error = null) }
+        val lote = LoteExtractor.extract(raw)
+        if (lote.isNullOrBlank()) {
+            _state.update { it.copy(error = "QR inválido: no pude extraer lote") }
+        } else {
+            _state.update { it.copy(isProcessing = true) }
+            onLote(lote)
+        }
+    }
+
+    fun clearError() = _state.update { it.copy(error = null) }
+}
