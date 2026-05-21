@@ -15,10 +15,6 @@ import BatchLookupPage from "../pages/BatchLookupPage";
 import ScanHistoryPage from "../pages/ScanHistoryPage";
 import RegisterLabelPage from "../pages/RegisterLabelPage";
 import GenerateQrPage from "../pages/GenerateQrPage";
-<<<<<<< HEAD
-import LabelPreviewTestPage from "../pages/LabelPreviewTestPage";
-=======
->>>>>>> origin/cleanup/repo-sanitize
 
 import { RequireAuth, RequireAdmin } from "../auth/guards";
 import { RequireRole } from "../auth/RequireRole";

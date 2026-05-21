@@ -58,7 +58,6 @@ public ResponseEntity<UserDto.LoginResponse> login(
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    // Permite login por username o email
     var userOpt = raw.contains("@")
             ? userRepository.findByEmailIgnoreCase(raw)
             : userRepository.findByUsernameIgnoreCase(raw);
@@ -125,7 +124,6 @@ public ResponseEntity<UserDto.LoginResponse> login(
 
     @PostMapping("/request-access")
 public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest req) {
-    // normaliza
     String username = req.username() == null ? "" : req.username().trim();
     String email = req.email() == null ? "" : req.email().trim();
     String password = req.password() == null ? "" : req.password();
@@ -135,12 +133,10 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
         return ResponseEntity.badRequest().body(new ErrorResponse("Datos incompletos"));
     }
 
-    // Solo estos roles se pueden solicitar (ADMIN no)
     if (!roleName.equals("ALMACEN") && !roleName.equals("INSPECCION")) {
         return ResponseEntity.badRequest().body(new ErrorResponse("Rol inválido. Usa ALMACEN o INSPECCION."));
     }
 
-    // Evita duplicados
     if (userRepository.existsByUsernameIgnoreCase(username)) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Username ya existe"));
     }
@@ -156,7 +152,7 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
     u.setEmail(email);
     u.setPasswordHash(passwordEncoder.encode(password));
     u.setRole(role);
-    u.setEnabled(false); // pendiente de aprobación por admin
+    u.setEnabled(false);
 
     User saved = userRepository.save(u);
 
@@ -167,8 +163,6 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
     return ResponseEntity.status(HttpStatus.CREATED)
             .body(new UserDto.RequestAccessResponse(saved.getId().toString(), "PENDING"));
 }
-
-    // === helpers ===
 
     private static UserDto.Response toResponse(User u) {
     String roleName = (u.getRole() == null ? "UNKNOWN" : u.getRole().getName());

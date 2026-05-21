@@ -17,8 +17,11 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // API base URL: default Azure, override with -PAPI_BASE_URL=...
-        buildConfigField("String", "BASE_URL", "\"${project.findProperty("API_BASE_URL") ?: "https://qr-empresarial-demo-fdfahagrafbmdne2.mexicocentral-01.azurewebsites.net/"}\"")
+        buildConfigField(
+            "String",
+            "BASE_URL",
+            "\"${project.findProperty("API_BASE_URL") ?: "https://olnaturaqr-dchrfye3fgfzcjbn.mexicocentral-01.azurewebsites.net/"}\""",
+        )
     }
 
     buildFeatures {

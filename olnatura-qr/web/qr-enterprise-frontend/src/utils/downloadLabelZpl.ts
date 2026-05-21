@@ -1,9 +1,4 @@
 import { API_BASE } from "../api/client";
-
-/**
- * Descarga ZPL vía GET (mismo contrato que consulta por lote).
- * Evita POST con body grande (data URL del QR) que puede fallar en proxies o límites de tamaño.
- */
 export async function downloadLabelZplFile(opts: {
   labelIdOrLote: string;
   totalEnvases: number;

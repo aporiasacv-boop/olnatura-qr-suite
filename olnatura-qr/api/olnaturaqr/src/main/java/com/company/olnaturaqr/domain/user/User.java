@@ -27,12 +27,9 @@ public class User {
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
 
-  // UN SOLO ROL (users.role_id)
   @ManyToOne(fetch = FetchType.EAGER, optional = false)
   @JoinColumn(name = "role_id", nullable = false)
   private Role role;
-
-  // ----- getters/setters -----
 
   public UUID getId() {
     return id;

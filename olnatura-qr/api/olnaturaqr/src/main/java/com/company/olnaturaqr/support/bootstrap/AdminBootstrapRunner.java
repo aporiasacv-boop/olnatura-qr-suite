@@ -43,12 +43,10 @@ public class AdminBootstrapRunner implements CommandLineRunner {
             return;
         }
 
-        // ===== id =====
         if (userRepository.existsByUsernameIgnoreCase(username)) {
             return;
         }
 
-        // ===== rol ADMIN =====
         Role adminRole = roleRepository.findByName("ADMIN")
                 .orElseThrow(() ->
                         new IllegalStateException("Rol ADMIN no existe. Revisa migraciones.")
@@ -58,11 +56,11 @@ public class AdminBootstrapRunner implements CommandLineRunner {
         user.setUsername(username.trim());
         user.setEmail(props.email());
         user.setPasswordHash(passwordEncoder.encode(props.password()));
-        user.setEnabled(true); // si se crea es porque debe estar activo
+        user.setEnabled(true);
         user.setRole(adminRole);
 
         userRepository.save(user);
 
-        System.out.println("✅ Bootstrap admin creado: " + username);
+        System.out.println("Bootstrap admin creado: " + username);
     }
 }

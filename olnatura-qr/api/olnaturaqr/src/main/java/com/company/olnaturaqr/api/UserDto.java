@@ -20,16 +20,15 @@ public class UserDto {
             Response user
     ) {}
 
-    // ===== REQUEST ACCESS =====
     public record RequestAccessRequest(
             String username,
             String email,
             String password,
-            String roleRequested // "ALMACEN" o "INSPECCION" (NO ADMIN)
+            String roleRequested 
     ) {}
 
     public record RequestAccessResponse(
             String requestId,
-            String status // "PENDING"
+            String status 
     ) {}
 }

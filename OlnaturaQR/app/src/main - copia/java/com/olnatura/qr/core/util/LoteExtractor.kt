@@ -8,27 +8,15 @@ private const val PREFIX = "OLNQR:1:"
 
 object LoteExtractor {
 
-    /**
-     * @param raw Contenido crudo del QR (texto, JSON, URL).
-     * @return Identificador extraído (token o lote) o null.
-     */
     fun extract(raw: String?): String? {
         val t = raw?.trim() ?: return null
         if (t.isBlank()) return null
-
-        // 1. Canonical: OLNQR:1:<public_token>
         if (t.startsWith(PREFIX)) {
             val token = t.removePrefix(PREFIX).trim()
             return token.takeIf { it.isNotBlank() && it.length <= 64 }
         }
-
-        // 2. Legacy: JSON
         extractFromJson(t)?.let { return it }
-
-        // 3. Legacy: URL
         extractFromUrl(t)?.let { return it }
-
-        // 4. Legacy: texto plano
         return t.takeIf { it.length in 1..128 }
     }
 

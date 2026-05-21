@@ -7,7 +7,6 @@ export const API_BASE =
     ? raw.trim().replace(/\/+$/, "")
     : "";
 
-// Api error class
 export class ApiError extends Error {
   status: number;
   url: string;
@@ -22,7 +21,6 @@ export class ApiError extends Error {
   }
 }
 
-// Types
 export type ApiOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: any;
@@ -34,28 +32,23 @@ export type ApiOptions = {
   toastTitle?: string;
 };
 
-// Global 401 handler
 let onUnauthorized: (() => void) | null = null;
 
 export function setOnUnauthorized(handler: () => void) {
   onUnauthorized = handler;
 }
 
-// URL joiner
 function joinApiUrl(path: string) {
-  // Permitir URL absoluta
   if (/^https?:\/\//i.test(path)) return path;
 
   const base = API_BASE.replace(/\/+$/, "");
   const p = path.startsWith("/") ? path : `/${path}`;
 
-  // Si ya viene con /api/v1 no se duplica
   if (p === "/api/v1" || p.startsWith("/api/v1/")) return `${base}${p}`;
 
   return `${base}/api/v1${p}`;
 }
 
-// Helpers
 function tryParseBody(text: string) {
   if (!text) return null;
   try {
@@ -83,7 +76,6 @@ function defaultToastTitle(status: number) {
   return "Error";
 }
 
-// API wrapper (ÚNICO acceso al backend)
 export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T> {
   const url = joinApiUrl(path);
   const method = opts.method ?? "GET";

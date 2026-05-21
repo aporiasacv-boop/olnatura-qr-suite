@@ -11,13 +11,6 @@ public final class ZplGraphicUtil {
 
     private ZplGraphicUtil() {}
 
-    /**
-     * Convert base64 PNG (with optional data URL prefix) to ZPL ^GFA command.
-     *
-     * @param base64OrDataUrl Base64 string, optionally with "data:image/png;base64," prefix
-     * @param maxSize         Max width/height to scale to (keeps aspect ratio)
-     * @return ZPL graphic string e.g. "^GFA,5000,25,25,:H08...:F8" or empty on error
-     */
     public static String toGfa(String base64OrDataUrl, int maxSize) {
         if (base64OrDataUrl == null || base64OrDataUrl.isBlank()) return "";
 

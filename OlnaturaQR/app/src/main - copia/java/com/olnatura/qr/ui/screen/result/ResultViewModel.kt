@@ -60,8 +60,6 @@ class ResultViewModel(
                 todayCount = 0
             )
         }
-
-        // GATE: SIEMPRE /me primero
         val me = try {
             authRepo.me()
         } catch (e: Exception) {
@@ -81,8 +79,6 @@ class ResultViewModel(
 
         val roles = me.roles.toSet()
         _state.update { it.copy(me = me, roles = roles, gate = GateState.Authorized) }
-
-        // autorizado => /qr
         val qr = try {
             qrRepo.getQr(lote)
         } catch (e: Exception) {
@@ -110,10 +106,7 @@ class ResultViewModel(
 
         _state.update { it.copy(qr = qr) }
 
-        // autorizado => /scan POST (si da 401, interceptor manda a login)
         runCatching { scanRepo.postScan(lote) }
-
-        // autorizado => /scan GET
         val events = runCatching { scanRepo.history(lote) }.getOrDefault(emptyList())
         val todayCount = countToday(events)
 

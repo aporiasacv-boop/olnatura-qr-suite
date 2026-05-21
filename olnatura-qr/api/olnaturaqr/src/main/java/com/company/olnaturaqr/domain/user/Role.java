@@ -16,7 +16,6 @@ public class Role {
     private String name;
 
     protected Role() {
-        // JPA
     }
 
     public Role(String name) {

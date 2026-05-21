@@ -39,8 +39,6 @@ class MainActivity : ComponentActivity() {
         val qrRepo = QrRepository(api)
         val deviceIdProvider = DeviceIdProvider(applicationContext)
         val scanRepo = ScanRepository(api, deviceIdProvider)
-
-        // VMs (simples, sin DI)
         val loginVm = LoginViewModel(authRepo)
         val requestAccessVm = RequestAccessViewModel(authRepo)
         val scannerVm = ScannerViewModel()

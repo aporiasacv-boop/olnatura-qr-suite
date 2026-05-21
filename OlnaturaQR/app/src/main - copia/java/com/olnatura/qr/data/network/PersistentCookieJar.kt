@@ -23,7 +23,7 @@ class PersistentCookieJar(private val context: Context) : CookieJar {
     private val listType = Types.newParameterizedType(List::class.java, StoredCookie::class.java)
     private val adapter = moshi.adapter<List<StoredCookie>>(listType)
 
-    private val memory = ConcurrentHashMap<String, List<Cookie>>() // host -> cookies
+    private val memory = ConcurrentHashMap<String, List<Cookie>>()
     private val KEY_COOKIES = stringPreferencesKey("cookies_v1")
 
     init {

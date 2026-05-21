@@ -1,6 +1,3 @@
-
-
-/** d/M/yy, dd/MM/yy, d/MM/yyyy, dd/M/yyyy, dd/MM/yyyy */
 const FLEX_DMY_REGEX = /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/;
 
 function parseFlexibleDMY(trimmed: string): { d: number; m: number; y: number } | null {
@@ -29,14 +26,6 @@ export function formatDateDDMMYYYY(isoOrLocal: string | null | undefined): strin
   return `${day}/${month}/${year}`;
 }
 
-<<<<<<< HEAD
-
-=======
-/**
- * Parse flexible d/M/y forms to ISO string (YYYY-MM-DD) for API.
- * Accepts: d/M/yy, dd/MM/yy, d/MM/yyyy, dd/M/yyyy, dd/MM/yyyy (yy → 20yy).
- */
->>>>>>> origin/cleanup/repo-sanitize
 export function parseDDMMYYYYToISO(input: string | null | undefined): string {
   if (!input || typeof input !== "string") return "";
   const r = parseFlexibleDMY(input.trim());
@@ -47,13 +36,6 @@ export function parseDDMMYYYYToISO(input: string | null | undefined): string {
   return `${y}-${mo}-${d}`;
 }
 
-<<<<<<< HEAD
-
-=======
-/**
- * Parse YYYY-MM-DD or slash-separated d/M/y to Date
- */
->>>>>>> origin/cleanup/repo-sanitize
 function parseToDate(s: string): Date | null {
   const iso = /^\d{4}-\d{2}-\d{2}/.test(s);
   if (iso) return new Date(s);
@@ -62,13 +44,6 @@ function parseToDate(s: string): Date | null {
   return new Date(s);
 }
 
-<<<<<<< HEAD
-
-=======
-/**
- * Validate date input (flexible forms accepted)
- */
->>>>>>> origin/cleanup/repo-sanitize
 export function isValidDDMMYYYY(input: string | null | undefined): boolean {
   if (!input || typeof input !== "string") return false;
   const iso = parseDDMMYYYYToISO(input.trim());

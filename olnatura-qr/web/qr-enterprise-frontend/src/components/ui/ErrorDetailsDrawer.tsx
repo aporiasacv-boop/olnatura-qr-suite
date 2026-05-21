@@ -84,7 +84,6 @@ export default function ErrorDetailsDrawer({
               try {
                 await navigator.clipboard.writeText(json);
               } catch {
-                 silencioso: si el browser bloquea clipboard, no rompemos UX
               }
             }}
           >

@@ -1,7 +1,5 @@
-// src/styles/brand.ts
 import type { PartialTheme } from "@fluentui/react-components";
 
-/** Enterprise palette: soft, clean, professional */
 export const brand = {
   primary: "#9CAF47",
   hover: "#8A9E3C",

@@ -6,13 +6,13 @@ export type QrWithLogoOptions = {
   width?: number;
   color?: { dark: string; light: string };
 
-  logoUrl?: string;        // default: "/logo-olnatura.png" en /public
-  logoSizeRatio?: number;  // tamaño del logo vs QR (ej 0.22)
-  badgeSizeRatio?: number; // tamaño del badge (debe ser un poco mayor que logo)
-  badgeRadiusRatio?: number; // redondez del badge (0.18 ~ buen look)
-  badgeBorderWidth?: number; // borde visible
-  badgeShadow?: boolean;   // sombra suave
-  debug?: boolean;         // logs
+  logoUrl?: string;  
+  logoSizeRatio?: number;
+  badgeSizeRatio?: number; 
+  badgeRadiusRatio?: number; 
+  badgeBorderWidth?: number; 
+  badgeShadow?: boolean;   
+  debug?: boolean;         
 };
 
 const DEFAULTS: Required<Omit<QrWithLogoOptions, "logoUrl">> = {
@@ -90,10 +90,8 @@ async function drawLogoOverlay(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas not supported");
 
-  // 1) Dibuja QR
   ctx.drawImage(qrImg, 0, 0, size, size);
 
-  // 2) Badge + logo (centrado)
   const badgeSize = Math.round(size * opts.badgeSizeRatio);
   const logoSize = Math.round(size * opts.logoSizeRatio);
 
@@ -103,7 +101,6 @@ async function drawLogoOverlay(
   const bx = Math.round(cx - badgeSize / 2);
   const by = Math.round(cy - badgeSize / 2);
 
-  // Badge: sombra
   if (opts.badgeShadow) {
     ctx.save();
     ctx.shadowColor = "rgba(0,0,0,0.20)";
@@ -120,18 +117,14 @@ async function drawLogoOverlay(
     ctx.fill();
   }
 
-  // Borde verde (para que se note siempre)
   drawRoundedRect(ctx, bx, by, badgeSize, badgeSize, Math.round(badgeSize * opts.badgeRadiusRatio));
   ctx.lineWidth = opts.badgeBorderWidth;
-  ctx.strokeStyle = "#4d8a52"; // verde Olnatura-ish
+  ctx.strokeStyle = "#4d8a52";
   ctx.stroke();
 
-  // Dibuja logo “contain” dentro del badge
   const lx = Math.round(cx - logoSize / 2);
   const ly = Math.round(cy - logoSize / 2);
 
-  // Algunos logos traen transparencia y se ven muy claros:
-  // aumenta un poco el contraste pintando primero un blanco puro (ya lo hicimos con badge)
   ctx.drawImage(logoImg, lx, ly, logoSize, logoSize);
 
   return canvas.toDataURL("image/png");

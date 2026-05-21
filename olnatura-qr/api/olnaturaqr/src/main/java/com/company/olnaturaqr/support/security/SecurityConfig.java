@@ -50,7 +50,7 @@ public class SecurityConfig {
                         "Origin"
                 ));
                 cfg.setAllowCredentials(true);
-                cfg.setMaxAge(3600L); // cache preflight 1h
+                cfg.setMaxAge(3600L);
                 return cfg;
             }))
 
@@ -58,34 +58,23 @@ public class SecurityConfig {
             .requestMatchers("/actuator/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/public/ping").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-         // Landing pública del QR (sin login) - HTML para cámara genérica
             .requestMatchers(HttpMethod.GET, "/qr/**").permitAll()
-
-         // SPA static assets and shell (index.html for client-side routing)
             .requestMatchers(req ->
                 "GET".equals(req.getMethod())
                     && req.getRequestURI() != null
                     && !req.getRequestURI().startsWith("/api")
             ).permitAll()
-
-         // Auth
             .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/v1/auth/request-access").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
-
-        // Audit log (autenticado)
             .requestMatchers(HttpMethod.POST, "/api/v1/audit/**").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/v1/audit", "/api/v1/audit/*/pdf").authenticated()
-
             .requestMatchers(HttpMethod.GET, "/api/v1/qr/**").authenticated()
             .requestMatchers(HttpMethod.POST, "/api/v1/scan/**").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/v1/scan/**").authenticated()
-
             .anyRequest().authenticated()
             )
-
             .exceptionHandling(ex -> {
                 var entryPoint = new JsonErrorEntryPoint();
                 ex.authenticationEntryPoint(entryPoint);

@@ -1,7 +1,3 @@
-/**
- * @deprecated Prefer LabelPreview + exportLabelPreviewToPng for React flows
- */
-
 import { formatDateDDMMYYYY } from "./dateFormat";
 
 export type FechaTipo = "CADUCIDAD" | "REANALISIS";
@@ -16,9 +12,7 @@ export type LabelData = {
   fechaTipo?: FechaTipo;
   
   fechaValor?: string;
-  /** @deprecated Legacy: si no hay fechaTipo/fechaValor, se usa para inferir */
   caducidad?: string;
-  /** @deprecated Legacy: si no hay fechaTipo/fechaValor, se usa para inferir */
   reanalisis?: string;
   envaseNum?: number;
   envaseTotal?: number;
@@ -74,7 +68,6 @@ export async function renderLabelToPng(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas not supported");
 
-  // Fondo blanco + borde verde
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, w, h);
   ctx.strokeStyle = "#45a350";
@@ -100,7 +93,6 @@ export async function renderLabelToPng(
   row(ctx, x, y, "Envase", `${label.envaseNum ?? "—"} / ${label.envaseTotal ?? "—"}`);
   y += lineH + pad;
 
-  // QR centrado abajo
   const qrX = (w - qrSize) / 2;
   ctx.drawImage(qrImg, qrX, y, qrSize, qrSize);
 

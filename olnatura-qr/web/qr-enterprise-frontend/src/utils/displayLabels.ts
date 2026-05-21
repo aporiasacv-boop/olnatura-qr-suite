@@ -1,7 +1,6 @@
 
 
 export const LABELS = {
-  // Section headers
   lookup: "Consulta por lote",
   scanHistory: "Historial de escaneos",
   auditLog: "Historial de auditoría",
@@ -13,21 +12,15 @@ export const LABELS = {
   envase: "Envase",
   cantidad: "Cantidad",
   ubicacion: "Ubicación",
-
-  // Actions
   downloadZpl: "Descargar etiqueta Zebra",
   downloadAuditPdf: "Descargar historial (PDF)",
   registerScan: "Registrar escaneo",
-
-  // Empty / no data
   noData: "Sin dato",
   noRecords: "No hay registros disponibles",
   noScans: "Sin escaneos",
   noEvents: "Sin eventos",
   readyToLookup: "Listo para consultar",
   readyToFilter: "Listo para filtrar",
-
-  // Scan history table columns
   fecha: "Fecha",
   hora: "Hora",
   usuario: "Usuario",
@@ -63,14 +56,10 @@ export function actionTypeDisplay(actionType: string | null | undefined): string
   return map[v] ?? actionType;
 }
 
-<<<<<<< HEAD
-
-=======
-/** Map audit metadata keys (backend) to friendly Spanish labels */
 const METADATA_KEY_LABELS: Record<string, string> = {
   targetUserId: "ID de usuario destino",
   targetUsername: "Usuario destino",
-  targetUserName: "Usuario destino", // fallback si viene así
+  targetUserName: "Usuario destino",
   roleRequested: "Rol solicitado",
   exportType: "Tipo de exportación",
   count: "Cantidad",
@@ -92,7 +81,6 @@ export function metadataKeyToLabel(key: string): string {
   return METADATA_KEY_LABELS[key] ?? key;
 }
 
-/** Map some technical metadata values to friendly Spanish */
 function formatMetadataValue(key: string, value: unknown): string {
   if (value == null) return LABELS.noData;
   const str = String(value).trim();
@@ -108,7 +96,6 @@ function formatMetadataValue(key: string, value: unknown): string {
   return str;
 }
 
-/** Parse metadata safely - may be object or JSON string */
 function parseMetadata(raw: unknown): Record<string, unknown> | null {
   if (raw == null) return null;
   if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
@@ -126,8 +113,6 @@ function parseMetadata(raw: unknown): Record<string, unknown> | null {
 }
 
 export type AuditDetailEntry = { label: string; value: string };
-
-/** Build friendly label-value pairs from audit metadata for display */
 export function formatAuditDetail(
   metadata: Record<string, unknown> | string | null | undefined,
   deviceId?: string | null
@@ -147,8 +132,6 @@ export function formatAuditDetail(
   return entries;
 }
 
-/** Format ISO date string for display: DD/MM/YYYY HH:mm */
->>>>>>> origin/cleanup/repo-sanitize
 export function formatDateTime(iso: string | null | undefined): { date: string; time: string } {
   if (!iso) return { date: LABELS.noData, time: LABELS.noData };
   try {

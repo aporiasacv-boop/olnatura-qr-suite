@@ -29,16 +29,10 @@ const useStyles = makeStyles({
   },
   surface: {
     backgroundColor: brand.surface,
-<<<<<<< HEAD
-    ...shorthands.borderRadius("14px"),
-    ...shorthands.border("1px", "solid", brand.border),
-    ...shorthands.padding("16px"),
-=======
     borderRadius: "12px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
     ...shorthands.border("1px", "solid", brand.border),
     ...shorthands.padding("24px"),
->>>>>>> origin/cleanup/repo-sanitize
     minHeight: "100%",
   },
 });

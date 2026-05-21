@@ -9,7 +9,6 @@ public class NoopUserDetailsConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        // Evita que Spring cree el usuario default con password generado
         return username -> { throw new UnsupportedOperationException("No UserDetailsService"); };
     }
 }

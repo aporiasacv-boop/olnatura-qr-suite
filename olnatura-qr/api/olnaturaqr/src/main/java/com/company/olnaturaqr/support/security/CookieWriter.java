@@ -14,7 +14,6 @@ public final class CookieWriter {
             String sameSite,
             long maxAgeSeconds
     ) {
-        // HttpOnly + SameSite mitigar ataques XSS y CSRF
         String header = cookieName + "=" + jwt
                 + "; Path=/"
                 + "; Max-Age=" + maxAgeSeconds
@@ -32,7 +31,6 @@ public final class CookieWriter {
             boolean secure,
             String sameSite
     ) {
-        // valor vacío + Max-Age=0 para borrar correctamente en navegadores/proxies
         String header = cookieName + "="
                 + "; Path=/"
                 + "; Max-Age=0"

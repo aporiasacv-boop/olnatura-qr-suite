@@ -9,12 +9,6 @@ import java.util.Optional;
 public final class LoteExtractor {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    /**
-     * @param raw Contenido crudo (JSON, URL con path, o lote directo)
-     * @return Lote normalizado o empty si no se pudo extraer
-     */
-    /** Canonical format for new QR codes. */
     private static final String PREFIX = "OLNQR:1:";
 
 
@@ -22,22 +16,18 @@ public final class LoteExtractor {
         if (raw == null || raw.isBlank()) return Optional.empty();
         String t = raw.trim();
 
-        // Canonical: OLNQR:1:<public_token>
         if (t.startsWith(PREFIX)) {
             String token = t.substring(PREFIX.length()).trim();
             if (!token.isBlank() && token.length() <= 64) return Optional.of(token);
             return Optional.empty();
         }
 
-        // Legacy: JSON
         Optional<String> fromJson = extractFromJson(t);
         if (fromJson.isPresent()) return fromJson;
 
-        // Legacy: URL
         Optional<String> fromUrl = extractFromUrl(t);
         if (fromUrl.isPresent()) return fromUrl;
 
-        // Legacy: plain lote or token
         if (t.length() >= 1 && t.length() <= 120) return Optional.of(t);
         return Optional.empty();
     }

@@ -72,7 +72,7 @@ public class JwtCookieAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            String roleName = user.getRole().getName(); // ADMIN / ALMACEN / INSPECCION
+            String roleName = user.getRole().getName();
 
             var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
 

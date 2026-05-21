@@ -1,4 +1,3 @@
-// src/auth/guards.tsx
 import type { JSX, ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
@@ -32,7 +31,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const { me, loading } = useAuth();
   const loc = useLocation();
 
-  if (loading) return null; // o tu LoadingState
+  if (loading) return null; 
   if (!me) return <Navigate to="/login" replace state={{ from: loc.pathname }} />;
 
   return <>{children}</>;

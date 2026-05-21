@@ -15,8 +15,6 @@ data class ScannerState(
 class ScannerViewModel : ViewModel() {
     private val _state = MutableStateFlow(ScannerState())
     val state = _state.asStateFlow()
-
-    /** Reinicia el estado para permitir un nuevo escaneo al volver a la pantalla. */
     fun resetForNewScan() {
         _state.update {
             it.copy(lastRaw = null, error = null, isProcessing = false)

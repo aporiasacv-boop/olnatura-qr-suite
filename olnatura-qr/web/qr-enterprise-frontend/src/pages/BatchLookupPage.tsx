@@ -29,7 +29,6 @@ import StatusTag from "../components/ui/StatusTag";
 import { LABELS, fuenteDisplay } from "../utils/displayLabels";
 import ScanHistoryTable from "../components/ui/ScanHistoryTable";
 
-// Helpers
 function getDeviceId() {
   const k = "qr_device_id";
   const existing = localStorage.getItem(k);
@@ -138,8 +137,6 @@ async function downloadAuditPdf(
   }
 }
 
-// Status mapping: display label (Spanish) <-> backend value (English)
-// PATCH requests must send backend values.
 const STATUS_OPTIONS = [
   { value: "PENDING", label: "PENDIENTE" },
   { value: "LIBERADO", label: "LIBERADO" },
@@ -200,7 +197,6 @@ export default function BatchLookupPage() {
 
   const loteTrim = useMemo(() => lote.trim(), [lote]);
 
-  // Load batch data
   const load = async () => {
     if (!loteTrim) return;
 
@@ -262,7 +258,6 @@ export default function BatchLookupPage() {
     }
   };
 
-  // Register scan
   const registerScan = async () => {
     if (!loteTrim) return;
 
@@ -305,7 +300,6 @@ export default function BatchLookupPage() {
     }
   };
 
-  // Derived values
   const labelEnvase = `${readLabel(data, "envaseNum")} / ${readLabel(data, "envaseTotal")}`;
   const envaseTotal = parseInt(String((data as any)?.label?.envaseTotal ?? 1), 10) || 1;
 

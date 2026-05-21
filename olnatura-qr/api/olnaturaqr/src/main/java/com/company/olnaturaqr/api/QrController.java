@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/qr")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class QrController {
 
     private final QrQueryService qrQueryService;

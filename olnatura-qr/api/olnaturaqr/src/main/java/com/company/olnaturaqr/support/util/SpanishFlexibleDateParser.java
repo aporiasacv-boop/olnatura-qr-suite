@@ -9,10 +9,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-
-/**
- * Accepts ISO yyyy-MM-dd and slash forms d/M/yy, dd/MM/yy, d/MM/yyyy, dd/M/yyyy, dd/MM/yyyy (yy → 20yy).
- */
 public final class SpanishFlexibleDateParser {
 
     private static final Pattern SLASH = Pattern.compile("^(\\d{1,2})/(\\d{1,2})/(\\d{2}|\\d{4})$");
@@ -35,7 +31,6 @@ public final class SpanishFlexibleDateParser {
         try {
             return LocalDate.parse(s, DateTimeFormatter.ISO_LOCAL_DATE);
         } catch (DateTimeParseException ignored) {
-            // continue
         }
         Matcher m = SLASH.matcher(s);
         if (!m.matches()) {

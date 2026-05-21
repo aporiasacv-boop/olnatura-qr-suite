@@ -15,6 +15,25 @@ const useStyles = makeStyles({
     ...shorthands.padding("18px", "16px"),
     borderBottom: `1px solid ${brand.border}`,
   },
+  logoRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+  },
+  logo: {
+    width: "40px",
+    height: "40px",
+    objectFit: "contain",
+  },
+  title: {
+    fontWeight: 600,
+    fontSize: "15px",
+    color: brand.text,
+  },
+  subtitle: {
+    color: brand.muted,
+    fontSize: "12px",
+  },
   nav: {
     display: "flex",
     flexDirection: "column",
@@ -54,17 +73,12 @@ const useStyles = makeStyles({
   },
   footer: {
     marginTop: "auto",
-<<<<<<< HEAD
-    ...shorthands.padding("14px", "16px"),
-    borderTop: `1px solid ${brand.border}`,
-=======
     ...shorthands.padding("16px"),
     borderTop: `1px solid ${brand.border}`,
   },
   small: {
     color: brand.muted,
     fontSize: "12px",
->>>>>>> origin/cleanup/repo-sanitize
   },
 });
 

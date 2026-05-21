@@ -36,7 +36,6 @@ public class ScanController {
         ev.setLote(actualLote);
         ev.setDeviceId(deviceId);
 
-        // cookie JWT
         if (principal != null && principal.id() != null) {
             ev.setScannedBy(principal.id());
         }

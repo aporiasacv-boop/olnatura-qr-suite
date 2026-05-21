@@ -93,7 +93,6 @@ fun ReportProblemScreen(
                 text = "Enviar",
                 enabled = canSend,
                 onClick = {
-                    // Aquí luego llamas vm.submit(lote, motivo, comentario)
                     onDone()
                 },
                 containerColor = OlnGreen

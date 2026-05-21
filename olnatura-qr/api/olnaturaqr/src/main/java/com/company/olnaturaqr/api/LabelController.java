@@ -33,11 +33,6 @@ public class LabelController {
 
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT);
-
-    /**
-     * ^CI13 = ISO 8859-1 (Latin-1), el juego correcto para español en Zebra.
-     * ^CI15 NO es CP850 en el manual ZPL (p.ej. Latin-5); por eso á salía como símbolos sueltos.
-     */
     private static final Charset ZPL_OUT_CHARSET = StandardCharsets.ISO_8859_1;
 
     private final QrLabelRepository repo;
@@ -50,7 +45,6 @@ public class LabelController {
         this.dynamics = dynamics;
     }
 
-    // ADMIN o ALMACEN pueden crear
     @PreAuthorize("hasAnyRole('ADMIN','ALMACEN')")
     @PostMapping
     public ResponseEntity<LabelDto.CreateResponse> create(@RequestBody LabelDto.CreateRequest req) {
@@ -86,7 +80,6 @@ public class LabelController {
         q.setDocumentCode(
                 req.documentCode() != null && !req.documentCode().isBlank() ? req.documentCode().trim() : null);
 
-        // Estado inicial fijo
         q.setStatusDinamico("PENDING");
         q.setCreatedAt(Instant.now());
         q.setPublicToken(java.util.UUID.randomUUID().toString().replace("-", ""));
@@ -95,7 +88,6 @@ public class LabelController {
         try {
             saved = repo.save(q);
         } catch (DataIntegrityViolationException ex) {
-            // Por unique(lote) o unique(public_token)
             throw new ResponseStatusException(CONFLICT, "Ya existe una etiqueta con ese lote: " + lote);
         }
 
@@ -221,19 +213,10 @@ public class LabelController {
         return ResponseEntity
                 .ok()
                 .headers(headers)
-<<<<<<< HEAD
-                .contentType(org.springframework.http.MediaType.TEXT_PLAIN)
-                .body(zplAll.toString());
-
-=======
                 .contentType(new MediaType("text", "plain", ZPL_OUT_CHARSET))
                 .body(zplBytes);
     }
 
-    /**
-     * POST: same as GET but accepts qrImageBase64 to embed QR+logo as ^GF graphic
-     */
->>>>>>> origin/cleanup/repo-sanitize
     @PreAuthorize("hasAnyRole('ADMIN','ALMACEN')")
     @PostMapping(value = "/{id}/zpl", consumes = "application/json")
     public ResponseEntity<byte[]> downloadZplWithGraphic(
@@ -407,31 +390,12 @@ public class LabelController {
         return "^FO455,190^BQN,2,8\n^FDQA," + qrPayload + "^FS";
     }
 
-<<<<<<< HEAD
- 
-    private String escapeZpl(String s) {
-        if (s == null) return "";
-        return s.replace("\\", " ").replace("^", " ");
-=======
-    /**
-     * Genera el bloque {@code ^FD...^FS} de forma segura para la impresora Zebra.
-     * <p>
-     * Requisitos:
-     * <ul>
-     *   <li>Conserva ASCII imprimible tal cual.</li>
-     *   <li>Convierte caracteres no ASCII (>= 0x80 en Latin-1) a escapes hex compatibles con {@code ^FH\}.
-     *       Ejemplo: {@code ó} (0xF3) => {@code \F3}.</li>
-     *   <li>Reemplaza {@code ^} y {@code \} literales por espacio para no romper comandos ZPL.</li>
-     * </ul>
-     */
     private String fdField(String s) {
         EncodedFd encoded = encodeFdFieldContent(s);
         if (!encoded.needsHex) {
             return "^FD" + encoded.content + "^FS";
         }
-        // ^FH\ habilita que la impresora interprete \XX dentro del ^FD como bytes hexadecimales.
         return "^FH\\^FD" + encoded.content + "^FS";
->>>>>>> origin/cleanup/repo-sanitize
     }
 
     private EncodedFd encodeFdFieldContent(String s) {
@@ -460,9 +424,6 @@ public class LabelController {
                 continue;
             }
 
-            // Caso conservador: caracteres fuera de Latin-1.
-            // Para no perder datos, los codificamos a bytes UTF-8 y los enviamos como escapes hex.
-            // Nota: la interpretación final depende de la configuración ^CI (actualmente ^CI13).
             needsHex = true;
             byte[] utf8 = new String(Character.toChars(cp)).getBytes(StandardCharsets.UTF_8);
             for (byte b : utf8) {

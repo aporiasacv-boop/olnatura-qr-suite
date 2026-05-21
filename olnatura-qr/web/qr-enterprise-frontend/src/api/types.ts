@@ -1,5 +1,3 @@
-// src/api/types.ts
-
 export type Role = "ADMIN" | "ALMACEN" | "INSPECCION" | string;
 
 export type Me = {

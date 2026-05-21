@@ -21,7 +21,6 @@ export function RequireRole({ anyOf, children }: Props) {
   const allowed = anyOf.some((r) => roles.includes(r.toUpperCase()));
 
   if (!allowed) {
-    // “403 Forbidden” - redirigir al home
     return <Navigate to="/" replace />;
   }
 

@@ -29,26 +29,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
   });
 
-  // ---- helpers de estado ----
   const setAnonymous = React.useCallback(() => {
     setState({ status: "anonymous", user: null });
   }, []);
 
-  // ---- 401 global ----
   React.useEffect(() => {
-    // Cuando el client detecte 401, limpia sesión local.
     setOnUnauthorized(() => {
       setAnonymous();
     });
   }, [setAnonymous]);
 
-  // ---- fetch /me ----
   const refreshMe = React.useCallback(async () => {
     try {
       const me = await api<Me>("/auth/me");
       setState({ status: "authenticated", user: me });
     } catch (err) {
-      // Si /me falla (401 o backend caído), queda como anónimo
       setAnonymous();
     }
   }, [setAnonymous]);
@@ -57,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshMe();
   }, [refreshMe]);
 
-  // ---- login ----
   const login = React.useCallback(
     async (payload: LoginRequest) => {
       await api<void>("/auth/login", { method: "POST", body: payload });
@@ -66,17 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refreshMe]
   );
 
-  // ---- logout ----
   const logout = React.useCallback(async () => {
     try {
       await api<void>("/auth/logout", { method: "POST" });
-<<<<<<< HEAD
-    } catch (err) {
-      const _ae = err as ApiError;
-=======
     } catch {
-      // si falla igual limpiamos localmente
->>>>>>> origin/cleanup/repo-sanitize
     } finally {
       setAnonymous();
     }

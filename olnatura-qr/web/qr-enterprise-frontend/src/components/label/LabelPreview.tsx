@@ -79,11 +79,9 @@ export default function LabelPreview({
         overflow: "hidden",
         display: "grid",
         gridTemplateColumns: "520px 280px",
-        /* Fila 5 ampliada: números grandes necesitan ~115px; antes 90px desbordaban sobre Caducidad */
         gridTemplateRows: "90px 85px 130px 125px 120px 50px",
       }}
     >
-      {/* HEADER: logo esquina + titulo */}
       <div
         style={{
           gridColumn: "1 / 3",
@@ -128,7 +126,6 @@ export default function LabelPreview({
         </div>
       </div>
 
-      {/* QR: filas 2–4 (línea 5 = inicio pie, sin solaparse) */}
       <div
         style={{
           gridColumn: "2 / 3",
@@ -172,7 +169,6 @@ export default function LabelPreview({
         )}
       </div>
 
-      {/* FECHA | CODIGO | LOTE */}
       <div
         style={{
           gridColumn: "1 / 2",
@@ -216,7 +212,6 @@ export default function LabelPreview({
         </div>
       </div>
 
-      {/* CADUCIDAD | REANALISIS | CANTIDAD */}
       <div
         style={{
           gridColumn: "1 / 2",
@@ -242,7 +237,6 @@ export default function LabelPreview({
         <div style={{ fontSize: 24, fontWeight: 700 }}>{cantidadStr}</div>
       </div>
 
-      {/* FOOTER: columna título + fila de valores (sin baseline que suba los números) */}
       <div
         style={{
           gridColumn: "1 / 3",
@@ -303,7 +297,6 @@ export default function LabelPreview({
         </div>
       </div>
 
-      {/* FOOTER: documentCode + compliance */}
       <div
         style={{
           gridColumn: "1 / 3",
