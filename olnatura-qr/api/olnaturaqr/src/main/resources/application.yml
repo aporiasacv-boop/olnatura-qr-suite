@@ -22,10 +22,13 @@ app:
     allowed-origins: "https://olnaturaqr-dchrfye3fgfzcjbn.mexicocentral-01.azurewebsites.net,http://localhost:5173,http://localhost:3000,http://192.168.41.177:5173,http://192.168.41.177:3000,http://192.168.41.206:3000,http://192.168.41.206:5173,http://192.168.41.230:5173,http://192.168.41.230:3000"
   dynamics:
     mode: ${APP_DYNAMICS_MODE:real}
-    base-url: ${APP_DYNAMICS_BASE_URL:https://olnatura-production.operations.dynamics.com}
+    base-url: ${APP_DYNAMICS_BASE_URL:https://olnatura-produccion.operations.dynamics.com}
+    tenant-id: ${APP_DYNAMICS_TENANT_ID:}
+    client-id: ${APP_DYNAMICS_CLIENT_ID:}
+    client-secret: ${APP_DYNAMICS_CLIENT_SECRET:}
     bearer-token: ${APP_DYNAMICS_BEARER_TOKEN:}
-    connect-timeout: ${APP_DYNAMICS_CONNECT_TIMEOUT:3s}
-    read-timeout: ${APP_DYNAMICS_READ_TIMEOUT:10s}
+    connect-timeout: ${APP_DYNAMICS_CONNECT_TIMEOUT:10s}
+    read-timeout: ${APP_DYNAMICS_READ_TIMEOUT:30s}
 
   auth:
     cookie:

@@ -23,18 +23,21 @@ public class RealDynamicsClient implements DynamicsClient {
 
     private final RestClient restClient;
     private final DynamicsProperties properties;
+    private final DynamicsOAuthTokenProvider tokenProvider;
 
-    public RealDynamicsClient(DynamicsProperties properties) {
+    public RealDynamicsClient(DynamicsProperties properties, DynamicsOAuthTokenProvider tokenProvider) {
         this.properties = properties;
+        this.tokenProvider = tokenProvider;
         this.restClient = buildClient(properties);
     }
 
     @Override
     public Optional<DynamicCard> fetchByLote(String raw) {
         Optional<String> loteOpt = LoteExtractor.extract(raw);
-        boolean hasToken = properties.getBearerToken() != null && !properties.getBearerToken().isBlank();
-        log.info("Dynamics fetchByLote raw='{}' normalized='{}' bearerConfigured={}",
-                safeForLog(raw), loteOpt.orElse("<empty>"), hasToken);
+        boolean oauthReady = properties.isOAuthConfigured()
+                || (properties.getBearerToken() != null && !properties.getBearerToken().isBlank());
+        log.info("Dynamics fetchByLote raw='{}' normalized='{}' authConfigured={}",
+                safeForLog(raw), loteOpt.orElse("<empty>"), oauthReady);
         if (loteOpt.isEmpty()) {
             log.info("Dynamics fallback reason=LOTE_EXTRACTOR_EMPTY");
             return Optional.empty();
@@ -131,10 +134,7 @@ public class RealDynamicsClient implements DynamicsClient {
     }
 
     private void applyAuth(java.util.function.Consumer<String> bearerSetter) {
-        String token = properties.getBearerToken();
-        if (token != null && !token.isBlank()) {
-            bearerSetter.accept(token.trim());
-        }
+        bearerSetter.accept(tokenProvider.getAccessToken());
     }
 
     private RestClient buildClient(DynamicsProperties props) {

@@ -10,8 +10,11 @@ import java.time.Duration;
 public class DynamicsProperties {
 
     private String mode = "mock";
-    private String baseUrl = "https://olnatura-production.operations.dynamics.com";
+    private String baseUrl = "https://olnatura-produccion.operations.dynamics.com";
     private String bearerToken;
+    private String tenantId;
+    private String clientId;
+    private String clientSecret;
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(10);
 
@@ -24,7 +27,7 @@ public class DynamicsProperties {
     }
 
     public String getBaseUrl() {
-        return baseUrl;
+        return normalizeResourceUrl(baseUrl);
     }
 
     public void setBaseUrl(String baseUrl) {
@@ -37,6 +40,30 @@ public class DynamicsProperties {
 
     public void setBearerToken(String bearerToken) {
         this.bearerToken = bearerToken;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getClientSecret() {
+        return clientSecret;
+    }
+
+    public void setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
     }
 
     public Duration getConnectTimeout() {
@@ -53,5 +80,36 @@ public class DynamicsProperties {
 
     public void setReadTimeout(Duration readTimeout) {
         this.readTimeout = readTimeout;
+    }
+
+    public String getTokenEndpoint() {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalStateException("app.dynamics.tenant-id is required for OAuth");
+        }
+        return "https://login.microsoftonline.com/" + tenantId.trim() + "/oauth2/v2.0/token";
+    }
+
+    public String getOAuthScope() {
+        return normalizeResourceUrl(baseUrl) + "/.default";
+    }
+
+    public boolean isOAuthConfigured() {
+        return tenantId != null && !tenantId.isBlank()
+                && clientId != null && !clientId.isBlank()
+                && clientSecret != null && !clientSecret.isBlank();
+    }
+
+    private static String normalizeResourceUrl(String url) {
+        if (url == null) {
+            return "";
+        }
+        String trimmed = url.trim();
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        if (trimmed.endsWith("/data")) {
+            trimmed = trimmed.substring(0, trimmed.length() - "/data".length());
+        }
+        return trimmed;
     }
 }
