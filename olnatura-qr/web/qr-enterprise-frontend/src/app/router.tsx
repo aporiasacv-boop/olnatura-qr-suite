@@ -15,6 +15,7 @@ import BatchLookupPage from "../pages/BatchLookupPage";
 import ScanHistoryPage from "../pages/ScanHistoryPage";
 import RegisterLabelPage from "../pages/RegisterLabelPage";
 import GenerateQrPage from "../pages/GenerateQrPage";
+import DynamicsTestPage from "../pages/DynamicsTestPage";
 
 import { RequireAuth, RequireAdmin } from "../auth/guards";
 import { RequireRole } from "../auth/RequireRole";
@@ -86,6 +87,8 @@ export const router = createBrowserRouter([
           </RequireAdmin>
         ),
       },
+
+      { path: "dynamics-test", element: <DynamicsTestPage /> },
 
       { path: "*", element: <NotFoundPage /> },
     ],

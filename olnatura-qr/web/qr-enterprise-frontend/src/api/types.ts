@@ -46,3 +46,20 @@ export type QrResponse = {
   availableTransitions?: string[];
   permissions?: QrPermissions;
 } & Record<string, any>;
+
+export type DynamicsPreview = {
+  itemNumber: string | null;
+  productName: string | null;
+  productType: string | null;
+  productGroup: string | null;
+  warehouse: string | null;
+  site: string | null;
+  availableQuantity: number | null;
+  onHandQuantity: number | null;
+  unit: string | null;
+  batchNumber: string | null;
+  batchAttribute: string | null;
+  batchValue: string | null;
+  qualityResult: string | null;
+  qualityValue: number | null;
+};
