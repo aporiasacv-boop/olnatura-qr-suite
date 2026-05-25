@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import com.company.olnaturaqr.infra.dynamics.DynamicsException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -39,6 +40,22 @@ public class GlobalExceptionHandler {
         writeError(request, response, status, message, code);
     }
 
+    @ExceptionHandler(DynamicsException.class)
+    public void handleDynamics(DynamicsException ex, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int status = ex.getCode().getHttpStatus().value();
+        writeError(
+                request,
+                response,
+                status,
+                ex.getMessage(),
+                ex.getCode().name(),
+                Map.of(
+                        "elapsedMs", ex.getElapsedMs(),
+                        "dynamicsCode", ex.getCode().name()
+                )
+        );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public void handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String message = ex.getBindingResult().getFieldErrors().stream()
@@ -59,17 +76,30 @@ public class GlobalExceptionHandler {
     }
 
     private void writeError(HttpServletRequest request, HttpServletResponse response, int status, String message, String code) throws IOException {
+        writeError(request, response, status, message, code, Map.of());
+    }
+
+    private void writeError(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            int status,
+            String message,
+            String code,
+            Map<String, Object> extra
+    ) throws IOException {
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        Map<String, Object> body = Map.of(
-                "timestamp", Instant.now().toString(),
-                "path", request != null ? request.getRequestURI() : "",
-                "status", status,
-                "error", code,
-                "message", message
-        );
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("path", request != null ? request.getRequestURI() : "");
+        body.put("status", status);
+        body.put("error", code);
+        body.put("message", message);
+        if (extra != null) {
+            body.putAll(extra);
+        }
         objectMapper.writeValue(response.getOutputStream(), body);
     }
 }

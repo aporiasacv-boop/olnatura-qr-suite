@@ -25,6 +25,7 @@ public class RealDynamicsPreviewService implements DynamicsPreviewService {
 
     @Override
     public DynamicsPreviewResponse fetchPreview(String itemNumber, String lote) {
+        long started = System.nanoTime();
         String item = trimToNull(itemNumber);
         String batch = trimToNull(lote);
 
@@ -37,7 +38,7 @@ public class RealDynamicsPreviewService implements DynamicsPreviewService {
         }
 
         if (item == null) {
-            return emptyPreview(batch);
+            return emptyPreview(batch, elapsedMs(started));
         }
 
         if (batch == null) {
@@ -74,11 +75,29 @@ public class RealDynamicsPreviewService implements DynamicsPreviewService {
                 batchAttribute,
                 batchValue,
                 qr != null ? firstNonBlank(qr.TestResult, qr.QualityTestId) : null,
-                qr != null ? firstNonNull(qr.ResultValue, qr.ResultInventoryQuantity) : null
+                qr != null ? firstNonNull(qr.ResultValue, qr.ResultInventoryQuantity) : null,
+                elapsedMs(started)
         );
     }
 
     private String resolveItemFromBatch(String batch) {
+        String filter = "BatchNumber eq '" + DynamicsODataClient.escapeOdataLiteral(batch) + "'";
+        List<ItemBatchesRow> batches = odata.query(
+                "ItemBatches",
+                filter,
+                1,
+                listType(ItemBatchesRow.class)
+        );
+        String fromBatch = batches.stream()
+                .map(r -> r.ItemNumber)
+                .filter(s -> s != null && !s.isBlank())
+                .map(String::trim)
+                .findFirst()
+                .orElse(null);
+        if (fromBatch != null) {
+            return fromBatch;
+        }
+
         List<ItemBatchAttributeValuesV2Row> rows = queryBatchAttrs(null, batch);
         return rows.stream()
                 .map(r -> r.ItemNumber)
@@ -142,12 +161,17 @@ public class RealDynamicsPreviewService implements DynamicsPreviewService {
         );
     }
 
-    private static DynamicsPreviewResponse emptyPreview(String batch) {
+    private static DynamicsPreviewResponse emptyPreview(String batch, long elapsedMs) {
         return new DynamicsPreviewResponse(
                 null, null, null, null, null, null,
                 null, null, null,
-                batch, null, null, null, null
+                batch, null, null, null, null,
+                elapsedMs
         );
+    }
+
+    private static long elapsedMs(long startedNano) {
+        return (System.nanoTime() - startedNano) / 1_000_000;
     }
 
     private static String trimToNull(String v) {

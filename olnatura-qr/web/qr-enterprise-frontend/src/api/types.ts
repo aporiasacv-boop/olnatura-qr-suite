@@ -62,4 +62,20 @@ export type DynamicsPreview = {
   batchValue: string | null;
   qualityResult: string | null;
   qualityValue: number | null;
+  elapsedMs: number;
+};
+
+export type DynamicsConnectionStatus = {
+  mode: string;
+  oauthConfigured: boolean;
+  usesStaticBearerToken: boolean;
+  scheduledRefreshEnabled: boolean;
+  tokenRefreshInterval: string;
+  tokenExpiresAtUtc: string | null;
+  lastTokenRefreshAtUtc: string | null;
+  lastTokenRefreshMs: number;
+  tokenValid: boolean;
+  tokenExpired: boolean;
+  lastError: string | null;
+  secondsUntilTokenExpiry: number;
 };

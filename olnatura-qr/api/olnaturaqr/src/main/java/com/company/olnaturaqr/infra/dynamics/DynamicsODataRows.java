@@ -32,6 +32,15 @@ public final class DynamicsODataRows {
         public String StringValue;
     }
 
+    public static class ItemBatchesRow {
+        public String ItemNumber;
+        public String BatchNumber;
+        public String BatchExpirationDate;
+        public String BestBeforeDate;
+        public String ManufacturingDate;
+        public String MostRecentTestDate;
+    }
+
     public static class QualityOrderLineResultsRow {
         public String QualityOrderNumber;
         public String QualityTestId;

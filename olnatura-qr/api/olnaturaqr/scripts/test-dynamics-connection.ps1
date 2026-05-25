@@ -1,10 +1,3 @@
-# Prueba local OAuth + OData (no imprime secretos).
-# Uso:
-#   $env:APP_DYNAMICS_TENANT_ID="..."
-#   $env:APP_DYNAMICS_CLIENT_ID="..."
-#   $env:APP_DYNAMICS_CLIENT_SECRET="..."
-#   .\scripts\test-dynamics-connection.ps1 -Lote "TU-LOTE" -ItemNumber "TU-CODIGO"
-
 param(
     [string]$BaseUrl = "https://olnatura-produccion.operations.dynamics.com",
     [string]$TenantId = $env:APP_DYNAMICS_TENANT_ID,

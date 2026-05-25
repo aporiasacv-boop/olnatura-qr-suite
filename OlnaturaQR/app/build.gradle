@@ -15,6 +15,12 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "BASE_URL",
+            "\"${project.findProperty('API_BASE_URL') ?: 'https://olnaturaqr-dchrfye3fgfzcjbn.mexicocentral-01.azurewebsites.net/'}\""
+        )
     }
 
     buildTypes {

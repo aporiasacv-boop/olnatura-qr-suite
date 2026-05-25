@@ -29,6 +29,8 @@ app:
     bearer-token: ${APP_DYNAMICS_BEARER_TOKEN:}
     connect-timeout: ${APP_DYNAMICS_CONNECT_TIMEOUT:10s}
     read-timeout: ${APP_DYNAMICS_READ_TIMEOUT:30s}
+    token-refresh-interval: ${APP_DYNAMICS_TOKEN_REFRESH_INTERVAL:65m}
+    token-refresh-scheduled: ${APP_DYNAMICS_TOKEN_REFRESH_SCHEDULED:true}
 
   auth:
     cookie:

@@ -14,5 +14,6 @@ public record DynamicsPreviewResponse(
         String batchAttribute,
         String batchValue,
         String qualityResult,
-        Double qualityValue
+        Double qualityValue,
+        long elapsedMs
 ) {}
