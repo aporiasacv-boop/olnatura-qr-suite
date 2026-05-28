@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConditionalOnProperty(prefix = "app.dynamics", name = "mode", havingValue = "real")
+@ConditionalOnProperty(prefix = "app.dynamics", name = "token-refresh-scheduled", havingValue = "true")
 public class DynamicsOAuthTokenRefreshScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(DynamicsOAuthTokenRefreshScheduler.class);
@@ -27,7 +28,7 @@ public class DynamicsOAuthTokenRefreshScheduler {
 
     @EventListener(ApplicationReadyEvent.class)
     public void warmUpOnStartup() {
-        if (!properties.isTokenRefreshScheduled()) {
+        if (!shouldRunRefresh()) {
             return;
         }
         log.info("Dynamics OAuth warm-up on startup");
@@ -35,14 +36,25 @@ public class DynamicsOAuthTokenRefreshScheduler {
     }
 
     @Scheduled(
-            initialDelayString = "${app.dynamics.token-refresh-interval:65m}",
-            fixedDelayString = "${app.dynamics.token-refresh-interval:65m}"
+            initialDelayString = "${app.dynamics.token-refresh-interval:50m}",
+            fixedDelayString = "${app.dynamics.token-refresh-interval:50m}"
     )
     public void refreshTokenPeriodically() {
-        if (!properties.isTokenRefreshScheduled()) {
+        if (!shouldRunRefresh()) {
+            return;
+        }
+        if (tokenProvider.isTokenValid()
+                && tokenProvider.getSecondsUntilTokenExpiry() > properties.getTokenRefreshInterval().getSeconds()) {
             return;
         }
         log.info("Dynamics OAuth periodic refresh (interval={})", properties.getTokenRefreshInterval());
         tokenProvider.refreshScheduled();
+    }
+
+    private boolean shouldRunRefresh() {
+        if (tokenProvider.usesStaticBearerToken()) {
+            return false;
+        }
+        return properties.isOAuthConfigured();
     }
 }

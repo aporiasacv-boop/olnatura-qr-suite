@@ -17,7 +17,7 @@ public class DynamicsProperties {
     private String clientSecret;
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(10);
-    private Duration tokenRefreshInterval = Duration.ofMinutes(65);
+    private Duration tokenRefreshInterval = Duration.ofMinutes(50);
     private boolean tokenRefreshScheduled = true;
 
     public String getMode() {

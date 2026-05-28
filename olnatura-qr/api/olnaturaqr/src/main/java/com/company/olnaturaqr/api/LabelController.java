@@ -34,6 +34,7 @@ public class LabelController {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT);
     private static final Charset ZPL_OUT_CHARSET = StandardCharsets.ISO_8859_1;
+    private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
 
     private final QrLabelRepository repo;
     private final AuditService auditService;
@@ -185,9 +186,10 @@ public class LabelController {
             throw new ResponseStatusException(BAD_REQUEST, "Rango debe estar entre 1 y " + envaseTotal);
         }
 
-        StringBuilder zplAll = new StringBuilder();
+        String cantidadStr = resolveCantidadPorEnvase(q);
+        StringBuilder zplAll = new StringBuilder((printTo - printFrom + 1) * 4096);
         for (int seq = printFrom; seq <= printTo; seq++) {
-            zplAll.append(buildSingleZpl(q, seq, envaseTotal, null));
+            zplAll.append(buildSingleZpl(q, seq, envaseTotal, null, cantidadStr));
         }
 
         String safeLote = loteSafe(q.getLote());
@@ -208,8 +210,7 @@ public class LabelController {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
 
-        String zplText = zplAll.toString();
-        byte[] zplBytes = zplText.getBytes(ZPL_OUT_CHARSET);
+        byte[] zplBytes = zplAll.toString().getBytes(ZPL_OUT_CHARSET);
         return ResponseEntity
                 .ok()
                 .headers(headers)
@@ -244,9 +245,10 @@ public class LabelController {
             throw new ResponseStatusException(BAD_REQUEST, "Rango debe estar entre 1 y " + envaseTotal);
         }
 
-        StringBuilder zplAll = new StringBuilder();
+        String cantidadStr = resolveCantidadPorEnvase(q);
+        StringBuilder zplAll = new StringBuilder((printTo - printFrom + 1) * 4096);
         for (int seq = printFrom; seq <= printTo; seq++) {
-            zplAll.append(buildSingleZpl(q, seq, envaseTotal, qrBase64));
+            zplAll.append(buildSingleZpl(q, seq, envaseTotal, qrBase64, cantidadStr));
         }
 
         String safeLote = loteSafe(q.getLote());
@@ -267,8 +269,7 @@ public class LabelController {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
 
-        String zplText = zplAll.toString();
-        byte[] zplBytes = zplText.getBytes(ZPL_OUT_CHARSET);
+        byte[] zplBytes = zplAll.toString().getBytes(ZPL_OUT_CHARSET);
         return ResponseEntity
                 .ok()
                 .headers(headers)
@@ -280,7 +281,19 @@ public class LabelController {
         return (lote == null ? "label" : lote).replaceAll("[\\s/\\\\]+", "_");
     }
 
-    private String buildSingleZpl(QrLabel q, int envaseNum, int envaseTotal, String qrImageBase64) {
+    private String resolveCantidadPorEnvase(QrLabel q) {
+        String manualQty = safe(q.getCantidadPorEnvase());
+        if (!manualQty.isEmpty()) {
+            return manualQty;
+        }
+        String lote = q.getLote();
+        return dynamics.fetchByLote(lote)
+                .map(d -> String.format("%.0f", d.cantidad()).replace(".0", "") +
+                        (d.uom() != null && !d.uom().isBlank() ? " " + d.uom().trim() : ""))
+                .orElse("N/A");
+    }
+
+    private String buildSingleZpl(QrLabel q, int envaseNum, int envaseTotal, String qrImageBase64, String cantidadStr) {
         String lote = q.getLote();
         String qrPayload = "OLNQR:1:" + safe(q.getPublicToken());
         String nombre = safe(q.getNombre());
@@ -288,13 +301,6 @@ public class LabelController {
         String fechaStr = formatDate(q.getFechaEntrada());
         String caducidadStr = formatDate(q.getCaducidad());
         String reanalisisStr = q.getReanalisis() != null ? formatDate(q.getReanalisis()) : "N/A";
-        String manualQty = safe(q.getCantidadPorEnvase());
-        String cantidadStr = !manualQty.isEmpty()
-                ? manualQty
-                : dynamics.fetchByLote(lote)
-                        .map(d -> String.format("%.0f", d.cantidad()).replace(".0", "") +
-                                (d.uom() != null && !d.uom().isBlank() ? " " + d.uom().trim() : ""))
-                        .orElse("N/A");
         String documentCode = orEmpty(q.getDocumentCode(), "AL-001-E02/04");
 
         String envaseDisplay = String.format("%02d", envaseNum) + " de " + String.format("%02d", envaseTotal);
@@ -436,8 +442,7 @@ public class LabelController {
 
     private static String hex2(int value) {
         int v = value & 0xFF;
-        char[] HEX = "0123456789ABCDEF".toCharArray();
-        return "" + HEX[(v >> 4) & 0x0F] + HEX[v & 0x0F];
+        return "" + HEX_DIGITS[(v >> 4) & 0x0F] + HEX_DIGITS[v & 0x0F];
     }
 
     private record EncodedFd(String content, boolean needsHex) {}
