@@ -10,8 +10,14 @@ import java.time.Duration;
 public class DynamicsProperties {
 
     private String mode = "mock";
-    private String baseUrl = "https://olnatura-production.operations.dynamics.com";
-    private String bearerToken;
+    private String baseUrl;
+    private String tenantId;
+    private String clientId;
+    private String clientSecret;
+    /** Audience/resource del token (por defecto se usa baseUrl en el cliente OAuth). */
+    private String resource;
+    /** Override opcional del endpoint de token Azure AD v1. */
+    private String tokenUrl;
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(10);
 
@@ -31,12 +37,44 @@ public class DynamicsProperties {
         this.baseUrl = baseUrl;
     }
 
-    public String getBearerToken() {
-        return bearerToken;
+    public String getTenantId() {
+        return tenantId;
     }
 
-    public void setBearerToken(String bearerToken) {
-        this.bearerToken = bearerToken;
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getClientSecret() {
+        return clientSecret;
+    }
+
+    public void setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+    }
+
+    public String getResource() {
+        return resource;
+    }
+
+    public void setResource(String resource) {
+        this.resource = resource;
+    }
+
+    public String getTokenUrl() {
+        return tokenUrl;
+    }
+
+    public void setTokenUrl(String tokenUrl) {
+        this.tokenUrl = tokenUrl;
     }
 
     public Duration getConnectTimeout() {

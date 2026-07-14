@@ -35,7 +35,7 @@ public class LabelDto {
             int envaseNum,
             int envaseTotal,
             String cantidadPorEnvase,
-            String statusDinamico,
+            String status,
             String documentCode,
             Instant createdAt
     ) {
@@ -53,7 +53,7 @@ public class LabelDto {
                     q.getEnvaseNum(),
                     q.getEnvaseTotal(),
                     q.getCantidadPorEnvase(),
-                    q.getStatusDinamico(),
+                    q.getStatus(),
                     q.getDocumentCode(),
                     q.getCreatedAt()
             );

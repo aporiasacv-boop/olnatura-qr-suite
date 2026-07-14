@@ -35,11 +35,19 @@ data class LabelDto(
 )
 
 data class DynamicDto(
-    val status: String?,
-    val cantidad: Double?,
-    val uom: String?,
-    val ubicacion: String?,
-    val fuente: String?
+    val codigo: String? = null,
+    val nombre: String? = null,
+    val lote: String? = null,
+    val caducidad: String? = null,
+    val cantidadAlmacen: Double? = null,
+    val status: String? = null,
+    val statusDynamics: String? = null,
+    val almacen: String? = null,
+    val ubicacion: String? = null,
+    val fuente: String? = null,
+    /** Compat legado; preferir cantidadAlmacen. */
+    val cantidad: Double? = null,
+    val uom: String? = null
 )
 
 data class ScanEventResponse(

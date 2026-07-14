@@ -43,6 +43,12 @@ public class AdminBootstrapRunner implements CommandLineRunner {
             return;
         }
 
+        String password = props.password();
+        if (password == null || password.isBlank()) {
+            System.out.println("Bootstrap admin omitido: APP_BOOTSTRAP_ADMIN_PASSWORD no definido");
+            return;
+        }
+
         if (userRepository.existsByUsernameIgnoreCase(username)) {
             return;
         }

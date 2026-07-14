@@ -1,7 +1,7 @@
 package com.company.olnaturaqr.api;
 
 import com.company.olnaturaqr.domain.qr.QrLabel;
-import com.company.olnaturaqr.infra.dynamics.DynamicsClient;
+import com.company.olnaturaqr.infra.dynamics.DynamicsLookupService;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
@@ -37,12 +37,12 @@ public class LabelController {
 
     private final QrLabelRepository repo;
     private final AuditService auditService;
-    private final DynamicsClient dynamics;
+    private final DynamicsLookupService dynamicsLookupService;
 
-    public LabelController(QrLabelRepository repo, AuditService auditService, DynamicsClient dynamics) {
+    public LabelController(QrLabelRepository repo, AuditService auditService, DynamicsLookupService dynamicsLookupService) {
         this.repo = repo;
         this.auditService = auditService;
-        this.dynamics = dynamics;
+        this.dynamicsLookupService = dynamicsLookupService;
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','ALMACEN')")
@@ -80,7 +80,7 @@ public class LabelController {
         q.setDocumentCode(
                 req.documentCode() != null && !req.documentCode().isBlank() ? req.documentCode().trim() : null);
 
-        q.setStatusDinamico("PENDING");
+        q.setStatus(WorkflowStatus.PENDING);
         q.setCreatedAt(Instant.now());
         q.setPublicToken(java.util.UUID.randomUUID().toString().replace("-", ""));
 
@@ -99,7 +99,7 @@ public class LabelController {
 
         return ResponseEntity.ok(new LabelDto.CreateResponse(
                 saved.getId(),
-                saved.getStatusDinamico(),
+                saved.getStatus(),
                 qrUrl,
                 saved.getPublicToken(),
                 LabelDto.LabelView.from(saved)));
@@ -123,13 +123,13 @@ public class LabelController {
         QrLabel q = repo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + id));
 
-        q.setStatusDinamico(st);
+        q.setStatus(st);
         repo.save(q);
 
         auditService.log(principal, "CHANGE_STATUS", q.getLote(),
                 java.util.Map.of("status", st, "labelId", id.toString()), null);
 
-        return ResponseEntity.ok(new LabelDto.StatusResponse(q.getId(), q.getStatusDinamico()));
+        return ResponseEntity.ok(new LabelDto.StatusResponse(q.getId(), q.getStatus()));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','INSPECCION')")
@@ -146,13 +146,13 @@ public class LabelController {
             throw new ResponseStatusException(BAD_REQUEST, "Status inválido: " + st);
         }
         QrLabel q = resolveLabel(lote == null ? "" : lote.trim());
-        q.setStatusDinamico(st);
+        q.setStatus(st);
         repo.save(q);
 
         auditService.log(principal, "CHANGE_STATUS", q.getLote(),
                 java.util.Map.of("status", st, "labelId", q.getId().toString()), null);
 
-        return ResponseEntity.ok(new LabelDto.StatusResponse(q.getId(), q.getStatusDinamico()));
+        return ResponseEntity.ok(new LabelDto.StatusResponse(q.getId(), q.getStatus()));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -185,9 +185,12 @@ public class LabelController {
             throw new ResponseStatusException(BAD_REQUEST, "Rango debe estar entre 1 y " + envaseTotal);
         }
 
+        // Una sola resolución de cantidad por solicitud (DB o Dynamics), reutilizada en el ciclo ZPL.
+        String cantidadStr = resolveCantidadForZpl(q);
+
         StringBuilder zplAll = new StringBuilder();
         for (int seq = printFrom; seq <= printTo; seq++) {
-            zplAll.append(buildSingleZpl(q, seq, envaseTotal, null));
+            zplAll.append(buildSingleZpl(q, seq, envaseTotal, null, cantidadStr));
         }
 
         String safeLote = loteSafe(q.getLote());
@@ -244,9 +247,12 @@ public class LabelController {
             throw new ResponseStatusException(BAD_REQUEST, "Rango debe estar entre 1 y " + envaseTotal);
         }
 
+        // Una sola resolución de cantidad por solicitud (DB o Dynamics), reutilizada en el ciclo ZPL.
+        String cantidadStr = resolveCantidadForZpl(q);
+
         StringBuilder zplAll = new StringBuilder();
         for (int seq = printFrom; seq <= printTo; seq++) {
-            zplAll.append(buildSingleZpl(q, seq, envaseTotal, qrBase64));
+            zplAll.append(buildSingleZpl(q, seq, envaseTotal, qrBase64, cantidadStr));
         }
 
         String safeLote = loteSafe(q.getLote());
@@ -276,11 +282,35 @@ public class LabelController {
                 .body(zplBytes);
     }
 
+    /**
+     * Resuelve la cantidad impresa en ZPL una sola vez por solicitud.
+     * Preferencia: cantidadPorEnvase en BD; si falta, un único lookup Dynamics.
+     */
+    private String resolveCantidadForZpl(QrLabel q) {
+        String manualQty = safe(q.getCantidadPorEnvase());
+        if (!manualQty.isEmpty()) {
+            return manualQty;
+        }
+        return fetchDynamicsCantidadForZpl(q.getLote());
+    }
+
+    private String fetchDynamicsCantidadForZpl(String lote) {
+        // DynamicsException propaga al GlobalExceptionHandler con código específico.
+        return dynamicsLookupService.lookupByBatchNumber(lote)
+                .map(d -> {
+                    if (d.cantidadAlmacen() == null) {
+                        return "N/A";
+                    }
+                    return String.format("%.0f", d.cantidadAlmacen()).replace(".0", "");
+                })
+                .orElse("N/A");
+    }
+
     private String loteSafe(String lote) {
         return (lote == null ? "label" : lote).replaceAll("[\\s/\\\\]+", "_");
     }
 
-    private String buildSingleZpl(QrLabel q, int envaseNum, int envaseTotal, String qrImageBase64) {
+    private String buildSingleZpl(QrLabel q, int envaseNum, int envaseTotal, String qrImageBase64, String cantidadStr) {
         String lote = q.getLote();
         String qrPayload = "OLNQR:1:" + safe(q.getPublicToken());
         String nombre = safe(q.getNombre());
@@ -288,13 +318,6 @@ public class LabelController {
         String fechaStr = formatDate(q.getFechaEntrada());
         String caducidadStr = formatDate(q.getCaducidad());
         String reanalisisStr = q.getReanalisis() != null ? formatDate(q.getReanalisis()) : "N/A";
-        String manualQty = safe(q.getCantidadPorEnvase());
-        String cantidadStr = !manualQty.isEmpty()
-                ? manualQty
-                : dynamics.fetchByLote(lote)
-                        .map(d -> String.format("%.0f", d.cantidad()).replace(".0", "") +
-                                (d.uom() != null && !d.uom().isBlank() ? " " + d.uom().trim() : ""))
-                        .orElse("N/A");
         String documentCode = orEmpty(q.getDocumentCode(), "AL-001-E02/04");
 
         String envaseDisplay = String.format("%02d", envaseNum) + " de " + String.format("%02d", envaseTotal);
@@ -317,8 +340,7 @@ public class LabelController {
                 "^FO20,185^GB360,70,2^FS\n" +
                 "^FO20,255^GB360,70,2^FS\n" +
                 "^FO20,325^GB360,70,2^FS\n" +
-                "\n" +
-                "^FO380,185^GB400,300,2^FS\n" +
+                "\n" +                "^FO380,185^GB400,300,2^FS\n" +
                 "\n" +
                 "^FO20,395^GB180,90,2^FS\n" +
                 "^FO200,395^GB180,90,2^FS\n" +

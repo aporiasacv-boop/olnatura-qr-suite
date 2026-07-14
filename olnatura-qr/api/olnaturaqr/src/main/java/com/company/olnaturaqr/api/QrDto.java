@@ -26,9 +26,14 @@ public class QrDto {
     ) {}
 
     public record Dynamic(
+            String codigo,
+            String nombre,
+            String lote,
+            String caducidad,
+            Double cantidadAlmacen,
             String status,
-            Double cantidad,
-            String uom,
+            String statusDynamics,
+            String almacen,
             String ubicacion,
             String fuente
     ) {}

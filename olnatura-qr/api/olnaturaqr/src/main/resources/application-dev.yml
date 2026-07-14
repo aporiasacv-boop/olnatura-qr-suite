@@ -5,17 +5,30 @@ server:
     include-exception: true
     include-binding-errors: always
 
+# Secretos de BD y JWT deben venir del entorno (sin defaults en este archivo):
+#   SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD, JWT_SECRET
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    # Esquema + seeds demo solo en perfil dev (prod usa únicamente classpath:db/migration).
+    locations: classpath:db/migration,classpath:db/demo
+
 app:
   cors:
-    allowed-origins: "http://localhost:5173,http://localhost:3000"
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
 
   auth:
     cookie:
       secure: false
       same-site: "Lax"
+  dynamics:
+    mode: ${APP_DYNAMICS_MODE:mock}
   bootstrap:
     admin:
       enabled: true
       username: admin
       email: admin@olnatura.local
-      password: Admin123!
+      password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}

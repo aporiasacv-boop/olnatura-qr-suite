@@ -2,9 +2,11 @@ package com.company.olnaturaqr.support.qr;
 
 import com.company.olnaturaqr.api.QrDto;
 import com.company.olnaturaqr.domain.qr.QrLabel;
-import com.company.olnaturaqr.infra.dynamics.DynamicsClient;
+import com.company.olnaturaqr.infra.dynamics.DynamicsLookupDto;
+import com.company.olnaturaqr.infra.dynamics.DynamicsLookupService;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
+import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.support.workflow.WorkflowTransitions;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -20,11 +23,11 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class QrQueryService {
 
     private final QrLabelRepository qrLabelRepository;
-    private final DynamicsClient dynamics;
+    private final DynamicsLookupService dynamicsLookupService;
 
-    public QrQueryService(QrLabelRepository qrLabelRepository, DynamicsClient dynamics) {
+    public QrQueryService(QrLabelRepository qrLabelRepository, DynamicsLookupService dynamicsLookupService) {
         this.qrLabelRepository = qrLabelRepository;
-        this.dynamics = dynamics;
+        this.dynamicsLookupService = dynamicsLookupService;
     }
 
     @Transactional(readOnly = true)
@@ -58,32 +61,50 @@ public class QrQueryService {
                 label.getCantidadPorEnvase()
         );
 
-        String statusOverride = normalizeStatus(label.getStatusDinamico());
-        boolean useDbStatus = statusOverride != null && !"DESCONOCIDO".equals(statusOverride);
+        // Platform-owned status only — never derived from Dynamics QualityOrderStatus.
+        String platformStatus = WorkflowStatus.normalize(label.getStatus());
 
-        var dyn = dynamics.fetchByLote(lote)
-                .map(d -> new QrDto.Dynamic(
-                        useDbStatus ? statusOverride : d.status(),
-                        d.cantidad(),
-                        d.uom(),
-                        d.ubicacion(),
-                        d.fuente()
-                ))
+        QrDto.Dynamic dyn = lookupDynamicsOrFail(lote)
+                .map(d -> toDynamicDto(d, platformStatus))
                 .orElseGet(() -> new QrDto.Dynamic(
-                        statusOverride,
+                        label.getCodigo(),
+                        label.getNombre(),
+                        lote,
+                        label.getCaducidad() != null ? label.getCaducidad().toString() : null,
                         null,
-                        "N/A",
+                        platformStatus,
+                        null,
+                        null,
                         null,
                         "DB_ONLY"
                 ));
 
-        String currentStatus = dyn.status();
         List<String> transitions = principal != null
-                ? WorkflowTransitions.allowedFrom(currentStatus)
+                ? WorkflowTransitions.allowedFrom(platformStatus)
                 : Collections.emptyList();
         QrDto.Permissions perms = buildPermissions(principal);
 
         return new QrDto.Response(dtoLabel, dyn, transitions, perms);
+    }
+
+    private Optional<DynamicsLookupDto> lookupDynamicsOrFail(String lote) {
+        // DynamicsException (OAuth/OData/timeout/interno) propaga al GlobalExceptionHandler.
+        return dynamicsLookupService.lookupByBatchNumber(lote);
+    }
+
+    private static QrDto.Dynamic toDynamicDto(DynamicsLookupDto d, String platformStatus) {
+        return new QrDto.Dynamic(
+                d.codigo(),
+                d.nombre(),
+                d.lote(),
+                d.caducidad(),
+                d.cantidadAlmacen(),
+                platformStatus,
+                d.statusDynamics(),
+                d.almacen(),
+                d.ubicacion(),
+                d.fuente()
+        );
     }
 
     private QrDto.Permissions buildPermissions(AuthPrincipal principal) {
@@ -95,11 +116,5 @@ public class QrQueryService {
         boolean canCreateLabel = roles.contains("ADMIN") || roles.contains("ALMACEN");
         boolean canRegisterScan = roles.contains("ADMIN") || roles.contains("INSPECCION") || roles.contains("ALMACEN");
         return new QrDto.Permissions(canChangeStatus, canRegisterScan, canCreateLabel);
-    }
-
-    private String normalizeStatus(String s) {
-        if (s == null) return "DESCONOCIDO";
-        var v = s.trim().toUpperCase();
-        return v.isBlank() ? "DESCONOCIDO" : v;
     }
 }

@@ -216,15 +216,27 @@ export default function BatchLookupPage() {
 
     } catch (e) {
       const ae = e as ApiError;
+      const isDynamics =
+        ae.status === 502 ||
+        ae.status === 504 ||
+        (typeof ae.body?.error === "string" && String(ae.body.error).startsWith("DYNAMICS_"));
 
       setErr({
-        title: ae.status === 404 ? "Lote no encontrado" : "Error al consultar",
+        title:
+          ae.status === 404
+            ? "Lote no encontrado"
+            : isDynamics
+              ? "Error de Dynamics 365"
+              : "Error al consultar",
         detail:
           ae.status === 404
             ? "Verifica el identificador e intenta de nuevo."
             : ae.status === 401
               ? "Tu sesión expiró. Vuelve a iniciar sesión."
-              : "No se pudo obtener la información del lote.",
+              : isDynamics
+                ? ae.message ||
+                  "No se pudo obtener datos de Dynamics 365. Intenta de nuevo o contacta a soporte."
+                : ae.message || "No se pudo obtener la información del lote.",
       });
 
       setStatus("error");
@@ -312,12 +324,17 @@ export default function BatchLookupPage() {
   }, [status, data, envaseTotal]);
 
   const dynamicCantidad = (() => {
-    const cant = readDynamic(data, "cantidad");
-    const uom = readDynamic(data, "uom", "");
-    return uom && uom !== "—" ? `${cant} ${uom}` : cant;
+    const cant = readDynamic(data, "cantidadAlmacen");
+    if (cant !== "—") return cant;
+    return readDynamic(data, "cantidad");
   })();
 
-  const dynamicStatus = (data as any)?.dynamic?.status ?? "—";
+  const dynamicStatus =
+    (data as any)?.dynamic?.status ??
+    "—";
+  const statusDynamicsRef =
+    (data as any)?.dynamic?.statusDynamics ??
+    "—";
   const canChangeStatus = data?.permissions?.canChangeStatus ?? false;
   const canRegisterScan = data?.permissions?.canRegisterScan ?? can("SCAN");
   const canDownloadZpl = data?.permissions?.canCreateLabel ?? (hasRole("ADMIN") || hasRole("ALMACEN"));
@@ -520,7 +537,9 @@ export default function BatchLookupPage() {
                   )}
                 </div>
 
+                <Field label={LABELS.statusDynamics} value={asText(statusDynamicsRef)} />
                 <Field label={LABELS.ubicacion} value={readDynamic(data, "ubicacion")} />
+                <Field label={LABELS.almacen} value={readDynamic(data, "almacen")} />
                 <Field label={LABELS.cantidad} value={dynamicCantidad} />
                 <Field label={LABELS.fuente} value={fuenteDisplayLabel} />
               </div>

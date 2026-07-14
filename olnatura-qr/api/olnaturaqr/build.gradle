@@ -1,12 +1,12 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.5.11-SNAPSHOT'
+	id 'org.springframework.boot' version '3.5.16'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.company'
-version = '0.0.1-SNAPSHOT'
-description = 'Demo project for Spring Boot'
+version = '1.0.0'
+description = 'Olnatura QR Suite'
 
 java {
 	toolchain {
@@ -21,8 +21,8 @@ configurations {
 }
 
 repositories {
+	// Solo Maven Central — sin SNAPSHOT de Spring (builds reproducibles / Azure).
 	mavenCentral()
-	maven { url = 'https://repo.spring.io/snapshot' }
 }
 
 def frontendDir = file("${projectDir}/../../web/qr-enterprise-frontend")

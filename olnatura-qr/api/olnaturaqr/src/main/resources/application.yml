@@ -4,9 +4,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/olnatura_qr
-    username: olnatura
-    password: olnatura123
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   jpa:
     hibernate:
@@ -19,11 +19,16 @@ spring:
 
 app:
   cors:
-    allowed-origins: "https://olnaturaqr-dchrfye3fgfzcjbn.mexicocentral-01.azurewebsites.net,http://localhost:5173,http://localhost:3000,http://192.168.41.177:5173,http://192.168.41.177:3000,http://192.168.41.206:3000,http://192.168.41.206:5173,http://192.168.41.230:5173,http://192.168.41.230:3000"
+    # Override with APP_CORS_ALLOWED_ORIGINS in each environment. No prod hosts hard-coded.
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
   dynamics:
-    mode: ${APP_DYNAMICS_MODE:real}
-    base-url: ${APP_DYNAMICS_BASE_URL:https://olnatura-production.operations.dynamics.com}
-    bearer-token: ${APP_DYNAMICS_BEARER_TOKEN:}
+    mode: ${APP_DYNAMICS_MODE:mock}
+    base-url: ${APP_DYNAMICS_BASE_URL:}
+    resource: ${APP_DYNAMICS_RESOURCE:}
+    tenant-id: ${APP_DYNAMICS_TENANT_ID:}
+    client-id: ${APP_DYNAMICS_CLIENT_ID:}
+    client-secret: ${APP_DYNAMICS_CLIENT_SECRET:}
+    token-url: ${APP_DYNAMICS_TOKEN_URL:}
     connect-timeout: ${APP_DYNAMICS_CONNECT_TIMEOUT:3s}
     read-timeout: ${APP_DYNAMICS_READ_TIMEOUT:10s}
 
@@ -35,5 +40,6 @@ app:
       same-site: "Lax"
 
 jwt:
-  secret: ${JWT_SECRET:dev-secret-change-me-please-dev-secret-change-me}
+  # Obligatorio vía entorno. Sin valor por defecto.
+  secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}

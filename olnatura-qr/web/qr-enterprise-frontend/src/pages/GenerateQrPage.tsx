@@ -83,12 +83,18 @@ export default function GenerateQrPage() {
       logAudit("GENERATE_LABEL", v);
     } catch (e) {
       const ae = e as ApiError;
+      const isDynamics =
+        ae?.status === 502 ||
+        ae?.status === 504 ||
+        (typeof ae?.body?.error === "string" && String(ae.body.error).startsWith("DYNAMICS_"));
       setError(
         ae?.status === 404
           ? "Lote no encontrado. Verifica el identificador."
           : ae?.status === 401 || ae?.status === 403
             ? "No tienes acceso. Inicia sesión."
-            : (e as Error)?.message ?? "No se pudo generar la etiqueta."
+            : isDynamics
+              ? ae.message || "Dynamics 365 no disponible. Intenta de nuevo."
+              : ae?.message ?? (e as Error)?.message ?? "No se pudo generar la etiqueta."
       );
     } finally {
       setBusy(false);
@@ -181,7 +187,13 @@ export default function GenerateQrPage() {
                     cantidad={(() => {
                       const manual = String((labelData as { cantidadPorEnvase?: string })?.cantidadPorEnvase ?? "").trim();
                       if (manual) return manual;
-                      const d = dynamicData as { cantidad?: number | null; uom?: string | null } | null;
+                      const d = dynamicData as {
+                        cantidadAlmacen?: number | null;
+                        cantidad?: number | null;
+                        uom?: string | null;
+                      } | null;
+                      if (d != null && d.cantidadAlmacen != null && typeof d.cantidadAlmacen === "number")
+                        return `${d.cantidadAlmacen}`;
                       if (d != null && d.cantidad != null && typeof d.cantidad === "number")
                         return `${d.cantidad}${d.uom && String(d.uom).trim() ? " " + String(d.uom).trim() : ""}`;
                       return "N/A";

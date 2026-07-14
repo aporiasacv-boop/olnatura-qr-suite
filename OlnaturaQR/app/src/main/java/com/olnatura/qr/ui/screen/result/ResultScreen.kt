@@ -146,6 +146,7 @@ private fun SuccessContent(
 ) {
     val label = qr.label
     val dynamic = qr.dynamic
+    // Platform QR status only — never QualityOrderStatus from Dynamics.
     val status = dynamic?.status ?: "DESCONOCIDO"
     val (bgColor, textColor) = statusColors(status)
 
@@ -153,9 +154,14 @@ private fun SuccessContent(
     fun int(v: Int?) = v?.toString() ?: "—"
 
     val envaseText = "${int(label?.envaseNum)} / ${int(label?.envaseTotal)}"
-    val cantidadUom = if (!str(dynamic?.uom).equals("—")) {
-        "${dynamic?.cantidad ?: "—"} ${str(dynamic?.uom)}"
-    } else str(dynamic?.cantidad?.toString())
+    val cantidadText = when {
+        dynamic?.cantidadAlmacen != null -> dynamic.cantidadAlmacen.toString()
+        dynamic?.cantidad != null -> {
+            val uom = str(dynamic.uom)
+            if (uom != "—") "${dynamic.cantidad} $uom" else dynamic.cantidad.toString()
+        }
+        else -> "—"
+    }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = OlnCard),
@@ -167,7 +173,9 @@ private fun SuccessContent(
             LabelValueRow("Código", str(label?.codigo))
             LabelValueRow("Escaneado hoy", "V: $todayCount")
             LabelValueRow("Ubicación", str(dynamic?.ubicacion))
-            LabelValueRow("Existencia", cantidadUom)
+            LabelValueRow("Almacén", str(dynamic?.almacen))
+            LabelValueRow("Existencia", cantidadText)
+            LabelValueRow("Estado Dynamics", str(dynamic?.statusDynamics))
             LabelValueRow("Fecha de entrada", str(label?.fechaEntrada))
             LabelValueRow("Fecha de caducidad", str(label?.caducidad), showDivider = false)
         }

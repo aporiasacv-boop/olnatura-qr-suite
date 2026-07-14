@@ -1,8 +1,11 @@
 package com.company.olnaturaqr.api;
 
+import com.company.olnaturaqr.infra.dynamics.DynamicsException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -18,6 +21,8 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Map<Integer, String> MENSAGES_ES = Map.of(
@@ -26,8 +31,23 @@ public class GlobalExceptionHandler {
             403, "Acceso denegado",
             404, "No encontrado",
             409, "Conflicto",
+            502, "Error de servicios externos",
+            504, "Tiempo de espera agotado",
             500, "Error interno del servidor"
     );
+
+    @ExceptionHandler(DynamicsException.class)
+    public void handleDynamics(DynamicsException ex, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String message = (ex.getMessage() != null && !ex.getMessage().isBlank())
+                ? ex.getMessage()
+                : "Error al comunicar con Dynamics 365";
+        log.warn("Dynamics error code={} status={} path={} type={}",
+                ex.getErrorCode(),
+                ex.getHttpStatus(),
+                request != null ? request.getRequestURI() : "",
+                ex.getClass().getSimpleName());
+        writeError(request, response, ex.getHttpStatus(), message, ex.getErrorCode());
+    }
 
     @ExceptionHandler(ResponseStatusException.class)
     public void handleResponseStatus(ResponseStatusException ex, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -54,6 +74,8 @@ public class GlobalExceptionHandler {
         if (status == 403) return "FORBIDDEN";
         if (status == 404) return "NOT_FOUND";
         if (status == 409) return "CONFLICT";
+        if (status == 502) return "BAD_GATEWAY";
+        if (status == 504) return "GATEWAY_TIMEOUT";
         if (status >= 500) return "SERVER_ERROR";
         return "ERROR";
     }

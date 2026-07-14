@@ -7,7 +7,6 @@ import DashboardPage from "../pages/DashboardPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import RegisterRequestPage from "../pages/RegisterRequestPage";
 
-import RequestAccessPage from "../pages/RequestAccessPage";
 import AdminApprovalPage from "../pages/AdminApprovalPage";
 import AdminAuditPage from "../pages/AdminAuditPage";
 
@@ -23,10 +22,6 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
-  },
-  {
-    path: "/request-access",
-    element: <RequestAccessPage />,
   },
   {
     path: "/register-request",
