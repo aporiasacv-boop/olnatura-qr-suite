@@ -20,6 +20,8 @@ import com.olnatura.qr.ui.components.statusColors
 import com.olnatura.qr.ui.theme.OlnCard
 import com.olnatura.qr.ui.theme.OlnCream
 import com.olnatura.qr.ui.theme.OlnGreen
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
 fun ResultScreen(
@@ -154,11 +156,13 @@ private fun SuccessContent(
     fun int(v: Int?) = v?.toString() ?: "—"
 
     val envaseText = "${int(label?.envaseNum)} / ${int(label?.envaseTotal)}"
+    val numberFmt = NumberFormat.getNumberInstance(Locale.US)
     val cantidadText = when {
-        dynamic?.cantidadAlmacen != null -> dynamic.cantidadAlmacen.toString()
+        dynamic?.cantidadAlmacen != null -> numberFmt.format(dynamic.cantidadAlmacen)
         dynamic?.cantidad != null -> {
             val uom = str(dynamic.uom)
-            if (uom != "—") "${dynamic.cantidad} $uom" else dynamic.cantidad.toString()
+            val qty = numberFmt.format(dynamic.cantidad)
+            if (uom != "—") "$qty $uom" else qty
         }
         else -> "—"
     }
@@ -174,7 +178,11 @@ private fun SuccessContent(
             LabelValueRow("Escaneado hoy", "V: $todayCount")
             LabelValueRow("Ubicación", str(dynamic?.ubicacion))
             LabelValueRow("Almacén", str(dynamic?.almacen))
-            LabelValueRow("Existencia", cantidadText)
+            LabelValueRow(
+                label = "Inventario disponible",
+                value = cantidadText,
+                caption = if (cantidadText != "—") "Actualizado al momento del escaneo" else null
+            )
             LabelValueRow("Estado Dynamics", str(dynamic?.statusDynamics))
             LabelValueRow("Fecha de entrada", str(label?.fechaEntrada))
             LabelValueRow("Fecha de caducidad", str(label?.caducidad), showDivider = false)

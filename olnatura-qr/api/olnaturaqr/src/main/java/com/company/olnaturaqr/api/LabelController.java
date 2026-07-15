@@ -174,9 +174,14 @@ public class LabelController {
         String key = id == null ? "" : id.trim();
         QrLabel q = resolveLabel(key);
 
-        int envaseTotal = (total != null && total >= 1) ? total : q.getEnvaseTotal();
-        int printFrom = (from != null && from >= 1) ? from : q.getEnvaseNum();
-        int printTo = (to != null && to >= 1 && to <= envaseTotal) ? to : printFrom;
+        int envaseTotal = (total != null && total >= 1)
+                ? total
+                : Math.max(1, q.getEnvaseTotal());
+        // Por defecto imprimir el rango completo 1..total (todas las etiquetas del lote).
+        int printFrom = (from != null && from >= 1) ? from : 1;
+        int printTo = (to != null && to >= 1)
+                ? Math.min(to, envaseTotal)
+                : envaseTotal;
 
         if (printFrom > printTo) {
             throw new ResponseStatusException(BAD_REQUEST, "printFrom no puede ser mayor que printTo");
@@ -236,9 +241,14 @@ public class LabelController {
         String key = id == null ? "" : id.trim();
         QrLabel q = resolveLabel(key);
 
-        int envaseTotal = (total != null && total >= 1) ? total : q.getEnvaseTotal();
-        int printFrom = (from != null && from >= 1) ? from : q.getEnvaseNum();
-        int printTo = (to != null && to >= 1 && to <= envaseTotal) ? to : printFrom;
+        int envaseTotal = (total != null && total >= 1)
+                ? total
+                : Math.max(1, q.getEnvaseTotal());
+        // Por defecto imprimir el rango completo 1..total (todas las etiquetas del lote).
+        int printFrom = (from != null && from >= 1) ? from : 1;
+        int printTo = (to != null && to >= 1)
+                ? Math.min(to, envaseTotal)
+                : envaseTotal;
 
         if (printFrom > printTo) {
             throw new ResponseStatusException(BAD_REQUEST, "printFrom no puede ser mayor que printTo");

@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -55,30 +59,46 @@ public ResponseEntity<UserDto.LoginResponse> login(
     String pwd = request.password() == null ? "" : request.password();
 
     if (raw.isBlank() || pwd.isBlank()) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=blank_username_or_password");
+        log.info("LOGIN FAILED: blank username or password");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    var userOpt = raw.contains("@")
+    boolean byEmail = raw.contains("@");
+    var userOpt = byEmail
             ? userRepository.findByEmailIgnoreCase(raw)
             : userRepository.findByUsernameIgnoreCase(raw);
 
     if (userOpt.isEmpty()) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=user_not_found");
+        log.info("LOGIN FAILED: user not found (lookup={})", byEmail ? "email" : "username");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     User user = userOpt.get();
 
     if (!user.isEnabled()) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=user_disabled");
+        log.info("LOGIN FAILED: user disabled username={}", user.getUsername());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     if (!passwordEncoder.matches(pwd, user.getPasswordHash())) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=password_mismatch");
+        log.info("LOGIN FAILED: password mismatch username={}", user.getUsername());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     if (raw.contains("@")) {
         String emailLower = raw.toLowerCase();
         if (!emailLower.endsWith("@olnatura.com")) {
+            System.out.println("LOGIN FAILED:");
+            System.out.println("reason=email_domain");
+            log.info("LOGIN FAILED: email domain not allowed username={}", user.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
@@ -94,6 +114,9 @@ public ResponseEntity<UserDto.LoginResponse> login(
             cookieProps.maxAgeSeconds()
     );
 
+    System.out.println("LOGIN SUCCESS");
+    System.out.println("username=" + user.getUsername());
+    log.info("LOGIN SUCCESS username={}", user.getUsername());
     return ResponseEntity.ok(new UserDto.LoginResponse(toResponse(user)));
 }
 

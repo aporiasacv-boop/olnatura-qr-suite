@@ -1,12 +1,7 @@
 -- Demo data ONLY (perfil spring:dev → spring.flyway.locations includes classpath:db/demo).
 -- Never loaded in production.
 
--- Users demo
-INSERT INTO users (username, email, password_hash, enabled, role_id, created_at)
-SELECT 'admin', 'admin@demo.local', crypt('Admin123!', gen_salt('bf')), true, r.id, now()
-FROM roles r WHERE r.name = 'ADMIN'
-ON CONFLICT (username) DO NOTHING;
-
+-- Users demo (sin admin: el admin inicial lo crea AdminBootstrapRunner en arranque).
 INSERT INTO users (username, email, password_hash, enabled, role_id, created_at)
 SELECT 'inp', 'inp@demo.local', crypt('Inp123!', gen_salt('bf')), true, r.id, now()
 FROM roles r WHERE r.name = 'INSPECCION'
@@ -37,7 +32,7 @@ ON CONFLICT (lote) DO NOTHING;
 
 INSERT INTO scan_events (lote, scanned_by, device_id, created_at)
 SELECT '251201-MEM0003454', u.id, 'WEB-DEMO-1', now() - interval '2 hours'
-FROM users u WHERE u.username = 'admin' AND u.email = 'admin@demo.local' LIMIT 1;
+FROM users u WHERE u.username = 'alm' AND u.email = 'alm@demo.local' LIMIT 1;
 
 INSERT INTO scan_events (lote, scanned_by, device_id, created_at)
 SELECT 'LOTE-TEST-001', u.id, 'WEB-DEMO-2', now() - interval '1 hour'
@@ -48,8 +43,8 @@ SELECT '260112-MES003456', u.id, 'ANDROID-DEMO', now() - interval '30 minutes'
 FROM users u WHERE u.username = 'alm' AND u.email = 'alm@demo.local' LIMIT 1;
 
 INSERT INTO audit_events (actor_id, actor_email, actor_rol, action_type, lote, metadata, device_id)
-SELECT u.id, u.email, 'ADMIN', 'CHANGE_STATUS', 'LOTE-TEST-001', '{"status":"LIBERADO"}'::jsonb, 'WEB-DEMO'
-FROM users u WHERE u.username = 'admin' AND u.email = 'admin@demo.local' LIMIT 1;
+SELECT u.id, u.email, 'ALMACEN', 'CHANGE_STATUS', 'LOTE-TEST-001', '{"status":"LIBERADO"}'::jsonb, 'WEB-DEMO'
+FROM users u WHERE u.username = 'alm' AND u.email = 'alm@demo.local' LIMIT 1;
 
 INSERT INTO audit_events (actor_id, actor_email, actor_rol, action_type, lote, metadata, device_id)
 SELECT u.id, u.email, 'INSPECCION', 'SCAN', '251201-MEM0003454', '{}'::jsonb, 'WEB-DEMO'

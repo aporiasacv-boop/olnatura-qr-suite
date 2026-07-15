@@ -39,6 +39,15 @@ app:
       secure: false
       same-site: "Lax"
 
+  # Admin inicial (idempotente). No crea usuarios demo.
+  # Si el usuario ya existe, no se modifica. Override vía APP_BOOTSTRAP_ADMIN_*.
+  bootstrap:
+    admin:
+      enabled: ${APP_BOOTSTRAP_ADMIN_ENABLED:true}
+      username: ${APP_BOOTSTRAP_ADMIN_USERNAME:admin}
+      email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@olnatura.local}
+      password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin123!}
+
 jwt:
   # Obligatorio vía entorno. Sin valor por defecto.
   secret: ${JWT_SECRET}

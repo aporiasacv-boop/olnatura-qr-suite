@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { Text, Input, Button, Radio, RadioGroup } from "@fluentui/react-components";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
@@ -6,12 +6,17 @@ import { useAuth } from "../auth/AuthContext";
 import { api, ApiError } from "../api/client";
 import { downloadLabelZplFile } from "../utils/downloadLabelZpl";
 import { generateQrPlain } from "../utils/qrWithLogo";
-import { isValidDDMMYYYY } from "../utils/dateFormat";
+import { formatDateDDMMYYYY, isValidDDMMYYYY } from "../utils/dateFormat";
+import type { DynamicsLookupResponse } from "../api/types";
 import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
 import LabelPreview from "../components/label/LabelPreview";
 import type { FechaTipo } from "../utils/labelToPng";
 
 const QR_PREFIX = "OLNQR:1:";
+const ENVASE_INICIO = 1;
+
+const DYNAMICS_BG = "#f8f9fa";
+const REQUIRED_BORDER = "#f3b5b5";
 
 type FormState = {
   tipoMaterial: string;
@@ -25,6 +30,9 @@ type FormState = {
   envaseTotal: string;
   cantidadPorEnvase: string;
 };
+
+/** Campos precargados desde Dynamics (UI only). */
+type DynamicsLocked = Partial<Record<keyof FormState, boolean>>;
 
 type CreateResponse = {
   id: string;
@@ -51,25 +59,87 @@ export default function RegisterLabelPage() {
     fechaEntrada: "",
     fechaTipo: "CADUCIDAD",
     fechaValor: "",
-    envaseNum: "",
+    envaseNum: "1",
     envaseTotal: "",
     cantidadPorEnvase: "",
   });
 
   const [busy, setBusy] = useState(false);
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [dynamicsInfo, setDynamicsInfo] = useState<DynamicsLookupResponse | null>(null);
+  const [dynamicsLocked, setDynamicsLocked] = useState<DynamicsLocked>({});
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [createResp, setCreateResp] = useState<CreateResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  /** Siempre empezamos en envase 1; el operador solo captura el total. */
   const loteOk = form.lote.trim().length > 0;
   const fechaEntradaOk = isValidDDMMYYYY(form.fechaEntrada);
-  const envaseNum = parseInt(form.envaseNum, 10) || 0;
   const envaseTotal = parseInt(form.envaseTotal, 10) || 0;
-  const envaseOk = envaseNum > 0 && envaseTotal > 0 && envaseNum <= envaseTotal;
+  const envaseOk = envaseTotal >= 1;
   const canRegister = canQr && loteOk && fechaEntradaOk && envaseOk && !busy;
 
   const caducidadDisplay = form.fechaTipo === "CADUCIDAD" ? form.fechaValor : "";
   const reanalisisDisplay = form.fechaTipo === "REANALISIS" ? form.fechaValor : "";
+
+  const onConsultDynamics = async () => {
+    const lote = form.lote.trim();
+    if (!lote || lookupBusy) return;
+
+    setErr(null);
+    setLookupBusy(true);
+    setDynamicsInfo(null);
+    setDynamicsLocked({});
+
+    try {
+      const data = await api<DynamicsLookupResponse>(
+        `/dynamics/lookup/${encodeURIComponent(lote)}`,
+        { toast: false }
+      );
+      setDynamicsInfo(data);
+
+      const codigo = data.codigo?.trim() || "";
+      const nombre = data.nombre?.trim() || "";
+      const loteDyn = data.lote?.trim() || "";
+      const tipoMaterial = data.almacen?.trim() || "";
+      const caducidadFmt = data.caducidad ? formatDateDDMMYYYY(data.caducidad) : "";
+
+      setDynamicsLocked({
+        tipoMaterial: !!tipoMaterial,
+        codigo: !!codigo,
+        nombre: !!nombre,
+        lote: !!loteDyn,
+        fechaTipo: !!caducidadFmt,
+        fechaValor: !!caducidadFmt,
+      });
+
+      setForm((s) => ({
+        ...s,
+        tipoMaterial: tipoMaterial || s.tipoMaterial,
+        codigo: codigo || s.codigo,
+        nombre: nombre || s.nombre,
+        lote: loteDyn || s.lote,
+        fechaTipo: caducidadFmt ? "CADUCIDAD" : s.fechaTipo,
+        fechaValor: caducidadFmt || s.fechaValor,
+      }));
+    } catch (e) {
+      const ae = e as ApiError;
+      const isDynamics =
+        ae.status === 502 ||
+        ae.status === 504 ||
+        (typeof ae.body?.error === "string" && String(ae.body.error).startsWith("DYNAMICS_"));
+
+      setErr(
+        ae.status === 404
+          ? "Lote no encontrado en Dynamics. Verifica el identificador."
+          : isDynamics
+            ? ae.message || "Dynamics 365 no disponible. Intenta de nuevo."
+            : ae.message || "No se pudo consultar Dynamics."
+      );
+    } finally {
+      setLookupBusy(false);
+    }
+  };
 
   const onRegisterAndGenerate = async () => {
     setErr(null);
@@ -89,7 +159,7 @@ export default function RegisterLabelPage() {
       return;
     }
     if (!envaseOk) {
-      setErr("Envase Num/Total deben ser > 0 y Envase Num ≤ Cantidad total.");
+      setErr("Captura la cantidad total de envases (mínimo 1).");
       return;
     }
     if (form.fechaTipo === "CADUCIDAD" && form.fechaValor.trim() && !isValidDDMMYYYY(form.fechaValor)) {
@@ -117,7 +187,7 @@ export default function RegisterLabelPage() {
         fechaEntrada: form.fechaEntrada.trim(),
         caducidad,
         reanalisis,
-        envaseNum,
+        envaseNum: ENVASE_INICIO,
         envaseTotal,
         cantidadPorEnvase: cpe.length > 0 ? cpe : null,
       };
@@ -168,11 +238,11 @@ export default function RegisterLabelPage() {
     }
     try {
       setBusy(true);
-      const total = envaseTotal || 1;
+      const total = Math.max(1, envaseTotal);
       await downloadLabelZplFile({
         labelIdOrLote: String(createResp.id),
         totalEnvases: total,
-        printFrom: 1,
+        printFrom: ENVASE_INICIO,
         printTo: total,
       });
     } catch {
@@ -198,42 +268,97 @@ export default function RegisterLabelPage() {
         <Text style={{ fontSize: 15, fontWeight: 600, color: brand.text }}>Datos de la etiqueta</Text>
         <Field
           label="Tipo material"
-          placeholder="Ej. MP"
+          placeholder="Captura tipo de material (ej. MP)"
           value={form.tipoMaterial}
           onChange={(v) => setForm((s) => ({ ...s, tipoMaterial: v }))}
+          fromDynamics={!!dynamicsLocked.tipoMaterial}
         />
         <Field
           label="Nombre"
           placeholder="Nombre de material"
           value={form.nombre}
           onChange={(v) => setForm((s) => ({ ...s, nombre: v }))}
+          fromDynamics={!!dynamicsLocked.nombre}
         />
         <Field
           label="Código"
           placeholder="Código interno"
           value={form.codigo}
           onChange={(v) => setForm((s) => ({ ...s, codigo: v }))}
+          fromDynamics={!!dynamicsLocked.codigo}
         />
-        <Field
-          label="Lote"
-          placeholder="LOT-..."
-          value={form.lote}
-          onChange={(v) => setForm((s) => ({ ...s, lote: v }))}
-        />
+        <div style={{ display: "grid", gap: 8 }}>
+          <FieldLabel label="Lote" fromDynamics={!!dynamicsLocked.lote} />
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <Input
+              appearance="outline"
+              size="large"
+              value={form.lote}
+              readOnly={!!dynamicsLocked.lote}
+              onChange={(_, d) => {
+                if (dynamicsLocked.lote) return;
+                setForm((s) => ({ ...s, lote: d.value }));
+              }}
+              placeholder="Captura el lote y consulta Dynamics"
+              style={{
+                flex: "1 1 220px",
+                ...inputLook({
+                  fromDynamics: !!dynamicsLocked.lote,
+                  needsAttention: !dynamicsLocked.lote && !form.lote.trim(),
+                }),
+              }}
+            />
+            <Button
+              appearance="secondary"
+              onClick={() => void onConsultDynamics()}
+              disabled={!form.lote.trim() || lookupBusy || busy}
+            >
+              {lookupBusy ? "Consultando…" : "Consultar Dynamics"}
+            </Button>
+          </div>
+          <Text style={{ fontSize: 12, color: brand.muted }}>
+            Busca en ItemBatches, inventario y órdenes de calidad para precargar el formulario.
+          </Text>
+        </div>
+        {dynamicsInfo ? (
+          <div
+            style={{
+              fontSize: 13,
+              color: brand.text2,
+              background: brand.primarySoft,
+              padding: "10px 12px",
+              borderRadius: 8,
+              display: "grid",
+              gap: 4,
+            }}
+          >
+            <Text weight="semibold">Datos de Dynamics</Text>
+            {dynamicsInfo.statusDynamics ? (
+              <Text>Estado calidad: {dynamicsInfo.statusDynamics}</Text>
+            ) : null}
+            {dynamicsInfo.almacen ? <Text>Almacén: {dynamicsInfo.almacen}</Text> : null}
+            {dynamicsInfo.ubicacion ? <Text>Ubicación: {dynamicsInfo.ubicacion}</Text> : null}
+          </div>
+        ) : null}
         <Field
           label="Fecha entrada (DD/MM/YYYY)"
-          placeholder="11/09/2025"
+          placeholder="Captura fecha de entrada"
           value={form.fechaEntrada}
           onChange={(v) => setForm((s) => ({ ...s, fechaEntrada: v }))}
+          fromDynamics={!!dynamicsLocked.fechaEntrada}
+          requiredPending={!dynamicsLocked.fechaEntrada}
+          isFilled={fechaEntradaOk}
         />
         <div style={{ display: "grid", gap: 6 }}>
-          <Text>Fecha (tipo)</Text>
+          <FieldLabel label="Fecha (tipo)" fromDynamics={!!dynamicsLocked.fechaTipo} />
           <RadioGroup
             value={form.fechaTipo}
-            onChange={(_, d) =>
-              setForm((s) => ({ ...s, fechaTipo: d.value as FechaTipo }))
-            }
+            onChange={(_, d) => {
+              if (dynamicsLocked.fechaTipo) return;
+              setForm((s) => ({ ...s, fechaTipo: d.value as FechaTipo }));
+            }}
             layout="horizontal"
+            disabled={!!dynamicsLocked.fechaTipo}
           >
             <Radio value="CADUCIDAD" label="Caducidad" />
             <Radio value="REANALISIS" label="Reanálisis" />
@@ -245,30 +370,32 @@ export default function RegisterLabelPage() {
               ? "Caducidad (DD/MM/YYYY)"
               : "Reanálisis (DD/MM/YYYY)"
           }
-          placeholder="11/09/2025"
+          placeholder={
+            form.fechaTipo === "CADUCIDAD"
+              ? "Captura fecha de caducidad"
+              : "Captura fecha de reanálisis"
+          }
           value={form.fechaValor}
           onChange={(v) => setForm((s) => ({ ...s, fechaValor: v }))}
+          fromDynamics={!!dynamicsLocked.fechaValor}
         />
         <Field
-          label="Envase No"
-          placeholder="1"
-          value={form.envaseNum}
-          onChange={(v) => setForm((s) => ({ ...s, envaseNum: v }))}
-          hint="Contenedor actual (ej: 1 de 40)"
-        />
-        <Field
-          label="Cantidad total"
-          placeholder="40"
+          label="Cantidad total de envases"
+          placeholder="Ej. 30"
           value={form.envaseTotal}
-          onChange={(v) => setForm((s) => ({ ...s, envaseTotal: v }))}
-          hint="Total de contenedores"
+          onChange={(v) => setForm((s) => ({ ...s, envaseTotal: v, envaseNum: "1" }))}
+          hint="Se generarán etiquetas del 1 hasta este total (ej. 30 → 30 etiquetas ZPL)."
+          requiredPending
+          isFilled={envaseTotal >= 1}
         />
         <Field
           label="Cantidad por envase"
-          placeholder="Ej. 25 kg o 1000"
+          placeholder="Captura cantidad por envase"
           value={form.cantidadPorEnvase}
           onChange={(v) => setForm((s) => ({ ...s, cantidadPorEnvase: v }))}
-          hint="Opcional. Si la dejas vacía, en impresión se usará el dato de Dynamics cuando exista."
+          hint="Captura manual. No se obtiene desde Dynamics."
+          requiredPending
+          isFilled={form.cantidadPorEnvase.trim().length > 0}
         />
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
@@ -358,7 +485,7 @@ export default function RegisterLabelPage() {
                     caducidad={caducidadDisplay}
                     reanalisis={reanalisisDisplay}
                     cantidad={form.cantidadPorEnvase.trim() || "N/A"}
-                    envaseNum={form.envaseNum || "—"}
+                    envaseNum="1"
                     envaseTotal={form.envaseTotal || "—"}
                     qrData={qrDataUrl}
                     logoUrl={`${import.meta.env.BASE_URL}logo-olnatura.png`}
@@ -409,23 +536,89 @@ export default function RegisterLabelPage() {
   );
 }
 
+function inputLook({
+  fromDynamics,
+  needsAttention,
+}: {
+  fromDynamics?: boolean;
+  needsAttention?: boolean;
+}): CSSProperties {
+  if (fromDynamics) {
+    return {
+      backgroundColor: DYNAMICS_BG,
+      border: `1px solid ${brand.border}`,
+      borderRadius: 8,
+    };
+  }
+  if (needsAttention) {
+    return {
+      border: `1px solid ${REQUIRED_BORDER}`,
+      borderRadius: 8,
+    };
+  }
+  return {};
+}
+
+function FieldLabel({ label, fromDynamics }: { label: string; fromDynamics?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <Text style={{ fontSize: 14, fontWeight: 500, color: brand.text2 }}>{label}</Text>
+      {fromDynamics ? (
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: brand.muted,
+            background: DYNAMICS_BG,
+            border: `1px solid ${brand.border}`,
+            borderRadius: 999,
+            padding: "1px 8px",
+            letterSpacing: 0.2,
+          }}
+        >
+          Dynamics
+        </Text>
+      ) : null}
+    </div>
+  );
+}
+
 function Field({
   label,
   placeholder,
   value,
   onChange,
   hint,
+  fromDynamics,
+  requiredPending,
+  isFilled,
 }: {
   label: string;
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
   hint?: string;
+  fromDynamics?: boolean;
+  requiredPending?: boolean;
+  isFilled?: boolean;
 }) {
+  const needsAttention = !!requiredPending && !fromDynamics && !isFilled;
+
   return (
     <div style={{ display: "grid", gap: 8 }}>
-      <Text style={{ fontSize: 14, fontWeight: 500, color: brand.text2 }}>{label}</Text>
-      <Input appearance="outline" size="large" value={value} onChange={(_, d) => onChange(d.value)} placeholder={placeholder} />
+      <FieldLabel label={label} fromDynamics={fromDynamics} />
+      <Input
+        appearance="outline"
+        size="large"
+        value={value}
+        readOnly={!!fromDynamics}
+        onChange={(_, d) => {
+          if (fromDynamics) return;
+          onChange(d.value);
+        }}
+        placeholder={placeholder}
+        style={inputLook({ fromDynamics, needsAttention })}
+      />
       {hint ? <Text style={{ fontSize: 12, color: brand.muted }}>{hint}</Text> : null}
     </div>
   );

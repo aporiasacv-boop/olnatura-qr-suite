@@ -35,5 +35,10 @@ app:
     client-id: ${APP_DYNAMICS_CLIENT_ID}
     client-secret: ${APP_DYNAMICS_CLIENT_SECRET}
 
+  # Admin inicial: hereda de application.yml (idempotente; no toca admin existente).
+  bootstrap:
+    admin:
+      enabled: ${APP_BOOTSTRAP_ADMIN_ENABLED:true}
+
 jwt:
   secret: ${JWT_SECRET}

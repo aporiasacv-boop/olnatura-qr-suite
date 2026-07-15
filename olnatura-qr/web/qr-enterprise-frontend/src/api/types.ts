@@ -34,6 +34,18 @@ export type AccessRequestItem = {
 
 export type ScanEvent = Record<string, any>;
 
+export type DynamicsLookupResponse = {
+  codigo: string;
+  nombre: string | null;
+  lote: string;
+  caducidad: string | null;
+  cantidadAlmacen: number | null;
+  statusDynamics: string | null;
+  almacen: string | null;
+  ubicacion: string | null;
+  fuente: string;
+};
+
 export type QrPermissions = {
   canChangeStatus: boolean;
   canRegisterScan: boolean;

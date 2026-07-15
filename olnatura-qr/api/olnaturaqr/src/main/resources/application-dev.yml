@@ -26,9 +26,4 @@ app:
       same-site: "Lax"
   dynamics:
     mode: ${APP_DYNAMICS_MODE:mock}
-  bootstrap:
-    admin:
-      enabled: true
-      username: admin
-      email: admin@olnatura.local
-      password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}
+  # Hereda bootstrap admin de application.yml (defaults de producción inicial).

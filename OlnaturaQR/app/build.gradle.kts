@@ -17,11 +17,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField(
-            "String",
-            "BASE_URL",
-            "\"${project.findProperty("API_BASE_URL") ?: "https://olnaturaqr-dchrfye3fgfzcjbn.mexicocentral-01.azurewebsites.net/"}\""",
-        )
+        val apiBaseUrl = (project.findProperty("API_BASE_URL") as String?)
+            ?: "https://olnaturaqr-dchrfye3fgfzcjbn.mexicocentral-01.azurewebsites.net/"
+        buildConfigField("String", "BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildFeatures {
@@ -38,6 +36,14 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    // Firma release con keystore debug para artefactos internos (sin keystore de tienda aún).
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
 }
 
