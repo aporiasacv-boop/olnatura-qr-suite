@@ -17,7 +17,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -85,13 +84,12 @@ public class GlobalExceptionHandler {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        Map<String, Object> body = Map.of(
-                "timestamp", Instant.now().toString(),
-                "path", request != null ? request.getRequestURI() : "",
-                "status", status,
-                "error", code,
-                "message", message
-        );
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("path", request != null ? request.getRequestURI() : "");
+        body.put("status", status);
+        body.put("error", code);
+        body.put("message", message);
         objectMapper.writeValue(response.getOutputStream(), body);
     }
 }

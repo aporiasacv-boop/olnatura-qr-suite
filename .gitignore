@@ -32,6 +32,7 @@ OlnaturaQR/.idea/
 # curl cookie jars / local
 cookies.txt
 **/cookies.txt
+**/.dynamics-token-cache.json
 
 # IDEs
 .idea/

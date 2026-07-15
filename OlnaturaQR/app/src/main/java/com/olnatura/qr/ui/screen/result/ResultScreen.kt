@@ -39,7 +39,7 @@ fun ResultScreen(
     }
 
     Scaffold(
-        topBar = { OlnTopBar(title = "Materia prima verificada", onBack = onBack) },
+        topBar = { OlnTopBar(title = "Datos de consulta", onBack = onBack) },
         containerColor = OlnCream
     ) { padding ->
         Surface(

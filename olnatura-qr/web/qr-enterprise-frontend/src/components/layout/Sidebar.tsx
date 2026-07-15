@@ -134,6 +134,9 @@ export default function Sidebar() {
             <NavLink to="/admin/audit" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
               Historial de auditoría
             </NavLink>
+            <NavLink to="/dynamics-test" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+              Prueba Dynamics
+            </NavLink>
           </>
         )}
       </nav>
