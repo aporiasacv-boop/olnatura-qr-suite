@@ -34,10 +34,11 @@ public class DynamicsLookupService {
     }
 
     /**
-     * Busca por BatchNumber: token nuevo → ItemBatches → InventorySitesOnHand → QualityOrderHeaders → DTO.
+     * Busca por BatchNumber: token → ItemBatches → InventorySitesOnHand → ReleasedProductsV2 → QualityOrderHeaders → DTO.
      *
      * @return empty si el lote no existe en ItemBatches
-     * @throws DynamicsException si falla OAuth, OData, timeout o error interno
+     * @throws DynamicsException si falla OAuth, OData crítico, timeout o error interno
+     *         (ReleasedProductsV2 se omite ante fallo; no aborta el lookup)
      */
     public Optional<DynamicsLookupDto> lookupByBatchNumber(String rawBatchNumber) {
         Optional<String> loteOpt = LoteExtractor.extract(rawBatchNumber);
@@ -70,6 +71,9 @@ public class DynamicsLookupService {
                     dynamicsClient.findInventorySitesOnHand(itemNumber, accessToken);
             DynamicsClient.InventoryOnHandRecord onHand = onHandOpt.orElse(null);
 
+            // Unidad de inventario: solo InventoryUnitSymbol. Si falla, se omite (solo número).
+            String unidadInventario = resolveInventoryUnit(itemNumber, accessToken);
+
             Optional<DynamicsClient.QualityOrderRecord> qualityOpt =
                     dynamicsClient.findQualityOrderByItemBatch(batchNumber, accessToken);
             DynamicsClient.QualityOrderRecord quality = qualityOpt.orElse(null);
@@ -92,6 +96,7 @@ public class DynamicsLookupService {
                     batch.batchNumber() != null ? batch.batchNumber() : batchNumber,
                     blankToNull(batch.batchExpirationDate()),
                     onHand != null ? onHand.availableOnHandQuantity() : null,
+                    unidadInventario,
                     statusDynamics,
                     almacen,
                     ubicacion,
@@ -105,6 +110,27 @@ public class DynamicsLookupService {
             log.warn("DynamicsLookup error interno lote={} tipo={}",
                     batchNumber, ex.getClass().getSimpleName());
             throw DynamicsExceptionClassifier.unexpected("lookup:" + batchNumber, ex);
+        }
+    }
+
+    /**
+     * Consulta ReleasedProductsV2 por ItemNumber.
+     * Ante fallo o sin unidad: null (no interrumpe el lookup).
+     */
+    private String resolveInventoryUnit(String itemNumber, String accessToken) {
+        try {
+            return dynamicsClient.findReleasedProduct(itemNumber, accessToken)
+                    .map(DynamicsClient.ReleasedProductRecord::inventoryUnitSymbol)
+                    .map(DynamicsLookupService::blankToNull)
+                    .orElse(null);
+        } catch (DynamicsException ex) {
+            log.warn("DynamicsLookup: ReleasedProductsV2 omitido item={} reason={}",
+                    itemNumber, ex.getClass().getSimpleName());
+            return null;
+        } catch (Exception ex) {
+            log.warn("DynamicsLookup: ReleasedProductsV2 error item={} tipo={}",
+                    itemNumber, ex.getClass().getSimpleName());
+            return null;
         }
     }
 

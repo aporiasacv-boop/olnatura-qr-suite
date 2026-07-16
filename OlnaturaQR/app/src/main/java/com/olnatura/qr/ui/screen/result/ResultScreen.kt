@@ -157,12 +157,16 @@ private fun SuccessContent(
 
     val envaseText = "${int(label?.envaseNum)} / ${int(label?.envaseTotal)}"
     val numberFmt = NumberFormat.getNumberInstance(Locale.US)
+    val inventoryUnit = dynamic?.unidadInventario?.takeIf { it.isNotBlank() }
+        ?: dynamic?.uom?.takeIf { it.isNotBlank() }
     val cantidadText = when {
-        dynamic?.cantidadAlmacen != null -> numberFmt.format(dynamic.cantidadAlmacen)
+        dynamic?.cantidadAlmacen != null -> {
+            val qty = numberFmt.format(dynamic.cantidadAlmacen)
+            if (inventoryUnit != null) "$qty $inventoryUnit" else qty
+        }
         dynamic?.cantidad != null -> {
-            val uom = str(dynamic.uom)
             val qty = numberFmt.format(dynamic.cantidad)
-            if (uom != "—") "$qty $uom" else qty
+            if (inventoryUnit != null) "$qty $inventoryUnit" else qty
         }
         else -> "—"
     }

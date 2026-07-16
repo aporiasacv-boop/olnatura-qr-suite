@@ -10,27 +10,29 @@ const useStyles = makeStyles({
     display: "grid",
     gridTemplateColumns: "260px 1fr",
     height: "100vh",
-    backgroundColor: brand.background,
+    backgroundColor: "transparent",
   },
   sidebar: {
-    backgroundColor: brand.background,
+    backgroundColor: "rgba(253, 251, 235, 0.72)",
+    backdropFilter: "blur(8px)",
     borderRight: `1px solid ${brand.border}`,
   },
   main: {
     display: "grid",
     gridTemplateRows: "56px 44px 1fr",
-    backgroundColor: brand.background,
+    backgroundColor: "transparent",
     minWidth: 0,
   },
   content: {
     ...shorthands.padding("24px"),
     overflow: "auto",
-    backgroundColor: brand.background,
+    backgroundColor: "transparent",
   },
   surface: {
     backgroundColor: brand.surface,
+    backdropFilter: "blur(8px)",
     borderRadius: "12px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    boxShadow: "0 4px 18px rgba(74, 92, 40, 0.08)",
     ...shorthands.border("1px", "solid", brand.border),
     ...shorthands.padding("24px"),
     minHeight: "100%",
@@ -51,7 +53,7 @@ export default function AppShell() {
         <Topbar />
         <BreadcrumbsBar path={loc.pathname} />
         <main className={s.content}>
-          <div className={s.surface}>
+          <div className={`${s.surface} app-card`}>
             <Outlet />
           </div>
         </main>

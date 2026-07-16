@@ -9,6 +9,8 @@ public record DynamicsLookupDto(
         String lote,
         String caducidad,
         Double cantidadAlmacen,
+        /** InventoryUnitSymbol desde ReleasedProductsV2; null si no hay unidad. */
+        String unidadInventario,
         String statusDynamics,
         String almacen,
         String ubicacion,

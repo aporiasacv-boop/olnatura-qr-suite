@@ -12,11 +12,14 @@
   --radius-card: 12px;
   --transition-fast: 0.2s ease;
   --color-bg: #FDFBEB;
-  --color-surface: #FFFFFF;
+  --color-surface: rgba(255, 254, 248, 0.82);
   --color-border: #E5E7EB;
   --color-text: #1F2937;
   --color-muted: #6B7280;
   --color-primary: #9CAF47;
+  --color-focus: #9CAF47;
+  --mist-green: rgba(156, 175, 71, 0.20);
+  --mist-green-soft: rgba(184, 201, 90, 0.14);
 }
 
 *,
@@ -35,18 +38,25 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
-  background-color: var(--color-bg);
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(ellipse 90% 55% at 8% -5%, var(--mist-green), transparent 58%),
+    radial-gradient(ellipse 75% 50% at 95% 5%, var(--mist-green-soft), transparent 52%),
+    radial-gradient(ellipse 70% 45% at 50% 110%, rgba(156, 175, 71, 0.12), transparent 55%),
+    linear-gradient(165deg, #FDFBEB 0%, #F8F6E4 45%, #F4F7E8 100%);
+  background-attachment: fixed;
 }
 
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: transparent;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -62,17 +72,63 @@ small { font-size: var(--font-small); color: var(--color-muted); }
 a {
   color: inherit;
   text-decoration: none;
+  cursor: pointer;
+  transition: color var(--transition-fast), opacity var(--transition-fast);
 }
 
 a:hover { text-decoration: underline; }
 
-button, [role="button"] {
+button,
+[role="button"],
+a[role="button"],
+.fui-Button,
+.fui-Link {
   cursor: pointer;
-  transition: opacity var(--transition-fast), background-color var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    background-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast),
+    outline-color var(--transition-fast);
 }
 
-button:hover:not(:disabled), [role="button"]:hover {
-  opacity: 0.9;
+button:hover:not(:disabled),
+[role="button"]:hover:not([aria-disabled="true"]),
+.fui-Button:hover:not(:disabled),
+.fui-Link:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+.fui-Button:focus-visible,
+.fui-Link:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+.fui-Input:focus-within,
+.fui-Dropdown:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+button:active:not(:disabled),
+[role="button"]:active:not([aria-disabled="true"]),
+.fui-Button:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+button:disabled,
+.fui-Button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
 }
 
 input, button, textarea, select {
@@ -83,6 +139,72 @@ img {
   display: block;
   max-width: 100%;
   height: auto;
+}
+
+/* Tarjetas / superficies con hover suave */
+.app-card,
+.fui-Card {
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.app-card:hover:not(.app-card--interactive) {
+  box-shadow: 0 4px 14px rgba(74, 92, 40, 0.10);
+  transform: translateY(-1px);
+}
+
+.table-hover-row > td,
+.table-hover-row > th {
+  transition: background-color 150ms ease;
+  border-bottom: 1px solid #ecece4;
+  vertical-align: top;
+}
+
+.table-hover-row:nth-child(even) > td,
+.table-hover-row:nth-child(even) > th {
+  background-color: #fbfbf6;
+}
+
+.table-hover-row:hover > td,
+.table-hover-row:hover > th {
+  background-color: #f8f8f2;
+}
+
+/* Microanimación tipo pestaña en tarjetas del panel */
+.app-card--interactive {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.app-card--interactive::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 180ms ease;
+  opacity: 0.9;
+}
+
+.app-card--interactive:hover {
+  box-shadow: 0 6px 18px rgba(74, 92, 40, 0.12);
+  transform: translateY(-2px);
+  border-color: #d7dfb0;
+  background-color: rgba(255, 254, 248, 0.96);
+}
+
+.app-card--interactive:hover::after {
+  transform: scaleX(1);
 }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }

@@ -1,14 +1,32 @@
 package com.company.olnaturaqr.api;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
 public class QrDto {
 
+    public record ApprovalLeg(
+            boolean approved,
+            String actorEmail,
+            Instant at,
+            String rol
+    ) {}
+
     public record Permissions(
             boolean canChangeStatus,
             boolean canRegisterScan,
-            boolean canCreateLabel
+            boolean canCreateLabel,
+            boolean canApproveCalidad,
+            boolean canApproveInspeccion,
+            boolean canReject,
+            boolean canDownloadAuditPdf,
+            boolean calidadApproved,
+            boolean inspeccionApproved,
+            String pendingMessage,
+            String tipoMaterialDisplay,
+            ApprovalLeg calidad,
+            ApprovalLeg inspeccion
     ) {}
 
     public record Label(
@@ -31,6 +49,8 @@ public class QrDto {
             String lote,
             String caducidad,
             Double cantidadAlmacen,
+            /** InventoryUnitSymbol (ReleasedProductsV2); null si no aplica. */
+            String unidadInventario,
             String status,
             String statusDynamics,
             String almacen,
@@ -38,7 +58,6 @@ public class QrDto {
             String fuente
     ) {}
 
- 
     public record Response(
             Label label,
             Dynamic dynamic,

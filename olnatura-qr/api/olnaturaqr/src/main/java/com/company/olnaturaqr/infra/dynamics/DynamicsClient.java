@@ -28,9 +28,17 @@ public interface DynamicsClient {
             String warehouseLocationId
     ) {}
 
+    /** Unidad de inventario desde ReleasedProductsV2 (InventoryUnitSymbol). */
+    record ReleasedProductRecord(
+            String itemNumber,
+            String inventoryUnitSymbol
+    ) {}
+
     java.util.Optional<ItemBatchRecord> findItemBatch(String batchNumber, String accessToken);
 
     java.util.Optional<InventoryOnHandRecord> findInventorySitesOnHand(String itemNumber, String accessToken);
 
     java.util.Optional<QualityOrderRecord> findQualityOrderByItemBatch(String itemBatchNumber, String accessToken);
+
+    java.util.Optional<ReleasedProductRecord> findReleasedProduct(String itemNumber, String accessToken);
 }

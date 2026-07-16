@@ -25,7 +25,7 @@ public class DynamicsLookupController {
         this.dynamicsLookupService = dynamicsLookupService;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','INSPECCION')")
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION')")
     @GetMapping("/lookup/{lote}")
     public DynamicsLookupDto lookupByLote(@PathVariable String lote) {
         return dynamicsLookupService.lookupByBatchNumber(lote)

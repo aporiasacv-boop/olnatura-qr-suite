@@ -1,8 +1,13 @@
-import { useMemo, useRef, useState } from "react";
-import { Button, Input, Text, makeStyles, shorthands } from "@fluentui/react-components";
+import { useRef, useState } from "react";
+import { Button, Text, makeStyles, shorthands } from "@fluentui/react-components";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { api, ApiError } from "../api/client";
+import type { QrResponse } from "../api/types";
+import { generateQrPlain } from "../utils/qrWithLogo";
+import { downloadLabelZplFile } from "../utils/downloadLabelZpl";
+import LabelPreview from "../components/label/LabelPreview";
+import LoteAutocomplete from "../components/ui/LoteAutocomplete";
 
 function logAudit(actionType: string, lote: string | null) {
   api("/audit/log", {
@@ -11,10 +16,6 @@ function logAudit(actionType: string, lote: string | null) {
     toast: false,
   }).catch(() => {});
 }
-import type { QrResponse } from "../api/types";
-import { generateQrPlain } from "../utils/qrWithLogo";
-import { exportLabelPreviewToPng } from "../utils/exportLabelPreview";
-import LabelPreview from "../components/label/LabelPreview";
 
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "24px", maxWidth: "600px" },
@@ -32,24 +33,28 @@ const useStyles = makeStyles({
   },
   actions: { display: "flex", gap: "10px", flexWrap: "wrap" },
   error: { color: brand.dangerFg, fontSize: "13px" },
+  hint: { fontSize: "12px", color: brand.muted, marginTop: "4px" },
 });
+
+function parseEnvaseTotal(label: Record<string, unknown> | null): number {
+  if (!label) return 1;
+  const raw = label.envaseTotal ?? label.totalEnvases ?? 1;
+  const n = typeof raw === "number" ? raw : parseInt(String(raw), 10);
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+}
 
 export default function GenerateQrPage() {
   const s = useStyles();
   const previewRef = useRef<HTMLDivElement>(null);
   const [lote, setLote] = useState("");
   const [labelData, setLabelData] = useState<QrResponse["label"] | null>(null);
-  const [dynamicData, setDynamicData] = useState<QrResponse["dynamic"] | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [zplBusy, setZplBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fileName = useMemo(() => {
-    const safe = (lote || "QR").trim().replace(/[^\w\-]+/g, "_");
-    return `Etiqueta_${safe}.png`;
-  }, [lote]);
-
   const v = (lote || "").trim();
+  const hasPreview = !!(labelData && qrDataUrl);
 
   async function generate() {
     if (!v) {
@@ -60,7 +65,6 @@ export default function GenerateQrPage() {
     setError(null);
     setQrDataUrl(null);
     setLabelData(null);
-    setDynamicData(null);
 
     try {
       const qrResponse = await api<QrResponse>(`/qr/${encodeURIComponent(v)}`, { toast: false });
@@ -72,7 +76,6 @@ export default function GenerateQrPage() {
       }
 
       setLabelData(label);
-      setDynamicData(qrResponse?.dynamic ?? null);
 
       const payload = label.publicToken
         ? `OLNQR:1:${label.publicToken}`
@@ -90,32 +93,42 @@ export default function GenerateQrPage() {
       setError(
         ae?.status === 404
           ? "Lote no encontrado. Verifica el identificador."
-          : ae?.status === 401 || ae?.status === 403
-            ? "No tienes acceso. Inicia sesión."
-            : isDynamics
-              ? ae.message || "Dynamics 365 no disponible. Intenta de nuevo."
-              : ae?.message ?? (e as Error)?.message ?? "No se pudo generar la etiqueta."
+          : ae?.status === 409
+            ? ae.message || "Este lote no está activo para operación."
+            : ae?.status === 401 || ae?.status === 403
+              ? "No tienes acceso. Inicia sesión."
+              : isDynamics
+                ? ae.message || "Dynamics 365 no disponible. Intenta de nuevo."
+                : ae?.message ?? (e as Error)?.message ?? "No se pudo generar la etiqueta."
       );
     } finally {
       setBusy(false);
     }
   }
 
-  async function download() {
-    const el = previewRef.current?.querySelector("[data-label-preview]") as HTMLElement | null;
-    if (!el) return;
+  async function downloadZpl() {
+    if (!labelData) {
+      setError("Primero genera la etiqueta.");
+      return;
+    }
+    setZplBusy(true);
+    setError(null);
     try {
-      setBusy(true);
-      logAudit("DOWNLOAD_LABEL", v);
-      const dataUrl = await exportLabelPreviewToPng(el);
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      const key = String(labelData.id ?? labelData.lote ?? v).trim();
+      const total = parseEnvaseTotal(labelData);
+      await downloadLabelZplFile({
+        labelIdOrLote: key,
+        totalEnvases: total,
+        printFrom: 1,
+        printTo: total,
+      });
+    } catch (e) {
+      setError(
+        (e as Error)?.message?.trim() ||
+          "No se pudo descargar la etiqueta Zebra (.zpl). Comprueba la sesión e intenta de nuevo."
+      );
     } finally {
-      setBusy(false);
+      setZplBusy(false);
     }
   }
 
@@ -128,88 +141,100 @@ export default function GenerateQrPage() {
       <h1 className={s.title}>Generar etiqueta imprimible</h1>
 
       <AppCard>
-        <div style={{ display: "grid", gap: 16 }}>
+        <form
+          style={{ display: "grid", gap: 16 }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void generate();
+          }}
+        >
           <div className={s.row}>
             <span className={s.label}>Lote</span>
-            <Input
+            <LoteAutocomplete
               value={lote}
-              onChange={(_, d) => setLote(d.value)}
+              onChange={setLote}
+              onSelect={(item) => setLote(item.lote)}
               placeholder="Ej: 251201-MEM0003454"
             />
           </div>
 
           <div className={s.actions}>
-            <Button appearance="primary" onClick={generate} disabled={busy || !v}>
+            <Button appearance="primary" type="submit" disabled={busy || zplBusy || !v}>
               {busy ? "Generando…" : "Generar etiqueta"}
             </Button>
-            <Button appearance="secondary" onClick={scrollToPreview} disabled={!qrDataUrl}>
+            <Button
+              appearance="secondary"
+              type="button"
+              onClick={scrollToPreview}
+              disabled={!hasPreview || busy || zplBusy}
+            >
               Vista previa
             </Button>
-            <Button appearance="secondary" onClick={download} disabled={!qrDataUrl || busy}>
-              Descargar PNG
+            <Button
+              appearance="primary"
+              type="button"
+              onClick={() => void downloadZpl()}
+              disabled={!hasPreview || busy || zplBusy}
+            >
+              {zplBusy ? "Descargando…" : "Descargar Zebra (.zpl)"}
             </Button>
+          </div>
+          <div className={s.hint}>
+            La descarga .zpl es el archivo listo para imprimir en impresora Zebra.
           </div>
 
           {error ? <div className={s.error}>{error}</div> : null}
+        </form>
 
-          <div ref={previewRef} className={s.preview} style={{ overflowX: "auto" }}>
-            {labelData && qrDataUrl ? (
+        <div ref={previewRef} className={s.preview} style={{ overflowX: "auto", marginTop: 16 }}>
+          {hasPreview ? (
+            <div
+              style={{
+                width: 400,
+                height: 300,
+                overflow: "hidden",
+              }}
+            >
               <div
                 style={{
-                  width: 400,
-                  height: 300,
-                  overflow: "hidden",
+                  width: 800,
+                  height: 600,
+                  transform: "scale(0.5)",
+                  transformOrigin: "top left",
                 }}
               >
-                <div
-                  style={{
-                    width: 800,
-                    height: 600,
-                    transform: "scale(0.5)",
-                    transformOrigin: "top left",
-                  }}
-                >
-                  <LabelPreview
-                    materialName={String(labelData.nombre ?? "").trim() || "—"}
-                    codigo={String(labelData.codigo ?? "").trim() || "—"}
-                    lote={String(labelData.lote ?? "").trim() || "—"}
-                    fecha={labelData.fechaEntrada ?? "N/A"}
-                    caducidad={
-                      (labelData as any).fechaTipo === "REANALISIS"
-                        ? ""
-                        : ((labelData as any).fechaValor ?? labelData.caducidad ?? "")
-                    }
-                    reanalisis={
-                      (labelData as any).fechaTipo === "REANALISIS"
-                        ? ((labelData as any).fechaValor ?? labelData.reanalisis ?? "")
-                        : ""
-                    }
-                    cantidad={(() => {
-                      const manual = String((labelData as { cantidadPorEnvase?: string })?.cantidadPorEnvase ?? "").trim();
-                      if (manual) return manual;
-                      const d = dynamicData as {
-                        cantidadAlmacen?: number | null;
-                        cantidad?: number | null;
-                        uom?: string | null;
-                      } | null;
-                      if (d != null && d.cantidadAlmacen != null && typeof d.cantidadAlmacen === "number")
-                        return `${d.cantidadAlmacen}`;
-                      if (d != null && d.cantidad != null && typeof d.cantidad === "number")
-                        return `${d.cantidad}${d.uom && String(d.uom).trim() ? " " + String(d.uom).trim() : ""}`;
-                      return "N/A";
-                    })()}
-                    envaseNum={labelData.envaseNum ?? "—"}
-                    envaseTotal={labelData.envaseTotal ?? "—"}
-                    qrData={qrDataUrl}
-                    logoUrl={`${import.meta.env.BASE_URL}logo-olnatura.png`}
-                    documentCode={(labelData as any).documentCode ?? "AL-001-E02/04"}
-                  />
-                </div>
+                <LabelPreview
+                  materialName={String(labelData.nombre ?? "").trim() || "—"}
+                  codigo={String(labelData.codigo ?? "").trim() || "—"}
+                  lote={String(labelData.lote ?? "").trim() || "—"}
+                  fecha={labelData.fechaEntrada ?? "N/A"}
+                  caducidad={
+                    (labelData as any).fechaTipo === "REANALISIS"
+                      ? ""
+                      : ((labelData as any).fechaValor ?? labelData.caducidad ?? "")
+                  }
+                  reanalisis={
+                    (labelData as any).fechaTipo === "REANALISIS"
+                      ? ((labelData as any).fechaValor ?? labelData.reanalisis ?? "")
+                      : ""
+                  }
+                  cantidad={(() => {
+                    const manual = String(
+                      (labelData as { cantidadPorEnvase?: string })?.cantidadPorEnvase ?? ""
+                    ).trim();
+                    return manual || "N/A";
+                  })()}
+                  envaseNum={labelData.envaseNum ?? "—"}
+                  envaseTotal={labelData.envaseTotal ?? "—"}
+                  qrData={qrDataUrl!}
+                  logoUrl={`${import.meta.env.BASE_URL}logo-olnatura.png`}
+                  documentCode={(labelData as any).documentCode ?? "AL-001-E02/04"}
+                />
               </div>
-            ) : (
-              <Text style={{ opacity: 0.6 }}>Sin vista previa</Text>
-            )}
-          </div>
+            </div>
+          ) : (
+            <Text style={{ opacity: 0.6 }}>Sin vista previa</Text>
+          )}
         </div>
       </AppCard>
     </div>

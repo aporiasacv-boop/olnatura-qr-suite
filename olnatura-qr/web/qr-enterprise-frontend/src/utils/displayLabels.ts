@@ -4,6 +4,7 @@ export const LABELS = {
   lookup: "Consulta por lote",
   scanHistory: "Historial de escaneos",
   auditLog: "Historial de auditoría",
+  metrics: "Métricas operativas",
   label: "Etiqueta",
   labelData: "Datos fijos (Etiqueta)",
   dynamicStatus: "Estado",
@@ -11,10 +12,11 @@ export const LABELS = {
   statusDynamics: "Estado Dynamics (referencia)",
   fuente: "Fuente de datos",
   envase: "Envase",
-  cantidad: "Cantidad",
+  cantidad: "Inventario disponible",
   ubicacion: "Ubicación",
   almacen: "Almacén",
-  cantidadAlmacen: "Cantidad en almacén",
+  cantidadAlmacen: "Inventario disponible",
+  unidadInventario: "Unidad de inventario",
   downloadZpl: "Descargar etiqueta Zebra",
   downloadAuditPdf: "Descargar historial (PDF)",
   registerScan: "Registrar escaneo",
@@ -51,10 +53,15 @@ export function actionTypeDisplay(actionType: string | null | undefined): string
     PRINT_LABEL: "Impresión etiqueta",
     GENERATE_LABEL: "Generar etiqueta",
     EXPORT_AUDIT_PDF: "Exportación de historial PDF",
+    EXPORT_AUDIT_CSV: "Exportación de historial CSV",
     APPROVE_USER: "Aprobación de usuario",
     REJECT_USER: "Rechazo de usuario",
     ACCESS_REQUEST: "Solicitud de acceso",
     DOWNLOAD_LABEL: "Descarga de etiqueta",
+    APPROVE_MATERIAL: "Aprobación de material",
+    REJECT_MATERIAL: "Rechazo de material",
+    UPDATE_USER: "Actualización de usuario",
+    CHANGE_LOT_ADMIN_STATUS: "Cambio de estado administrativo",
   };
   return map[v] ?? actionType;
 }
@@ -72,6 +79,13 @@ const METADATA_KEY_LABELS: Record<string, string> = {
   lote: "Lote",
   mode: "Modo",
   status: "Estado",
+  resultingStatus: "Estado resultante",
+  rol: "Rol",
+  approvalRole: "Rol de aprobación",
+  tipoMaterial: "Tipo de material",
+  motivo: "Motivo",
+  calidadApproved: "Aprobado por Calidad",
+  inspeccionApproved: "Aprobado por Inspección",
   username: "Usuario",
   email: "Correo",
   userId: "ID de usuario",
@@ -91,10 +105,16 @@ function formatMetadataValue(key: string, value: unknown): string {
   const v = str.toUpperCase();
   if (key === "mode" && v === "ZPL_DOWNLOAD") return "Descarga ZPL";
   if (key === "exportType" && v === "PDF") return "PDF";
-  if (key === "roleRequested") {
+  if (key === "roleRequested" || key === "rol" || key === "approvalRole") {
     if (v === "ALMACEN") return "Almacén";
     if (v === "INSPECCION") return "Inspección";
+    if (v === "CALIDAD") return "Calidad";
     if (v === "ADMIN") return "Administrador";
+    if (v === "PRODUCCION") return "Producción";
+  }
+  if (key === "calidadApproved" || key === "inspeccionApproved") {
+    if (v === "TRUE") return "Sí";
+    if (v === "FALSE") return "No";
   }
   return str;
 }

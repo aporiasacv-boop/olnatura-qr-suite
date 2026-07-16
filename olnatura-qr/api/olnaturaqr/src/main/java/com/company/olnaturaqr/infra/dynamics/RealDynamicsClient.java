@@ -137,6 +137,43 @@ public class RealDynamicsClient implements DynamicsClient {
         }
     }
 
+    @Override
+    public Optional<ReleasedProductRecord> findReleasedProduct(String itemNumber, String accessToken) {
+        String filter = "ItemNumber eq '" + escapeOdataLiteral(itemNumber) + "'";
+        log.debug("Dynamics OData GET ReleasedProductsV2 item={}", itemNumber);
+        try {
+            ResponseEntity<ReleasedProductsResponse> responseEntity = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/data/ReleasedProductsV2")
+                            .queryParam("$filter", filter)
+                            .queryParam("$select", "ItemNumber,InventoryUnitSymbol")
+                            .queryParam("$top", 1)
+                            .build())
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .toEntity(ReleasedProductsResponse.class);
+            log.debug("Dynamics OData ReleasedProductsV2 HTTP {}", responseEntity.getStatusCode().value());
+
+            ReleasedProductsResponse body = responseEntity.getBody();
+            if (body == null || body.value == null || body.value.isEmpty() || body.value.get(0) == null) {
+                return Optional.empty();
+            }
+            ReleasedProductsRow row = body.value.get(0);
+            String unit = row.InventoryUnitSymbol;
+            if (unit == null || unit.isBlank()) {
+                return Optional.empty();
+            }
+            return Optional.of(new ReleasedProductRecord(
+                    row.ItemNumber != null ? row.ItemNumber.trim() : itemNumber,
+                    unit.trim()
+            ));
+        } catch (RestClientException ex) {
+            log.warn("Dynamics OData ReleasedProductsV2 falló item={} tipo={}",
+                    itemNumber, ex.getClass().getSimpleName());
+            throw DynamicsExceptionClassifier.fromOData("ReleasedProductsV2", itemNumber, ex);
+        }
+    }
+
     private RestClient buildClient(DynamicsProperties props) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout((int) props.getConnectTimeout().toMillis());
@@ -183,5 +220,14 @@ public class RealDynamicsClient implements DynamicsClient {
         public String PassedBatchDispositionCode;
         public String WarehouseId;
         public String WarehouseLocationId;
+    }
+
+    private static class ReleasedProductsResponse {
+        public List<ReleasedProductsRow> value;
+    }
+
+    private static class ReleasedProductsRow {
+        public String ItemNumber;
+        public String InventoryUnitSymbol;
     }
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button, Input, Text } from "@fluentui/react-components";
+import { Button, Text } from "@fluentui/react-components";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { api, ApiError } from "../api/client";
@@ -9,6 +9,7 @@ import LoadingState from "../components/ui/LoadingState";
 import EmptyState from "../components/ui/EmptyState";
 import ErrorState from "../components/ui/ErrorState";
 import ScanHistoryTable from "../components/ui/ScanHistoryTable";
+import LoteAutocomplete from "../components/ui/LoteAutocomplete";
 import { LABELS } from "../utils/displayLabels";
 
 export default function ScanHistoryPage() {
@@ -21,15 +22,16 @@ export default function ScanHistoryPage() {
   const [events, setEvents] = useState<ScanEvent[] | null>(null);
   const [err, setErr] = useState<{ title: string; detail?: string } | null>(null);
 
-  const load = async () => {
-    if (!loteTrim) return;
+  const load = async (loteOverride?: string) => {
+    const key = (loteOverride ?? lote).trim();
+    if (!key) return;
 
     setStatus("loading");
     setErr(null);
     setEvents(null);
 
     try {
-      const ev = await api<ScanEvent[]>(`/scan/${encodeURIComponent(loteTrim)}`);
+      const ev = await api<ScanEvent[]>(`/scan/${encodeURIComponent(key)}`);
       setEvents(Array.isArray(ev) ? ev : []);
       setStatus("ok");
     } catch (e) {
@@ -72,23 +74,35 @@ export default function ScanHistoryPage() {
       <h1 style={{ fontSize: "20px", fontWeight: 600, color: brand.text, margin: 0 }}>{LABELS.scanHistory}</h1>
 
       <AppCard style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
-        <div style={{ flex: 1, display: "grid", gap: 6 }}>
-          <Text>Lote</Text>
-          <Input
-            id="lote"
-            name="lote"
-            value={lote}
-            onChange={(_, d) => setLote(d.value)}
-            placeholder="Ej. 251201-MEM0003454"
-          />
-        </div>
-        <Button
-          appearance="primary"
-          onClick={() => void load()}
-          disabled={!loteTrim || status === "loading"}
+        <form
+          style={{ display: "contents" }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void load();
+          }}
         >
-          Buscar
-        </Button>
+          <div style={{ flex: 1, display: "grid", gap: 6 }}>
+            <Text>Lote</Text>
+            <LoteAutocomplete
+              id="lote"
+              name="lote"
+              value={lote}
+              onChange={setLote}
+              onSelect={(item) => {
+                setLote(item.lote);
+                void load(item.lote);
+              }}
+              placeholder="Ej. 251201-MEM0003454"
+            />
+          </div>
+          <Button
+            appearance="primary"
+            type="submit"
+            disabled={!loteTrim || status === "loading"}
+          >
+            Buscar
+          </Button>
+        </form>
       </AppCard>
 
       {status === "idle" && (

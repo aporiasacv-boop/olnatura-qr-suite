@@ -7,6 +7,7 @@ import com.company.olnaturaqr.repository.UserRepository;
 import com.company.olnaturaqr.support.config.AuthCookieProperties;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
 import com.company.olnaturaqr.support.audit.AuditService;
+import com.company.olnaturaqr.support.security.CredentialRules;
 import com.company.olnaturaqr.support.security.CookieWriter;
 import com.company.olnaturaqr.support.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
@@ -93,14 +94,12 @@ public ResponseEntity<UserDto.LoginResponse> login(
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    if (raw.contains("@")) {
-        String emailLower = raw.toLowerCase();
-        if (!emailLower.endsWith("@olnatura.com")) {
-            System.out.println("LOGIN FAILED:");
-            System.out.println("reason=email_domain");
-            log.info("LOGIN FAILED: email domain not allowed username={}", user.getUsername());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    // Solo cuentas con correo corporativo @olnatura.com
+    if (!CredentialRules.isAllowedEmail(user.getEmail())) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=email_domain");
+        log.info("LOGIN FAILED: email domain not allowed username={}", user.getUsername());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     String jwt = jwtTokenProvider.generateToken(user);
@@ -156,8 +155,20 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
         return ResponseEntity.badRequest().body(new ErrorResponse("Datos incompletos"));
     }
 
-    if (!roleName.equals("ALMACEN") && !roleName.equals("INSPECCION")) {
-        return ResponseEntity.badRequest().body(new ErrorResponse("Rol inválido. Usa ALMACEN o INSPECCION."));
+    String emailErr = CredentialRules.emailError(email);
+    if (emailErr != null) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(emailErr));
+    }
+
+    String passwordErr = CredentialRules.passwordError(password);
+    if (passwordErr != null) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(passwordErr));
+    }
+
+    if (!roleName.equals("ALMACEN") && !roleName.equals("INSPECCION")
+            && !roleName.equals("PRODUCCION") && !roleName.equals("CALIDAD")) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(
+                "Rol inválido. Usa ALMACEN, PRODUCCION, CALIDAD o INSPECCION."));
     }
 
     if (userRepository.existsByUsernameIgnoreCase(username)) {
@@ -172,7 +183,7 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
 
     User u = new User();
     u.setUsername(username);
-    u.setEmail(email);
+    u.setEmail(email.toLowerCase());
     u.setPasswordHash(passwordEncoder.encode(password));
     u.setRole(role);
     u.setEnabled(false);
@@ -180,7 +191,7 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
     User saved = userRepository.save(u);
 
     auditService.logUnauthenticated("ACCESS_REQUEST", null,
-            Map.of("username", username, "email", email, "roleRequested", roleName, "userId", saved.getId().toString()),
+            Map.of("username", username, "email", email.toLowerCase(), "roleRequested", roleName, "userId", saved.getId().toString()),
             null);
 
     return ResponseEntity.status(HttpStatus.CREATED)

@@ -1,142 +1,144 @@
 import { NavLink } from "react-router-dom";
-import { makeStyles, shorthands, Text } from "@fluentui/react-components";
+import { makeStyles, shorthands } from "@fluentui/react-components";
 import { useAuth } from "../../auth/AuthContext";
-import clsx from "clsx";
 import { brand } from "../../styles/brand";
+import BrandLogo from "../ui/BrandLogo";
+
+function clsx(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}
 
 const useStyles = makeStyles({
   root: {
+    display: "grid",
+    gridTemplateRows: "auto 1fr auto",
     height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    backgroundColor: brand.surface,
+    ...shorthands.padding("16px", "12px"),
+    backgroundColor: "transparent",
   },
-  header: {
-    ...shorthands.padding("18px", "16px"),
-    borderBottom: `1px solid ${brand.border}`,
-  },
-  logoRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-  logo: {
-    width: "40px",
-    height: "40px",
-    objectFit: "contain",
-  },
-  title: {
-    fontWeight: 600,
-    fontSize: "15px",
-    color: brand.text,
-  },
-  subtitle: {
-    color: brand.muted,
-    fontSize: "12px",
+  brandBlock: {
+    ...shorthands.padding("8px", "10px", "16px"),
   },
   nav: {
-    display: "flex",
-    flexDirection: "column",
-    ...shorthands.padding("12px", "8px"),
-    rowGap: "2px",
+    display: "grid",
+    gap: "4px",
+    alignContent: "start",
   },
   sectionLabel: {
-    marginTop: "16px",
-    marginBottom: "6px",
-    paddingInline: "12px",
-    color: brand.muted,
     fontSize: "11px",
+    fontWeight: 700,
+    letterSpacing: "0.04em",
     textTransform: "uppercase",
-    letterSpacing: "0.5px",
-    fontWeight: 500,
+    color: brand.muted,
+    ...shorthands.padding("14px", "10px", "6px"),
   },
   link: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
+    display: "block",
     ...shorthands.padding("10px", "12px"),
     borderRadius: "8px",
-    color: brand.text,
-    textDecorationLine: "none",
+    color: brand.text2,
+    textDecoration: "none",
     fontSize: "14px",
-    transition: "background-color 0.2s ease, color 0.2s ease",
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "background-color 0.2s ease, transform 0.2s ease, color 0.2s ease",
   },
   linkHover: {
     ":hover": {
-      backgroundColor: brand.background,
+      backgroundColor: "rgba(239, 241, 161, 0.55)",
+      transform: "translateX(2px)",
     },
   },
   active: {
     backgroundColor: brand.primarySoft,
     color: brand.text,
-    fontWeight: 500,
+    fontWeight: 600,
   },
   footer: {
-    marginTop: "auto",
-    ...shorthands.padding("16px"),
+    ...shorthands.padding("12px", "10px", "4px"),
     borderTop: `1px solid ${brand.border}`,
   },
   small: {
-    color: brand.muted,
     fontSize: "12px",
+    color: brand.muted,
   },
 });
 
 export default function Sidebar() {
   const s = useStyles();
-  const { state, can, hasRole } = useAuth();
-  const userLabel = state.status === "authenticated" ? `${state.user.username}` : "—";
+  const { me, can, hasRole } = useAuth();
+  const userLabel = me?.username ?? "—";
+
+  const showHome = can("HOME") || hasRole("ADMIN");
+  const showLookup = can("LOOKUP");
+  const showScan = can("SCAN");
+  const showGenerate = can("GENERATE_LABEL");
+  const showRegister = can("REGISTER_LABEL");
+  const showAudit = can("AUDIT");
+  const showAdmin = hasRole("ADMIN");
 
   return (
     <div className={s.root}>
-      <div className={s.header}>
-        <div className={s.logoRow}>
-          <img className={s.logo} src="/logo-olnatura.png" alt="Logo" />
-          <div>
-            <Text className={s.title}>Sistema Olnatura</Text>
-            <div className={s.subtitle}>Trazabilidad QR</div>
-          </div>
-        </div>
+      <div className={s.brandBlock}>
+        <BrandLogo size={44} title="Sistema Olnatura" subtitle="QR Suite" />
       </div>
 
       <nav className={s.nav}>
-        <div className={s.sectionLabel}>Operación</div>
-        <NavLink to="/" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-          Panel principal
-        </NavLink>
-        {can("LOOKUP") && (
+        {(showHome || showLookup || showScan) && (
+          <div className={s.sectionLabel}>Operación</div>
+        )}
+        {showHome && (
+          <NavLink to="/" end className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+            Panel principal
+          </NavLink>
+        )}
+        {showLookup && (
           <NavLink to="/lookup" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
             Consulta por lote
           </NavLink>
         )}
-        <NavLink to="/scan-history" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-          Historial de escaneos
-        </NavLink>
+        {showScan && (
+          <NavLink to="/scan-history" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+            Historial de escaneos
+          </NavLink>
+        )}
 
-        <div className={s.sectionLabel}>Etiquetas</div>
-        {(hasRole("ADMIN") || hasRole("ALMACEN") || hasRole("INSPECCION")) && (
+        {(showGenerate || showRegister) && <div className={s.sectionLabel}>Etiquetas</div>}
+        {showGenerate && (
           <NavLink to="/generate-qr" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
             Generar etiqueta
           </NavLink>
         )}
-        {(hasRole("ADMIN") || hasRole("ALMACEN")) && (
+        {showRegister && (
           <NavLink to="/register-label" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
             Registrar etiqueta
           </NavLink>
         )}
 
-        {hasRole("ADMIN") && (
+        {(showAudit || showAdmin) && (
           <>
             <div className={s.sectionLabel}>Administración</div>
-            <NavLink to="/admin/approval" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-              Aprobar usuarios
-            </NavLink>
-            <NavLink to="/admin/audit" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-              Historial de auditoría
-            </NavLink>
-            <NavLink to="/dynamics-test" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-              Prueba Dynamics
-            </NavLink>
+            {showAdmin && (
+              <>
+                <NavLink to="/admin/metrics" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+                  Métricas operativas
+                </NavLink>
+                <NavLink to="/admin/approval" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+                  Aprobar usuarios
+                </NavLink>
+                <NavLink to="/admin/users" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+                  Usuarios
+                </NavLink>
+                <NavLink to="/admin/lots" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+                  Lotes
+                </NavLink>
+              </>
+            )}
+            {showAudit && (
+              <NavLink to="/admin/audit" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+                Historial de auditoría
+              </NavLink>
+            )}
           </>
         )}
       </nav>

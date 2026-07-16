@@ -88,17 +88,32 @@ fun RequestAccessScreen(
             Spacer(Modifier.height(12.dp))
             Text("Rol solicitado", style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = s.role == "ALMACEN",
-                    onClick = { vm.setRole("ALMACEN") },
-                    label = { Text("ALMACÉN") }
-                )
-                FilterChip(
-                    selected = s.role == "INSPECCION",
-                    onClick = { vm.setRole("INSPECCION") },
-                    label = { Text("INSPECCIÓN") }
-                )
+            // Mismos roles que la web (credenciales compartidas con el backend)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = s.role == "ALMACEN",
+                        onClick = { vm.setRole("ALMACEN") },
+                        label = { Text("ALMACÉN") }
+                    )
+                    FilterChip(
+                        selected = s.role == "PRODUCCION",
+                        onClick = { vm.setRole("PRODUCCION") },
+                        label = { Text("PRODUCCIÓN") }
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = s.role == "CALIDAD",
+                        onClick = { vm.setRole("CALIDAD") },
+                        label = { Text("CONTROL DE CALIDAD") }
+                    )
+                    FilterChip(
+                        selected = s.role == "INSPECCION",
+                        onClick = { vm.setRole("INSPECCION") },
+                        label = { Text("INSPECCIÓN") }
+                    )
+                }
             }
 
             if (s.error != null) {

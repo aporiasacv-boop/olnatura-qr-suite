@@ -40,6 +40,8 @@ data class DynamicDto(
     val lote: String? = null,
     val caducidad: String? = null,
     val cantidadAlmacen: Double? = null,
+    /** InventoryUnitSymbol desde ReleasedProductsV2. */
+    val unidadInventario: String? = null,
     val status: String? = null,
     val statusDynamics: String? = null,
     val almacen: String? = null,

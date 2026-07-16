@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Button,
-  Dropdown,
   Input,
-  Option,
   Text,
   Tooltip,
   Dialog,
@@ -19,15 +17,26 @@ import {
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { API_BASE, api, ApiError } from "../api/client";
-import type { QrResponse, ScanEvent } from "../api/types";
+import type { QrResponse, ScanEvent, ApprovalLeg } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { useToasts } from "../components/ui/toasts";
 import LoadingState from "../components/ui/LoadingState";
 import EmptyState from "../components/ui/EmptyState";
 import ErrorState from "../components/ui/ErrorState";
 import StatusTag from "../components/ui/StatusTag";
-import { LABELS, fuenteDisplay } from "../utils/displayLabels";
+import { LABELS, fuenteDisplay, formatDateTime } from "../utils/displayLabels";
 import ScanHistoryTable from "../components/ui/ScanHistoryTable";
+import LoteAutocomplete from "../components/ui/LoteAutocomplete";
+
+function needsCalidadApproval(tipo: string): boolean {
+  const t = (tipo || "").toUpperCase();
+  return t.includes("MATERIA_PRIMA") || t.includes("EMPAQUE_PRIMARIO") || t === "MP";
+}
+
+function needsInspeccionApproval(tipo: string): boolean {
+  const t = (tipo || "").toUpperCase();
+  return t.includes("EMPAQUE_PRIMARIO") || t.includes("EMPAQUE_SECUNDARIO");
+}
 
 function getDeviceId() {
   const k = "qr_device_id";
@@ -138,17 +147,18 @@ async function downloadAuditPdf(
 }
 
 const STATUS_OPTIONS = [
-  { value: "PENDING", label: "PENDIENTE" },
-  { value: "LIBERADO", label: "LIBERADO" },
-  { value: "APROBADO", label: "APROBADO" },
   { value: "CUARENTENA", label: "CUARENTENA" },
+  { value: "APROBADO", label: "APROBADO" },
   { value: "RECHAZADO", label: "RECHAZADO" },
-  { value: "DESCONOCIDO", label: "DESCONOCIDO" },
 ] as const;
 
 function statusToDisplayLabel(backendValue: string): string {
-  const opt = STATUS_OPTIONS.find((o) => o.value === (backendValue ?? "").trim().toUpperCase());
-  return opt ? opt.label : (backendValue ?? "—");
+  const v = (backendValue ?? "").trim().toUpperCase();
+  if (!v || v === "—" || v === "PENDING" || v === "PENDIENTE" || v === "LIBERADO" || v === "DESCONOCIDO" || v === "OPEN") {
+    return "CUARENTENA";
+  }
+  const opt = STATUS_OPTIONS.find((o) => o.value === v);
+  return opt ? opt.label : v;
 }
 
 const useStyles = makeStyles({
@@ -161,7 +171,13 @@ const useStyles = makeStyles({
     alignItems: "flex-end",
   },
   searchInput: { flex: 1 },
-  resultGrid: { display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "24px" },
+  resultGrid: {
+    display: "grid",
+    gridTemplateColumns: "1.2fr 0.8fr",
+    gap: "24px",
+    alignItems: "start",
+  },
+  historyFull: { width: "100%" },
   dataGrid: {
     marginTop: "12px",
     display: "grid",
@@ -188,7 +204,6 @@ export default function BatchLookupPage() {
 
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "ok">("idle");
   const [err, setErr] = useState<{ title: string; detail?: string } | null>(null);
-  const [newStatus, setNewStatus] = useState<string>("");
   const [statusBusy, setStatusBusy] = useState(false);
   const [zplHelpOpen, setZplHelpOpen] = useState(false);
   const [zplTotalEnvases, setZplTotalEnvases] = useState<string>("");
@@ -197,8 +212,9 @@ export default function BatchLookupPage() {
 
   const loteTrim = useMemo(() => lote.trim(), [lote]);
 
-  const load = async () => {
-    if (!loteTrim) return;
+  const load = async (loteOverride?: string) => {
+    const key = (loteOverride ?? lote).trim();
+    if (!key) return;
 
     setStatus("loading");
     setErr(null);
@@ -206,10 +222,10 @@ export default function BatchLookupPage() {
     setScans(null);
 
     try {
-      const qr = await api<QrResponse>(`/qr/${encodeURIComponent(loteTrim)}`);
+      const qr = await api<QrResponse>(`/qr/${encodeURIComponent(key)}`);
       setData(qr);
 
-      const ev = await api<ScanEvent[]>(`/scan/${encodeURIComponent(loteTrim)}`);
+      const ev = await api<ScanEvent[]>(`/scan/${encodeURIComponent(key)}`);
       setScans(Array.isArray(ev) ? ev : []);
 
       setStatus("ok");
@@ -243,18 +259,19 @@ export default function BatchLookupPage() {
     }
   };
 
-  const changeStatus = async () => {
-    if (!loteTrim || !newStatus || statusBusy) return;
+  const changeStatus = async (action: "approve" | "reject") => {
+    if (!loteTrim || statusBusy) return;
     setStatusBusy(true);
     try {
-      await api<void>(`/label/by-lote/${encodeURIComponent(loteTrim)}/status`, {
-        method: "PATCH",
-        body: { status: newStatus },
-      });
+      const path =
+        action === "approve"
+          ? `/label/by-lote/${encodeURIComponent(loteTrim)}/approve`
+          : `/label/by-lote/${encodeURIComponent(loteTrim)}/reject`;
+      await api<{ id: string; status: string }>(path, { method: "POST", toast: false });
       toasts.push({
         intent: "success",
-        title: "Estatus actualizado",
-        message: `Nuevo estatus: ${statusToDisplayLabel(newStatus)}`,
+        title: action === "approve" ? "Aprobación registrada" : "Material rechazado",
+        message: action === "approve" ? "Se actualizó el estado del lote." : "El lote quedó en RECHAZADO.",
       });
       await load();
     } catch (e) {
@@ -325,8 +342,10 @@ export default function BatchLookupPage() {
 
   const dynamicCantidad = (() => {
     const cant = readDynamic(data, "cantidadAlmacen");
-    if (cant !== "—") return cant;
-    return readDynamic(data, "cantidad");
+    const qty = cant !== "—" ? cant : readDynamic(data, "cantidad");
+    if (qty === "—") return qty;
+    const unit = String((data as any)?.dynamic?.unidadInventario ?? "").trim();
+    return unit ? `${qty} ${unit}` : qty;
   })();
 
   const dynamicStatus =
@@ -336,13 +355,21 @@ export default function BatchLookupPage() {
     (data as any)?.dynamic?.statusDynamics ??
     "—";
   const canChangeStatus = data?.permissions?.canChangeStatus ?? false;
+  const canApprove =
+    !!(data?.permissions?.canApproveCalidad || data?.permissions?.canApproveInspeccion);
+  const canReject = !!data?.permissions?.canReject;
+  const pendingMessage = data?.permissions?.pendingMessage ?? null;
+  const tipoMaterialDisplay = data?.permissions?.tipoMaterialDisplay
+    ?? readLabel(data, "tipoMaterial");
+  const tipoMaterialCode = String((data as any)?.label?.tipoMaterial ?? "").trim();
   const canRegisterScan = data?.permissions?.canRegisterScan ?? can("SCAN");
-  const canDownloadZpl = data?.permissions?.canCreateLabel ?? (hasRole("ADMIN") || hasRole("ALMACEN"));
-  const canDownloadPdf = hasRole("ADMIN") || hasRole("INSPECCION");
-  const transitions = data?.availableTransitions ?? [];
-  const dropdownOptions = transitions.length > 0
-    ? STATUS_OPTIONS.filter((o) => transitions.includes(o.value))
-    : [...STATUS_OPTIONS];
+  const canDownloadZpl = data?.permissions?.canCreateLabel ?? can("GENERATE_LABEL");
+  const canDownloadPdf = data?.permissions?.canDownloadAuditPdf
+    ?? (hasRole("ADMIN") || hasRole("CALIDAD") || hasRole("INSPECCION"));
+  const calidadApproved = !!data?.permissions?.calidadApproved;
+  const inspeccionApproved = !!data?.permissions?.inspeccionApproved;
+  const calidadLeg = data?.permissions?.calidad;
+  const inspeccionLeg = data?.permissions?.inspeccion;
 
   const dynamicFuenteRaw = (data as any)?.dynamic?.fuente ?? "";
   const fuenteDisplayLabel = fuenteDisplay(dynamicFuenteRaw);
@@ -384,29 +411,41 @@ export default function BatchLookupPage() {
       <h1 className={s.title}>{LABELS.lookup}</h1>
 
       <AppCard className={s.searchCard}>
-        <div className={s.searchInput} style={{ display: "grid", gap: 6 }}>
-          <Text style={{ fontSize: 14, fontWeight: 500 }}>Lote</Text>
-          <Input
-            id="lote"
-            name="lote"
-            type="text"
-            value={lote}
-            onChange={(_, d) => setLote(d.value ?? "")}
-            placeholder="Ej. 251201-MEM0003454"
-          />
-        </div>
-
-        <Button
-          appearance="primary"
-          onClick={() => void load()}
-          disabled={!loteTrim || status === "loading"}
+        <form
+          style={{ display: "contents" }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void load();
+          }}
         >
-          Buscar
-        </Button>
+          <div className={s.searchInput} style={{ display: "grid", gap: 6 }}>
+            <Text style={{ fontSize: 14, fontWeight: 500 }}>Lote</Text>
+            <LoteAutocomplete
+              id="lote"
+              name="lote"
+              value={lote}
+              onChange={setLote}
+              onSelect={(item) => {
+                setLote(item.lote);
+                void load(item.lote);
+              }}
+              placeholder="Ej. 251201-MEM0003454"
+            />
+          </div>
+
+          <Button
+            appearance="primary"
+            type="submit"
+            disabled={!loteTrim || status === "loading"}
+          >
+            Buscar
+          </Button>
+        </form>
 
         {canRegisterScan && (
           <Button
             appearance="secondary"
+            type="button"
             onClick={() => void registerScan()}
             disabled={!loteTrim || status === "loading"}
             title={!loteTrim ? "Ingresa un lote primero" : undefined}
@@ -423,78 +462,78 @@ export default function BatchLookupPage() {
       )}
 
       {status === "ok" && data && (
-        <div className={s.resultGrid}>
-          <AppCard>
-            <Text weight="semibold">{LABELS.labelData}</Text>
-            <div className={s.dataGrid}>
-              <Field label="Tipo material" value={readLabel(data, "tipoMaterial")} />
-              <Field label="Nombre" value={readLabel(data, "nombre")} />
-              <CopyField
-                label="Código"
-                value={readLabel(data, "codigo")}
-                onCopy={handleCopy}
-              />
-              <CopyField
-                label="Lote"
-                value={readLabel(data, "lote")}
-                onCopy={handleCopy}
-              />
-              <Field label="Fecha entrada" value={readLabel(data, "fechaEntrada")} />
-              <Field label="Caducidad" value={readLabel(data, "caducidad")} />
-              <Field label="Reanálisis" value={readLabel(data, "reanalisis")} />
-              <Field label={LABELS.envase} value={labelEnvase} />
-            </div>
-
-            {canDownloadZpl && (
-              <div style={{ marginTop: 10 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
-                  <div>
-                    <Text style={{ fontSize: 12, color: brand.muted }}>Total envases</Text>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={zplTotalEnvases}
-                      onChange={(_, d) => setZplTotalEnvases(d.value ?? "")}
-                      placeholder={String(envaseTotal)}
-                    />
-                  </div>
-                  <div>
-                    <Text style={{ fontSize: 12, color: brand.muted }}>Imprimir desde</Text>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={zplPrintFrom}
-                      onChange={(_, d) => setZplPrintFrom(d.value ?? "")}
-                      placeholder="1"
-                    />
-                  </div>
-                  <div>
-                    <Text style={{ fontSize: 12, color: brand.muted }}>Imprimir hasta</Text>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={zplPrintTo}
-                      onChange={(_, d) => setZplPrintTo(d.value ?? "")}
-                      placeholder={String(envaseTotal)}
-                    />
-                  </div>
-                </div>
-                <Button
-                  appearance="secondary"
-                  size="small"
-                  onClick={() => void handleZplDownload()}
-                >
-                  {LABELS.downloadZpl}
-                </Button>
-                <Text style={{ display: "block", marginTop: 4, color: brand.muted, fontSize: 12 }}>
-                  Archivo para impresora Zebra.{" "}
-                  <Link onClick={() => setZplHelpOpen(true)}>Cómo imprimir</Link>
-                </Text>
+        <>
+          <div className={s.resultGrid}>
+            <AppCard>
+              <Text weight="semibold">{LABELS.labelData}</Text>
+              <div className={s.dataGrid}>
+                <Field label="Tipo material" value={readLabel(data, "tipoMaterial")} />
+                <Field label="Nombre" value={readLabel(data, "nombre")} />
+                <CopyField
+                  label="Código"
+                  value={readLabel(data, "codigo")}
+                  onCopy={handleCopy}
+                />
+                <CopyField
+                  label="Lote"
+                  value={readLabel(data, "lote")}
+                  onCopy={handleCopy}
+                />
+                <Field label="Fecha entrada" value={readLabel(data, "fechaEntrada")} />
+                <Field label="Caducidad" value={readLabel(data, "caducidad")} />
+                <Field label="Reanálisis" value={readLabel(data, "reanalisis")} />
+                <Field label={LABELS.envase} value={labelEnvase} />
               </div>
-            )}
-          </AppCard>
 
-          <div style={{ display: "grid", gap: 24 }}>
+              {canDownloadZpl && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
+                    <div>
+                      <Text style={{ fontSize: 12, color: brand.muted }}>Total envases</Text>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={zplTotalEnvases}
+                        onChange={(_, d) => setZplTotalEnvases(d.value ?? "")}
+                        placeholder={String(envaseTotal)}
+                      />
+                    </div>
+                    <div>
+                      <Text style={{ fontSize: 12, color: brand.muted }}>Imprimir desde</Text>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={zplPrintFrom}
+                        onChange={(_, d) => setZplPrintFrom(d.value ?? "")}
+                        placeholder="1"
+                      />
+                    </div>
+                    <div>
+                      <Text style={{ fontSize: 12, color: brand.muted }}>Imprimir hasta</Text>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={zplPrintTo}
+                        onChange={(_, d) => setZplPrintTo(d.value ?? "")}
+                        placeholder={String(envaseTotal)}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    appearance="secondary"
+                    size="small"
+                    onClick={() => void handleZplDownload()}
+                  >
+                    {LABELS.downloadZpl}
+                  </Button>
+                  <Text style={{ display: "block", marginTop: 4, color: brand.muted, fontSize: 12 }}>
+                    Archivo para impresora Zebra.{" "}
+                    <Link onClick={() => setZplHelpOpen(true)}>Cómo imprimir</Link>
+                  </Text>
+                </div>
+              )}
+            </AppCard>
+
             <AppCard>
               <Text weight="semibold">{LABELS.dynamicState}</Text>
 
@@ -502,76 +541,101 @@ export default function BatchLookupPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   <Text>{LABELS.dynamicStatus}</Text>
                   <StatusTag status={statusToDisplayLabel(dynamicStatus)} />
-                  {dropdownOptions.length > 0 ? (
-                    <>
-                      <Dropdown
-                        placeholder="Cambiar a…"
-                        selectedOptions={newStatus ? [newStatus] : []}
-                        onOptionSelect={(_, d) =>
-                          setNewStatus((d.optionValue ?? "") as string)
-                        }
-                        disabled={!canChangeStatus}
-                        style={{ minWidth: 140 }}
-                      >
-                        {dropdownOptions.map((o) => (
-                          <Option key={o.value} value={o.value}>
-                            {o.label}
-                          </Option>
-                        ))}
-                      </Dropdown>
+                </div>
+
+                <Field label="Tipo de material" value={tipoMaterialDisplay} />
+
+                {(needsCalidadApproval(tipoMaterialCode) || needsInspeccionApproval(tipoMaterialCode)) && (
+                  <div style={{ fontSize: 13, color: brand.text2, display: "grid", gap: 8 }}>
+                    {needsCalidadApproval(tipoMaterialCode) ? (
+                      <ApprovalLegBlock
+                        title="Calidad"
+                        approved={calidadApproved}
+                        leg={calidadLeg}
+                      />
+                    ) : null}
+                    {needsInspeccionApproval(tipoMaterialCode) ? (
+                      <ApprovalLegBlock
+                        title="Inspección"
+                        approved={inspeccionApproved}
+                        leg={inspeccionLeg}
+                      />
+                    ) : null}
+                    {pendingMessage ? (
+                      <Text style={{ color: brand.warningFg, fontWeight: 600 }}>{pendingMessage}</Text>
+                    ) : null}
+                  </div>
+                )}
+
+                {(canApprove || canReject) && (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {canApprove ? (
                       <Button
                         appearance="primary"
                         size="small"
-                        onClick={() => void changeStatus()}
-                        disabled={!canChangeStatus || !newStatus || statusBusy}
+                        onClick={() => void changeStatus("approve")}
+                        disabled={statusBusy}
                       >
-                        {statusBusy ? "…" : "Aplicar"}
+                        {statusBusy ? "…" : "Aprobar"}
                       </Button>
-                    </>
-                  ) : (
-                    !canChangeStatus ? null : (
-                      <Text style={{ color: brand.muted, fontSize: 12 }}>
-                        Sin opciones disponibles
-                      </Text>
-                    )
-                  )}
-                </div>
+                    ) : null}
+                    {canReject ? (
+                      <Button
+                        appearance="secondary"
+                        size="small"
+                        onClick={() => void changeStatus("reject")}
+                        disabled={statusBusy}
+                      >
+                        Rechazar
+                      </Button>
+                    ) : null}
+                  </div>
+                )}
 
-                <Field label={LABELS.statusDynamics} value={asText(statusDynamicsRef)} />
+                {!canChangeStatus && dynamicStatus === "CUARENTENA" ? (
+                  <Text style={{ color: brand.muted, fontSize: 12 }}>
+                    No tienes permiso para aprobar o rechazar este material.
+                  </Text>
+                ) : null}
+
+                <Field
+                  label="Estado Dynamics (solo referencia)"
+                  value={asText(statusDynamicsRef)}
+                />
                 <Field label={LABELS.ubicacion} value={readDynamic(data, "ubicacion")} />
                 <Field label={LABELS.almacen} value={readDynamic(data, "almacen")} />
                 <Field label={LABELS.cantidad} value={dynamicCantidad} />
                 <Field label={LABELS.fuente} value={fuenteDisplayLabel} />
               </div>
             </AppCard>
-
-            <AppCard>
-              <Text weight="semibold">{LABELS.scanHistory}</Text>
-              <div style={{ marginTop: 12 }}>
-                {scans === null ? null : scans.length === 0 ? (
-                  <EmptyState title={LABELS.noScans} hint={LABELS.noRecords} />
-                ) : (
-                  <ScanHistoryTable events={scans} />
-                )}
-              </div>
-              {canDownloadPdf && (
-                <div style={{ marginTop: 12 }}>
-                  <Button
-                    appearance="secondary"
-                    size="small"
-                    onClick={() =>
-                      downloadAuditPdf(loteTrim, (msg) =>
-                        toasts.push({ intent: "error", title: "Error", message: msg })
-                      )
-                    }
-                  >
-                    {LABELS.downloadAuditPdf}
-                  </Button>
-                </div>
-              )}
-            </AppCard>
           </div>
-        </div>
+
+          <AppCard className={s.historyFull}>
+            <Text weight="semibold">{LABELS.scanHistory}</Text>
+            <div style={{ marginTop: 12 }}>
+              {scans === null ? null : scans.length === 0 ? (
+                <EmptyState title={LABELS.noScans} hint={LABELS.noRecords} />
+              ) : (
+                <ScanHistoryTable events={scans} />
+              )}
+            </div>
+            {canDownloadPdf && (
+              <div style={{ marginTop: 12 }}>
+                <Button
+                  appearance="secondary"
+                  size="small"
+                  onClick={() =>
+                    downloadAuditPdf(loteTrim, (msg) =>
+                      toasts.push({ intent: "error", title: "Error", message: msg })
+                    )
+                  }
+                >
+                  {LABELS.downloadAuditPdf}
+                </Button>
+              </div>
+            )}
+          </AppCard>
+        </>
       )}
 
       {status === "idle" && (
@@ -603,6 +667,36 @@ export default function BatchLookupPage() {
           </DialogBody>
         </DialogSurface>
       </Dialog>
+    </div>
+  );
+}
+
+function ApprovalLegBlock({
+  title,
+  approved,
+  leg,
+}: {
+  title: string;
+  approved: boolean;
+  leg?: ApprovalLeg | null;
+}) {
+  if (!approved && !leg?.approved) {
+    return (
+      <div style={{ border: `1px solid ${brand.border}`, borderRadius: 10, padding: 10 }}>
+        <Text weight="semibold">{title}</Text>
+        <Text style={{ display: "block", marginTop: 4, color: brand.muted }}>Pendiente</Text>
+      </div>
+    );
+  }
+  const when = formatDateTime(leg?.at ?? null);
+  const who = (leg?.actorEmail ?? "").trim() || "—";
+  return (
+    <div style={{ border: `1px solid ${brand.border}`, borderRadius: 10, padding: 10 }}>
+      <Text weight="semibold">{title}: aprobada</Text>
+      <Text style={{ display: "block", marginTop: 4 }}>Usuario: {who}</Text>
+      <Text style={{ display: "block", marginTop: 2 }}>
+        Fecha: {when.date} {when.time !== LABELS.noData ? when.time : ""}
+      </Text>
     </div>
   );
 }

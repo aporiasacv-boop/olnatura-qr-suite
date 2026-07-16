@@ -69,4 +69,12 @@ public class MockDynamicsClient implements DynamicsClient {
                 b.locationId()
         ));
     }
+
+    @Override
+    public Optional<ReleasedProductRecord> findReleasedProduct(String itemNumber, String accessToken) {
+        return fake.values().stream()
+                .filter(b -> b.itemNumber().equals(itemNumber))
+                .findFirst()
+                .map(b -> new ReleasedProductRecord(b.itemNumber(), "PZA"));
+    }
 }
