@@ -7,6 +7,7 @@ import com.company.olnaturaqr.repository.UserRepository;
 import com.company.olnaturaqr.support.config.AuthCookieProperties;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
 import com.company.olnaturaqr.support.audit.AuditService;
+import com.company.olnaturaqr.support.security.CredentialRules;
 import com.company.olnaturaqr.support.security.CookieWriter;
 import com.company.olnaturaqr.support.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +25,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -55,32 +60,46 @@ public ResponseEntity<UserDto.LoginResponse> login(
     String pwd = request.password() == null ? "" : request.password();
 
     if (raw.isBlank() || pwd.isBlank()) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=blank_username_or_password");
+        log.info("LOGIN FAILED: blank username or password");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    var userOpt = raw.contains("@")
+    boolean byEmail = raw.contains("@");
+    var userOpt = byEmail
             ? userRepository.findByEmailIgnoreCase(raw)
             : userRepository.findByUsernameIgnoreCase(raw);
 
     if (userOpt.isEmpty()) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=user_not_found");
+        log.info("LOGIN FAILED: user not found (lookup={})", byEmail ? "email" : "username");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     User user = userOpt.get();
 
     if (!user.isEnabled()) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=user_disabled");
+        log.info("LOGIN FAILED: user disabled username={}", user.getUsername());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     if (!passwordEncoder.matches(pwd, user.getPasswordHash())) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=password_mismatch");
+        log.info("LOGIN FAILED: password mismatch username={}", user.getUsername());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    if (raw.contains("@")) {
-        String emailLower = raw.toLowerCase();
-        if (!emailLower.endsWith("@olnatura.com")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    // Solo cuentas con correo corporativo @olnatura.com
+    if (!CredentialRules.isAllowedEmail(user.getEmail())) {
+        System.out.println("LOGIN FAILED:");
+        System.out.println("reason=email_domain");
+        log.info("LOGIN FAILED: email domain not allowed username={}", user.getUsername());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     String jwt = jwtTokenProvider.generateToken(user);
@@ -94,6 +113,9 @@ public ResponseEntity<UserDto.LoginResponse> login(
             cookieProps.maxAgeSeconds()
     );
 
+    System.out.println("LOGIN SUCCESS");
+    System.out.println("username=" + user.getUsername());
+    log.info("LOGIN SUCCESS username={}", user.getUsername());
     return ResponseEntity.ok(new UserDto.LoginResponse(toResponse(user)));
 }
 
@@ -133,8 +155,20 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
         return ResponseEntity.badRequest().body(new ErrorResponse("Datos incompletos"));
     }
 
-    if (!roleName.equals("ALMACEN") && !roleName.equals("INSPECCION")) {
-        return ResponseEntity.badRequest().body(new ErrorResponse("Rol inválido. Usa ALMACEN o INSPECCION."));
+    String emailErr = CredentialRules.emailError(email);
+    if (emailErr != null) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(emailErr));
+    }
+
+    String passwordErr = CredentialRules.passwordError(password);
+    if (passwordErr != null) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(passwordErr));
+    }
+
+    if (!roleName.equals("ALMACEN") && !roleName.equals("INSPECCION")
+            && !roleName.equals("PRODUCCION") && !roleName.equals("CALIDAD")) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(
+                "Rol inválido. Usa ALMACEN, PRODUCCION, CALIDAD o INSPECCION."));
     }
 
     if (userRepository.existsByUsernameIgnoreCase(username)) {
@@ -149,7 +183,7 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
 
     User u = new User();
     u.setUsername(username);
-    u.setEmail(email);
+    u.setEmail(email.toLowerCase());
     u.setPasswordHash(passwordEncoder.encode(password));
     u.setRole(role);
     u.setEnabled(false);
@@ -157,7 +191,7 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
     User saved = userRepository.save(u);
 
     auditService.logUnauthenticated("ACCESS_REQUEST", null,
-            Map.of("username", username, "email", email, "roleRequested", roleName, "userId", saved.getId().toString()),
+            Map.of("username", username, "email", email.toLowerCase(), "roleRequested", roleName, "userId", saved.getId().toString()),
             null);
 
     return ResponseEntity.status(HttpStatus.CREATED)

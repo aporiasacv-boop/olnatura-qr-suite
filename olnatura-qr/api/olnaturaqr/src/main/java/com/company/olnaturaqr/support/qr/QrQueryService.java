@@ -2,9 +2,13 @@ package com.company.olnaturaqr.support.qr;
 
 import com.company.olnaturaqr.api.QrDto;
 import com.company.olnaturaqr.domain.qr.QrLabel;
-import com.company.olnaturaqr.infra.dynamics.DynamicsClient;
+import com.company.olnaturaqr.infra.dynamics.DynamicsLookupDto;
+import com.company.olnaturaqr.infra.dynamics.DynamicsLookupService;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
+import com.company.olnaturaqr.support.workflow.ApprovalService;
+import com.company.olnaturaqr.support.workflow.LotOperationalGate;
+import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.support.workflow.WorkflowTransitions;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +16,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -20,11 +26,17 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class QrQueryService {
 
     private final QrLabelRepository qrLabelRepository;
-    private final DynamicsClient dynamics;
+    private final DynamicsLookupService dynamicsLookupService;
+    private final ApprovalService approvalService;
 
-    public QrQueryService(QrLabelRepository qrLabelRepository, DynamicsClient dynamics) {
+    public QrQueryService(
+            QrLabelRepository qrLabelRepository,
+            DynamicsLookupService dynamicsLookupService,
+            ApprovalService approvalService
+    ) {
         this.qrLabelRepository = qrLabelRepository;
-        this.dynamics = dynamics;
+        this.dynamicsLookupService = dynamicsLookupService;
+        this.approvalService = approvalService;
     }
 
     @Transactional(readOnly = true)
@@ -43,6 +55,8 @@ public class QrQueryService {
                 .or(() -> qrLabelRepository.findByLote(identifier))
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + identifier));
 
+        LotOperationalGate.requireActive(label);
+
         String lote = label.getLote();
         var dtoLabel = new QrDto.Label(
                 label.getTipoMaterial(),
@@ -58,48 +72,107 @@ public class QrQueryService {
                 label.getCantidadPorEnvase()
         );
 
-        String statusOverride = normalizeStatus(label.getStatusDinamico());
-        boolean useDbStatus = statusOverride != null && !"DESCONOCIDO".equals(statusOverride);
+        // Estado del material: solo plataforma (CUARENTENA/APROBADO/RECHAZADO). Nunca Dynamics Open/Pending.
+        String platformStatus = WorkflowStatus.normalize(label.getStatus());
 
-        var dyn = dynamics.fetchByLote(lote)
-                .map(d -> new QrDto.Dynamic(
-                        useDbStatus ? statusOverride : d.status(),
-                        d.cantidad(),
-                        d.uom(),
-                        d.ubicacion(),
-                        d.fuente()
-                ))
+        QrDto.Dynamic dyn = lookupDynamicsOrFail(lote)
+                .map(d -> toDynamicDto(d, platformStatus))
                 .orElseGet(() -> new QrDto.Dynamic(
-                        statusOverride,
+                        label.getCodigo(),
+                        label.getNombre(),
+                        lote,
+                        label.getCaducidad() != null ? label.getCaducidad().toString() : null,
                         null,
-                        "N/A",
+                        null,
+                        platformStatus,
+                        null,
+                        null,
                         null,
                         "DB_ONLY"
                 ));
 
-        String currentStatus = dyn.status();
         List<String> transitions = principal != null
-                ? WorkflowTransitions.allowedFrom(currentStatus)
+                ? WorkflowTransitions.allowedFrom(platformStatus)
                 : Collections.emptyList();
-        QrDto.Permissions perms = buildPermissions(principal);
+
+        ApprovalService.ApprovalView av = approvalService.view(label, principal);
+        QrDto.Permissions perms = buildPermissions(principal, av);
 
         return new QrDto.Response(dtoLabel, dyn, transitions, perms);
     }
 
-    private QrDto.Permissions buildPermissions(AuthPrincipal principal) {
-        if (principal == null || principal.roles() == null) {
-            return new QrDto.Permissions(false, false, false);
-        }
-        var roles = principal.roles();
-        boolean canChangeStatus = roles.contains("ADMIN") || roles.contains("INSPECCION");
-        boolean canCreateLabel = roles.contains("ADMIN") || roles.contains("ALMACEN");
-        boolean canRegisterScan = roles.contains("ADMIN") || roles.contains("INSPECCION") || roles.contains("ALMACEN");
-        return new QrDto.Permissions(canChangeStatus, canRegisterScan, canCreateLabel);
+    private Optional<DynamicsLookupDto> lookupDynamicsOrFail(String lote) {
+        return dynamicsLookupService.lookupByBatchNumber(lote);
     }
 
-    private String normalizeStatus(String s) {
-        if (s == null) return "DESCONOCIDO";
-        var v = s.trim().toUpperCase();
-        return v.isBlank() ? "DESCONOCIDO" : v;
+    private static QrDto.Dynamic toDynamicDto(DynamicsLookupDto d, String platformStatus) {
+        return new QrDto.Dynamic(
+                d.codigo(),
+                d.nombre(),
+                d.lote(),
+                d.caducidad(),
+                d.cantidadAlmacen(),
+                d.unidadInventario(),
+                platformStatus,
+                d.statusDynamics(),
+                d.almacen(),
+                d.ubicacion(),
+                d.fuente()
+        );
+    }
+
+    private QrDto.Permissions buildPermissions(AuthPrincipal principal, ApprovalService.ApprovalView av) {
+        QrDto.ApprovalLeg calidad = toLeg(av != null ? av.calidad() : null);
+        QrDto.ApprovalLeg inspeccion = toLeg(av != null ? av.inspeccion() : null);
+        if (principal == null || principal.roles() == null) {
+            return new QrDto.Permissions(
+                    false, false, false, false, false, false, false,
+                    false, false, null, av != null ? av.tipoMaterialDisplay() : null,
+                    calidad, inspeccion
+            );
+        }
+        var roles = principal.roles();
+        boolean canCreateLabel = rolesContains(roles, "ADMIN")
+                || rolesContains(roles, "ALMACEN")
+                || rolesContains(roles, "PRODUCCION")
+                || rolesContains(roles, "CALIDAD")
+                || rolesContains(roles, "INSPECCION");
+        // Registrar etiqueta (POST) sigue restringido a ADMIN/ALMACEN en el controller.
+        boolean canRegisterScan = rolesContains(roles, "ADMIN")
+                || rolesContains(roles, "ALMACEN")
+                || rolesContains(roles, "PRODUCCION")
+                || rolesContains(roles, "CALIDAD")
+                || rolesContains(roles, "INSPECCION");
+        boolean canDownloadAuditPdf = rolesContains(roles, "ADMIN")
+                || rolesContains(roles, "CALIDAD")
+                || rolesContains(roles, "INSPECCION");
+
+        return new QrDto.Permissions(
+                av.canChangeStatus(),
+                canRegisterScan,
+                canCreateLabel,
+                av.canApproveCalidad(),
+                av.canApproveInspeccion(),
+                av.canReject(),
+                canDownloadAuditPdf,
+                av.calidadApproved(),
+                av.inspeccionApproved(),
+                av.pendingMessage(),
+                av.tipoMaterialDisplay(),
+                calidad,
+                inspeccion
+        );
+    }
+
+    private static QrDto.ApprovalLeg toLeg(ApprovalService.ApprovalLegView leg) {
+        if (leg == null) {
+            return new QrDto.ApprovalLeg(false, null, null, null);
+        }
+        return new QrDto.ApprovalLeg(leg.approved(), leg.actorEmail(), leg.at(), leg.rol());
+    }
+
+    private static boolean rolesContains(List<String> roles, String role) {
+        String t = role.toUpperCase(Locale.ROOT);
+        return roles.stream().anyMatch(r -> t.equalsIgnoreCase(r));
     }
 }

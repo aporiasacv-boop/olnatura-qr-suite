@@ -21,10 +21,6 @@ const useStyles = makeStyles({
   },
   card: {
     ...shorthands.padding("20px"),
-    transition: "box-shadow 0.2s ease",
-    ":hover": {
-      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-    },
   },
   cardTitle: {
     fontSize: "16px",
@@ -63,7 +59,7 @@ export default function DashboardPage() {
           </AppCard>
         )}
 
-        {(hasRole("ADMIN") || hasRole("ALMACEN")) && (
+        {can("REGISTER_LABEL") && (
           <AppCard
             clickable
             className={s.card}
@@ -77,17 +73,61 @@ export default function DashboardPage() {
           </AppCard>
         )}
 
-        <AppCard
-          clickable
-          className={s.card}
-          onClick={() => nav("/scan-history")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === "Enter" && nav("/scan-history")}
-        >
-          <div className={s.cardTitle}>Historial de escaneos</div>
-          <div className={s.cardDesc}>Revisa eventos por lote.</div>
-        </AppCard>
+        {can("GENERATE_LABEL") && (
+          <AppCard
+            clickable
+            className={s.card}
+            onClick={() => nav("/generate-qr")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && nav("/generate-qr")}
+          >
+            <div className={s.cardTitle}>Generar etiqueta</div>
+            <div className={s.cardDesc}>Vista previa y descarga de etiqueta.</div>
+          </AppCard>
+        )}
+
+        {can("SCAN") && (
+          <AppCard
+            clickable
+            className={s.card}
+            onClick={() => nav("/scan-history")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && nav("/scan-history")}
+          >
+            <div className={s.cardTitle}>Historial de escaneos</div>
+            <div className={s.cardDesc}>Revisa eventos por lote.</div>
+          </AppCard>
+        )}
+
+        {can("AUDIT") && (
+          <AppCard
+            clickable
+            className={s.card}
+            onClick={() => nav("/admin/audit")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && nav("/admin/audit")}
+          >
+            <div className={s.cardTitle}>Historial de auditoría</div>
+            <div className={s.cardDesc}>Movimientos y aprobaciones del sistema.</div>
+          </AppCard>
+        )}
+
+        {hasRole("ADMIN") && (
+          <AppCard
+            clickable
+            className={s.card}
+            onClick={() => nav("/admin/metrics")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && nav("/admin/metrics")}
+          >
+            <div className={s.cardTitle}>Métricas operativas</div>
+            <div className={s.cardDesc}>Resumen de altas, escaneos, lotes y auditoría.</div>
+          </AppCard>
+        )}
       </div>
     </div>
   );

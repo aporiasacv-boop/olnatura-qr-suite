@@ -46,8 +46,24 @@ public class QrLabel {
     @Column(name = "cantidad_por_envase", length = 120)
     private String cantidadPorEnvase;
 
-    @Column(name = "status_dinamico", nullable = false, length = 40)
-    private String statusDinamico;
+    @Column(name = "status", nullable = false, length = 40)
+    private String status;
+
+    /** Ciclo administrativo: ACTIVE | INACTIVE | BAJA (independiente del workflow de calidad). */
+    @Column(name = "admin_status", nullable = false, length = 20)
+    private String adminStatus = "ACTIVE";
+
+    @Column(name = "calidad_approved_at")
+    private Instant calidadApprovedAt;
+
+    @Column(name = "calidad_approved_by")
+    private UUID calidadApprovedBy;
+
+    @Column(name = "inspeccion_approved_at")
+    private Instant inspeccionApprovedAt;
+
+    @Column(name = "inspeccion_approved_by")
+    private UUID inspeccionApprovedBy;
 
     @Column(name = "document_code", length = 60)
     private String documentCode;
@@ -90,8 +106,23 @@ public class QrLabel {
     public String getCantidadPorEnvase() { return cantidadPorEnvase; }
     public void setCantidadPorEnvase(String cantidadPorEnvase) { this.cantidadPorEnvase = cantidadPorEnvase; }
 
-    public String getStatusDinamico() { return statusDinamico; }
-    public void setStatusDinamico(String statusDinamico) { this.statusDinamico = statusDinamico; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getAdminStatus() { return adminStatus; }
+    public void setAdminStatus(String adminStatus) { this.adminStatus = adminStatus; }
+
+    public Instant getCalidadApprovedAt() { return calidadApprovedAt; }
+    public void setCalidadApprovedAt(Instant calidadApprovedAt) { this.calidadApprovedAt = calidadApprovedAt; }
+
+    public UUID getCalidadApprovedBy() { return calidadApprovedBy; }
+    public void setCalidadApprovedBy(UUID calidadApprovedBy) { this.calidadApprovedBy = calidadApprovedBy; }
+
+    public Instant getInspeccionApprovedAt() { return inspeccionApprovedAt; }
+    public void setInspeccionApprovedAt(Instant inspeccionApprovedAt) { this.inspeccionApprovedAt = inspeccionApprovedAt; }
+
+    public UUID getInspeccionApprovedBy() { return inspeccionApprovedBy; }
+    public void setInspeccionApprovedBy(UUID inspeccionApprovedBy) { this.inspeccionApprovedBy = inspeccionApprovedBy; }
 
     public String getDocumentCode() { return documentCode; }
     public void setDocumentCode(String documentCode) { this.documentCode = documentCode; }

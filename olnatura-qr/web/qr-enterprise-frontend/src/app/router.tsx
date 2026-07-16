@@ -7,9 +7,11 @@ import DashboardPage from "../pages/DashboardPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import RegisterRequestPage from "../pages/RegisterRequestPage";
 
-import RequestAccessPage from "../pages/RequestAccessPage";
 import AdminApprovalPage from "../pages/AdminApprovalPage";
 import AdminAuditPage from "../pages/AdminAuditPage";
+import AdminMetricsPage from "../pages/AdminMetricsPage";
+import AdminUsersPage from "../pages/AdminUsersPage";
+import AdminLotsPage from "../pages/AdminLotsPage";
 
 import BatchLookupPage from "../pages/BatchLookupPage";
 import ScanHistoryPage from "../pages/ScanHistoryPage";
@@ -23,10 +25,6 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
-  },
-  {
-    path: "/request-access",
-    element: <RequestAccessPage />,
   },
   {
     path: "/register-request",
@@ -55,7 +53,7 @@ export const router = createBrowserRouter([
       {
         path: "generate-qr",
         element: (
-          <RequireRole anyOf={["ADMIN", "ALMACEN", "INSPECCION"]}>
+          <RequireRole anyOf={["ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION"]}>
             <GenerateQrPage />
           </RequireRole>
         ),
@@ -71,6 +69,14 @@ export const router = createBrowserRouter([
       },
 
       {
+        path: "admin/metrics",
+        element: (
+          <RequireAdmin>
+            <AdminMetricsPage />
+          </RequireAdmin>
+        ),
+      },
+      {
         path: "admin/approval",
         element: (
           <RequireAdmin>
@@ -79,11 +85,27 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "admin/audit",
+        path: "admin/users",
         element: (
           <RequireAdmin>
-            <AdminAuditPage />
+            <AdminUsersPage />
           </RequireAdmin>
+        ),
+      },
+      {
+        path: "admin/lots",
+        element: (
+          <RequireAdmin>
+            <AdminLotsPage />
+          </RequireAdmin>
+        ),
+      },
+      {
+        path: "admin/audit",
+        element: (
+          <RequireRole anyOf={["ADMIN", "CALIDAD", "INSPECCION"]}>
+            <AdminAuditPage />
+          </RequireRole>
         ),
       },
 

@@ -5,10 +5,40 @@ server:
     include-exception: false
     include-binding-errors: never
 
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    # Solo migraciones de esquema. Nunca classpath:db/demo.
+    locations: classpath:db/migration
+
 app:
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://olnaturaqr-dchrfye3fgfzcjbn.mexicocentral-01.azurewebsites.net}
+    # Obligatorio en prod. Sin host hard-coded.
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
   auth:
     cookie:
       secure: true
       same-site: "None"
+  dynamics:
+    # En producción se espera integración real salvo override explícito.
+    mode: ${APP_DYNAMICS_MODE}
+    base-url: ${APP_DYNAMICS_BASE_URL}
+    resource: ${APP_DYNAMICS_RESOURCE:${APP_DYNAMICS_BASE_URL}}
+    tenant-id: ${APP_DYNAMICS_TENANT_ID}
+    client-id: ${APP_DYNAMICS_CLIENT_ID}
+    client-secret: ${APP_DYNAMICS_CLIENT_SECRET}
+
+  # Admin inicial: hereda de application.yml (idempotente; no toca admin existente).
+  bootstrap:
+    admin:
+      enabled: ${APP_BOOTSTRAP_ADMIN_ENABLED:true}
+
+jwt:
+  secret: ${JWT_SECRET}

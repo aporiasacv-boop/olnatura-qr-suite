@@ -9,7 +9,8 @@ const useStyles = makeStyles({
     justifyContent: "space-between",
     padding: "0 24px",
     borderBottom: `1px solid ${brand.border}`,
-    backgroundColor: brand.surface,
+    backgroundColor: "rgba(253, 251, 235, 0.78)",
+    backdropFilter: "blur(8px)",
   },
   right: {
     display: "flex",

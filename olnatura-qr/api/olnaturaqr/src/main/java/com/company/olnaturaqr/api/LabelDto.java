@@ -35,7 +35,7 @@ public class LabelDto {
             int envaseNum,
             int envaseTotal,
             String cantidadPorEnvase,
-            String statusDinamico,
+            String status,
             String documentCode,
             Instant createdAt
     ) {
@@ -53,7 +53,7 @@ public class LabelDto {
                     q.getEnvaseNum(),
                     q.getEnvaseTotal(),
                     q.getCantidadPorEnvase(),
-                    q.getStatusDinamico(),
+                    q.getStatus(),
                     q.getDocumentCode(),
                     q.getCreatedAt()
             );
@@ -68,9 +68,12 @@ public class LabelDto {
             LabelView label
     ) {}
 
-    public record StatusRequest(String status) {}
+    public record StatusRequest(String status, String motivo) {}
 
     public record StatusResponse(UUID id, String status) {}
+
+    /** Body opcional para approve/reject con motivo. */
+    public record DecisionRequest(String motivo) {}
 
  
     public record ZplRequest(Integer total, Integer from, Integer to, String qrImageBase64) {}

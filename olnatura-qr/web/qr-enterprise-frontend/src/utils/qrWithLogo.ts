@@ -130,12 +130,19 @@ async function drawLogoOverlay(
   return canvas.toDataURL("image/png");
 }
 
+const imageLoadCache = new Map<string, Promise<HTMLImageElement>>();
+
 function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
+  const cached = imageLoadCache.get(src);
+  if (cached) {
+    return cached;
+  }
+
+  const pending = new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
 
     img.onload = () => {
-      const anyImg = img as any;
+      const anyImg = img as HTMLImageElement & { decode?: () => Promise<void> };
       if (typeof anyImg.decode === "function") {
         anyImg.decode().then(() => resolve(img)).catch(() => resolve(img));
       } else {
@@ -143,9 +150,15 @@ function loadImage(src: string): Promise<HTMLImageElement> {
       }
     };
 
-    img.onerror = () => reject(new Error(`Image load failed: ${src}`));
+    img.onerror = () => {
+      imageLoadCache.delete(src);
+      reject(new Error(`Image load failed: ${src}`));
+    };
     img.src = src;
   });
+
+  imageLoadCache.set(src, pending);
+  return pending;
 }
 
 function drawRoundedRect(

@@ -1,32 +1,7 @@
-import type { JSX, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
-export function RequireRole({
-  anyOf,
-  children,
-}: {
-  anyOf: string[];
-  children: JSX.Element;
-}) {
-  const { me, loading } = useAuth();
-  const loc = useLocation();
-
-  if (loading) return null;
-
-  if (!me) {
-    return <Navigate to="/login" state={{ from: loc.pathname }} replace />;
-  }
-
-  const roles = me.roles || [];
-  const allowed = anyOf.some((r) => roles.includes(r));
-
-  if (!allowed) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-}
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { me, loading } = useAuth();
   const loc = useLocation();

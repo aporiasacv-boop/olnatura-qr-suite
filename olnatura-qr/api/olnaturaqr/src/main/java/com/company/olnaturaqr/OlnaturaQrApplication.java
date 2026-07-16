@@ -2,8 +2,10 @@ package com.company.olnaturaqr;
 
 import com.company.olnaturaqr.core.integrity.SignatureDigest;
 import com.company.olnaturaqr.core.integrity.StartupIntegrityConfiguration;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
@@ -18,5 +20,11 @@ public class OlnaturaQrApplication {
             throw new IllegalStateException("Invalid internal integrity signature");
         }
         SpringApplication.run(OlnaturaQrApplication.class, args);
+    }
+
+    /** Diagnóstico temporal: confirma que los runners del contexto se ejecutan. */
+    @Bean
+    ApplicationRunner diagnosticRunner() {
+        return args -> System.out.println("=== APPLICATION RUNNER EXECUTED ===");
     }
 }

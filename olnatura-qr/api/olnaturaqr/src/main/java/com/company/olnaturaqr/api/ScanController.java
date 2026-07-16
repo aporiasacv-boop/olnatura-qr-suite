@@ -6,6 +6,7 @@ import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.repository.ScanEventRepository;
 import com.company.olnaturaqr.support.qr.LoteExtractor;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
+import com.company.olnaturaqr.support.workflow.LotOperationalGate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -73,6 +74,7 @@ public class ScanController {
         QrLabel label = qrLabelRepository.findByPublicToken(identifier)
                 .or(() -> qrLabelRepository.findByLote(identifier))
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + identifier));
+        LotOperationalGate.requireActive(label);
         return label.getLote();
     }
 }

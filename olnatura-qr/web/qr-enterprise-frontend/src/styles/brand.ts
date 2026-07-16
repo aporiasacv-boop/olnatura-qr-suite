@@ -7,7 +7,8 @@ export const brand = {
   primarySoft: "#EFF1A1",
   accent: "#B8C95A",
   background: "#FDFBEB",
-  surface: "#FFFFFF",
+  surface: "rgba(255, 254, 248, 0.88)",
+  surfaceSolid: "#FFFEF8",
   border: "#E5E7EB",
   borderStrong: "#D1D5DB",
   text: "#1F2937",
@@ -31,8 +32,8 @@ export const brandTheme: PartialTheme = {
   colorBrandBackgroundHover: brand.hover,
   colorBrandBackgroundPressed: brand.pressed,
 
-  colorNeutralBackground1: brand.surface,
-  colorNeutralBackground2: "#F8F9F5",
+  colorNeutralBackground1: "#FFFEF8",
+  colorNeutralBackground2: "#F8F6E4",
   colorNeutralBackground3: "#F1F2EE",
 
   colorNeutralForeground1: brand.text,

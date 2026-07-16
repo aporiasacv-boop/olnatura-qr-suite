@@ -9,47 +9,29 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
 import { brand } from "../styles/brand";
+import BrandLogo from "../components/ui/BrandLogo";
+import PasswordField from "../components/ui/PasswordField";
 
 const useStyles = makeStyles({
   root: {
     minHeight: "100vh",
     display: "grid",
     placeItems: "center",
-    backgroundColor: brand.background,
+    backgroundColor: "transparent",
     ...shorthands.padding("24px"),
   },
   card: {
     width: "420px",
     maxWidth: "100%",
     backgroundColor: brand.surface,
+    backdropFilter: "blur(10px)",
     borderRadius: "12px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+    boxShadow: "0 8px 28px rgba(74, 92, 40, 0.10)",
     ...shorthands.border("1px", "solid", brand.border),
     ...shorthands.padding("24px"),
   },
   header: {
     marginBottom: "24px",
-  },
-  title: {
-    fontSize: "20px",
-    fontWeight: 600,
-    color: brand.text,
-  },
-  subtitle: {
-    fontSize: "14px",
-    color: brand.muted,
-    marginTop: "4px",
-  },
-  brandRow: {
-    display: "flex",
-    gap: "10px",
-    alignItems: "center",
-    marginBottom: "20px",
-  },
-  logo: {
-    width: "32px",
-    height: "32px",
-    objectFit: "contain",
   },
   form: {
     display: "grid",
@@ -124,15 +106,13 @@ export default function LoginPage() {
 
   return (
     <div className={s.root}>
-      <div className={s.card}>
+      <div className={`${s.card} app-card`}>
         <div className={s.header}>
-          <div className={s.brandRow}>
-            <img src="/logo-olnatura.png" alt="Logo" className={s.logo} />
-            <div>
-              <div className={s.title}>Sistema Olnatura</div>
-              <div className={s.subtitle}>Plataforma de trazabilidad QR</div>
-            </div>
-          </div>
+          <BrandLogo
+            size={52}
+            title="Sistema Olnatura"
+            subtitle="Plataforma de trazabilidad QR"
+          />
         </div>
 
         <form onSubmit={onSubmit} className={s.form}>
@@ -145,19 +125,17 @@ export default function LoginPage() {
               value={username}
               onChange={(_, d) => setUsername(d.value)}
               placeholder="Ingresa tu usuario"
+              autoComplete="username"
             />
           </div>
 
           <div className={s.row}>
             <span className={s.label}>Contraseña</span>
-            <Input
-              appearance="outline"
-              size="large"
-              className={s.input}
-              type="password"
+            <PasswordField
               value={password}
-              onChange={(_, d) => setPassword(d.value)}
+              onChange={setPassword}
               placeholder="Ingresa tu contraseña"
+              className={s.input}
             />
           </div>
 

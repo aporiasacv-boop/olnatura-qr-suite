@@ -1,29 +1,23 @@
 package com.company.olnaturaqr.support.workflow;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-
 public final class WorkflowTransitions {
 
-    private static final List<String> ALL = Arrays.asList(
-            WorkflowStatus.PENDING,
+    private static final List<String> FROM_CUARENTENA = List.of(
             WorkflowStatus.APROBADO,
-            WorkflowStatus.LIBERADO,
-            WorkflowStatus.RECHAZADO,
-            WorkflowStatus.CUARENTENA,
-            WorkflowStatus.DESCONOCIDO);
+            WorkflowStatus.RECHAZADO
+    );
 
-    private WorkflowTransitions() {
-    }
+    private WorkflowTransitions() {}
 
-
+    /** Transiciones de estado agregadas (UI legacy). La aprobación real usa ApprovalService. */
     public static List<String> allowedFrom(String currentStatus) {
         String normalized = WorkflowStatus.normalize(currentStatus);
-        if (normalized.equals(WorkflowStatus.DESCONOCIDO)) {
-            return Collections.emptyList();
+        if (WorkflowStatus.CUARENTENA.equals(normalized)) {
+            return FROM_CUARENTENA;
         }
-        return Collections.unmodifiableList(ALL);
+        return Collections.emptyList();
     }
 }

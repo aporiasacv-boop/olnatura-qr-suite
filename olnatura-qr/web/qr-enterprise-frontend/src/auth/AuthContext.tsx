@@ -18,7 +18,7 @@ type AuthContextValue = {
   refreshMe: () => Promise<void>;
 
   hasRole: (role: Role) => boolean;
-  can: (perm: "LOOKUP" | "SCAN" | "ADMIN") => boolean;
+  can: (perm: "LOOKUP" | "SCAN" | "ADMIN" | "HOME" | "REGISTER_LABEL" | "GENERATE_LABEL" | "AUDIT") => boolean;
 };
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
@@ -80,10 +80,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const can = React.useCallback(
-    (perm: "LOOKUP" | "SCAN" | "ADMIN") => {
+    (perm: "LOOKUP" | "SCAN" | "ADMIN" | "HOME" | "REGISTER_LABEL" | "GENERATE_LABEL" | "AUDIT") => {
       if (!me) return false;
-      if (perm === "ADMIN") return me.roles.includes("ADMIN");
-      return true;
+      const roles = me.roles ?? [];
+      const has = (...r: string[]) => r.some((x) => roles.includes(x));
+      if (perm === "ADMIN") return has("ADMIN");
+      if (perm === "HOME") return has("ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION");
+      if (perm === "LOOKUP" || perm === "SCAN") {
+        return has("ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION");
+      }
+      if (perm === "REGISTER_LABEL") return has("ADMIN", "ALMACEN");
+      if (perm === "GENERATE_LABEL") {
+        return has("ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION");
+      }
+      if (perm === "AUDIT") return has("ADMIN", "CALIDAD", "INSPECCION");
+      return false;
     },
     [me]
   );
