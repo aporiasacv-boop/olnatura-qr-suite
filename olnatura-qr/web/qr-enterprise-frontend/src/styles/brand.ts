@@ -1,27 +1,32 @@
 import type { PartialTheme } from "@fluentui/react-components";
 
+/**
+ * Paleta operacional: crema + verde oliva pastel un poco más matizado
+ * (menos blanco puro, sin saturación agresiva).
+ */
 export const brand = {
-  primary: "#9CAF47",
-  hover: "#8A9E3C",
-  pressed: "#7A8E35",
-  primarySoft: "#EFF1A1",
-  accent: "#B8C95A",
-  background: "#FDFBEB",
-  surface: "rgba(255, 254, 248, 0.88)",
-  surfaceSolid: "#FFFEF8",
-  border: "#E5E7EB",
-  borderStrong: "#D1D5DB",
-  text: "#1F2937",
-  text2: "#374151",
-  muted: "#6B7280",
-  successFg: "#16603A",
-  successBg: "#E6F4EC",
-  warningFg: "#92400E",
-  warningBg: "#FEF3C7",
-  dangerFg: "#991B1B",
-  dangerBg: "#FEE2E2",
-  infoFg: "#4A7C59",
-  infoBg: "#E8F5EC",
+  primary: "#8FA33F",
+  hover: "#7E9336",
+  pressed: "#6E822F",
+  primarySoft: "#E2E6A8",
+  accent: "#A8BC4E",
+  background: "#EDE6D0",
+  surface: "rgba(240, 236, 220, 0.96)",
+  surfaceSolid: "#F0ECDC",
+  surfaceMuted: "#E4E8D4",
+  border: "#D2CBB4",
+  borderStrong: "#BDB69F",
+  text: "#1A2330",
+  text2: "#2F3A47",
+  muted: "#5F6B78",
+  successFg: "#145C36",
+  successBg: "#DCEFE4",
+  warningFg: "#8A3B0A",
+  warningBg: "#F0DFB8",
+  dangerFg: "#8F1D1D",
+  dangerBg: "#F8DADA",
+  infoFg: "#3F6B4C",
+  infoBg: "#DCE6CC",
 };
 
 export const brandTheme: PartialTheme = {
@@ -32,9 +37,9 @@ export const brandTheme: PartialTheme = {
   colorBrandBackgroundHover: brand.hover,
   colorBrandBackgroundPressed: brand.pressed,
 
-  colorNeutralBackground1: "#FFFEF8",
-  colorNeutralBackground2: "#F8F6E4",
-  colorNeutralBackground3: "#F1F2EE",
+  colorNeutralBackground1: brand.surfaceSolid,
+  colorNeutralBackground2: "#E8E2CC",
+  colorNeutralBackground3: brand.surfaceMuted,
 
   colorNeutralForeground1: brand.text,
   colorNeutralForeground2: brand.text2,

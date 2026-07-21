@@ -224,22 +224,18 @@ export default function AdminMetricsPage() {
           <AppCard>
             <Text weight="semibold">Etiquetas registradas hoy</Text>
             <div className={s.kpiValue}>{summary?.labelsCreatedToday ?? "—"}</div>
-            <div className={s.kpiHint}>Etiquetas dadas de alta hoy</div>
           </AppCard>
           <AppCard>
             <Text weight="semibold">Escaneos hoy</Text>
             <div className={s.kpiValue}>{summary?.scansToday ?? "—"}</div>
-            <div className={s.kpiHint}>Lecturas de QR registradas hoy</div>
           </AppCard>
           <AppCard>
             <Text weight="semibold">Lotes activos</Text>
             <div className={s.kpiValue}>{summary?.activeLots ?? "—"}</div>
-            <div className={s.kpiHint}>Lotes disponibles para operación</div>
           </AppCard>
           <AppCard>
             <Text weight="semibold">Auditoría (7 días)</Text>
             <div className={s.kpiValue}>{summary?.auditEventsInRange ?? "—"}</div>
-            <div className={s.kpiHint}>Movimientos registrados en la semana</div>
           </AppCard>
         </div>
       </section>
@@ -249,7 +245,6 @@ export default function AdminMetricsPage() {
         <div className={s.chartsGrid}>
           <AppCard>
             <Text weight="semibold">Etiquetas por día</Text>
-            <div className={s.chartHint}>Altas de etiquetas por día</div>
             {series.length === 0 ? (
               <Text className={s.muted}>Sin datos</Text>
             ) : (
@@ -258,7 +253,6 @@ export default function AdminMetricsPage() {
           </AppCard>
           <AppCard>
             <Text weight="semibold">Escaneos por día</Text>
-            <div className={s.chartHint}>Escaneos registrados por día</div>
             {series.length === 0 ? (
               <Text className={s.muted}>Sin datos</Text>
             ) : (

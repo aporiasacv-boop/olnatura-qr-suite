@@ -3,7 +3,15 @@ package com.olnatura.qr
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.*
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import com.olnatura.qr.core.Constants
 import com.olnatura.qr.core.session.SessionManager
 import com.olnatura.qr.data.device.DeviceIdProvider
@@ -18,12 +26,14 @@ import com.olnatura.qr.ui.screen.requestaccess.RequestAccessViewModel
 import com.olnatura.qr.ui.screen.report.ReportProblemViewModel
 import com.olnatura.qr.ui.screen.result.ResultViewModel
 import com.olnatura.qr.ui.screen.scanner.ScannerViewModel
+import com.olnatura.qr.ui.share.SharePayload
 import com.olnatura.qr.ui.sheet.ShareBottomSheet
 import com.olnatura.qr.ui.theme.OlnaturaTheme
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         val sessionManager = SessionManager(applicationContext)
@@ -46,30 +56,33 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             OlnaturaTheme {
-                var shareOpen by remember { mutableStateOf(false) }
-                var shareLote by remember { mutableStateOf("") }
-                var shareStatus by remember { mutableStateOf("") }
+                // Evita que la taskbar / barra de navegación de la tablet tape botones.
+                Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+                    var shareOpen by remember { mutableStateOf(false) }
+                    var sharePayload by remember { mutableStateOf<SharePayload?>(null) }
 
-                AppNavGraph(
-                    sessionManager = sessionManager,
-                    loginVm = loginVm,
-                    requestAccessVm = requestAccessVm,
-                    scannerVm = scannerVm,
-                    resultVmFactory = { ResultViewModel(authRepo, qrRepo, scanRepo) },
-                    reportVm = reportVm,
-                    onShare = { lote, status ->
-                        shareLote = lote
-                        shareStatus = status
-                        shareOpen = true
-                    }
-                )
-
-                if (shareOpen) {
-                    ShareBottomSheet(
-                        lote = shareLote,
-                        status = shareStatus,
-                        onDismiss = { shareOpen = false }
+                    AppNavGraph(
+                        sessionManager = sessionManager,
+                        loginVm = loginVm,
+                        requestAccessVm = requestAccessVm,
+                        scannerVm = scannerVm,
+                        resultVmFactory = { ResultViewModel(authRepo, qrRepo, scanRepo) },
+                        reportVm = reportVm,
+                        onShare = { payload ->
+                            sharePayload = payload
+                            shareOpen = true
+                        }
                     )
+
+                    if (shareOpen && sharePayload != null) {
+                        ShareBottomSheet(
+                            payload = sharePayload!!,
+                            onDismiss = {
+                                shareOpen = false
+                                sharePayload = null
+                            }
+                        )
+                    }
                 }
             }
         }

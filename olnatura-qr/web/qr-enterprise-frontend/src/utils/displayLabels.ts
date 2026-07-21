@@ -25,7 +25,7 @@ export const LABELS = {
   noScans: "Sin escaneos",
   noEvents: "Sin eventos",
   readyToLookup: "Listo para consultar",
-  readyToFilter: "Listo para filtrar",
+  readyToFilter: "Listo para consultar",
   fecha: "Fecha",
   hora: "Hora",
   usuario: "Usuario",

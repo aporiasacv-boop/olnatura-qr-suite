@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.olnatura.qr.ui.components.TabletContent
 import com.olnatura.qr.ui.theme.OlnaturaColors
 
 
@@ -22,12 +23,13 @@ fun RequestAccessScreen(
     val s by vm.state.collectAsState()
 
     Surface(Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(18.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
+        TabletContent {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
             Text("Solicitar acceso", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(8.dp))
             Text(
@@ -54,8 +56,7 @@ fun RequestAccessScreen(
                         }
                     }
                 }
-                return@Surface
-            }
+            } else {
 
             OutlinedTextField(
                 value = s.username,
@@ -141,6 +142,8 @@ fun RequestAccessScreen(
             Spacer(Modifier.height(12.dp))
             TextButton(onClick = onBackToLogin, modifier = Modifier.fillMaxWidth()) {
                 Text("Volver al inicio de sesión")
+            }
+            }
             }
         }
     }

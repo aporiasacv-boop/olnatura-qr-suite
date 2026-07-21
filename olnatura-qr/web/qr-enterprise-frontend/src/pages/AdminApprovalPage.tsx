@@ -155,7 +155,6 @@ export default function AdminApprovalPage() {
         <div className={s.headerRow}>
           <div>
             <h1 className={s.title}>Aprobar usuarios</h1>
-            <div className={s.subtitle}>Solicitudes pendientes</div>
           </div>
           <Button appearance="primary" onClick={() => void load()} disabled={refreshing || !!actionId}>
             {refreshing ? "Actualizando…" : refreshLabel}

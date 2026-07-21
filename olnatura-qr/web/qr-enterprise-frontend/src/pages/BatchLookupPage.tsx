@@ -4,12 +4,6 @@ import {
   Input,
   Text,
   Tooltip,
-  Dialog,
-  DialogSurface,
-  DialogBody,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Link,
   makeStyles,
   shorthands,
@@ -27,6 +21,7 @@ import StatusTag from "../components/ui/StatusTag";
 import { LABELS, fuenteDisplay, formatDateTime } from "../utils/displayLabels";
 import ScanHistoryTable from "../components/ui/ScanHistoryTable";
 import LoteAutocomplete from "../components/ui/LoteAutocomplete";
+import ZplPrintHelpDialog from "../components/ui/ZplPrintHelpDialog";
 
 function needsCalidadApproval(tipo: string): boolean {
   const t = (tipo || "").toUpperCase();
@@ -526,8 +521,7 @@ export default function BatchLookupPage() {
                   >
                     {LABELS.downloadZpl}
                   </Button>
-                  <Text style={{ display: "block", marginTop: 4, color: brand.muted, fontSize: 12 }}>
-                    Archivo para impresora Zebra.{" "}
+                  <Text style={{ display: "block", marginTop: 4, fontSize: 12 }}>
                     <Link onClick={() => setZplHelpOpen(true)}>Cómo imprimir</Link>
                   </Text>
                 </div>
@@ -614,7 +608,7 @@ export default function BatchLookupPage() {
             <Text weight="semibold">{LABELS.scanHistory}</Text>
             <div style={{ marginTop: 12 }}>
               {scans === null ? null : scans.length === 0 ? (
-                <EmptyState title={LABELS.noScans} hint={LABELS.noRecords} />
+                <EmptyState title={LABELS.noScans} />
               ) : (
                 <ScanHistoryTable events={scans} />
               )}
@@ -639,34 +633,10 @@ export default function BatchLookupPage() {
       )}
 
       {status === "idle" && (
-        <EmptyState title={LABELS.readyToLookup} hint="Ingresa un lote y presiona Buscar." />
+        <EmptyState title={LABELS.readyToLookup} />
       )}
 
-      <Dialog open={zplHelpOpen} onOpenChange={(_, data) => setZplHelpOpen(data.open)}>
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>Cómo imprimir archivos ZPL</DialogTitle>
-            <DialogContent>
-              <ul style={{ paddingLeft: 18, margin: "8px 0 0 0" }}>
-                <li>Descarga el archivo .zpl y guárdalo en tu equipo.</li>
-                <li>
-                  En equipos con impresora Zebra, envía el archivo al puerto de la impresora
-                  (por ejemplo, arrastrando el archivo a la impresora o usando utilidades de Zebra).
-                </li>
-                <li>
-                  No intentes abrir el archivo como documento; es código de comandos para la
-                  impresora.
-                </li>
-              </ul>
-            </DialogContent>
-            <DialogActions>
-              <Button appearance="primary" onClick={() => setZplHelpOpen(false)}>
-                Cerrar
-              </Button>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
+      <ZplPrintHelpDialog open={zplHelpOpen} onOpenChange={setZplHelpOpen} />
     </div>
   );
 }

@@ -38,7 +38,7 @@ const useStyles = makeStyles({
   bar: {
     padding: "10px 24px",
     borderBottom: `1px solid ${brand.border}`,
-    backgroundColor: "rgba(253, 251, 235, 0.78)",
+    backgroundColor: "rgba(228, 232, 212, 0.92)",
     backdropFilter: "blur(8px)",
   },
   crumb: {

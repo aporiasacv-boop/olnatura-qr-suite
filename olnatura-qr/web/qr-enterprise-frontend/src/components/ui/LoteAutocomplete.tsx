@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Input, makeStyles, shorthands, Text } from "@fluentui/react-components";
 import { api } from "../../api/client";
 import { brand } from "../../styles/brand";
@@ -22,7 +23,10 @@ type Props = {
   appearance?: "outline" | "underline" | "filled-darker" | "filled-lighter";
   size?: "small" | "medium" | "large";
   className?: string;
+  /** Estilos del contenedor (flex, width). No uses border aquí: crea doble caja. */
   style?: React.CSSProperties;
+  /** Estilos del Input (borde de atención, fondo Dynamics, etc.). */
+  inputStyle?: React.CSSProperties;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   /** Debounce en ms (default 250). */
   debounceMs?: number;
@@ -35,17 +39,14 @@ const useStyles = makeStyles({
     minWidth: 0,
   },
   list: {
-    position: "absolute",
-    zIndex: 40,
-    left: 0,
-    right: 0,
-    top: "calc(100% + 4px)",
+    position: "fixed",
+    zIndex: 10000,
     maxHeight: "280px",
     overflowY: "auto",
     backgroundColor: brand.surfaceSolid,
     ...shorthands.border("1px", "solid", brand.border),
     borderRadius: "10px",
-    boxShadow: "0 8px 24px rgba(74, 92, 40, 0.12)",
+    boxShadow: "0 8px 24px rgba(74, 92, 40, 0.16)",
     ...shorthands.padding("4px"),
   },
   item: {
@@ -61,7 +62,7 @@ const useStyles = makeStyles({
   },
   itemHover: {
     ":hover": {
-      backgroundColor: "rgba(239, 241, 161, 0.55)",
+      backgroundColor: "rgba(226, 230, 168, 0.65)",
     },
   },
   lote: {
@@ -92,6 +93,7 @@ function clsx(...parts: Array<string | false | null | undefined>) {
 
 /**
  * Autocompletado de lotes desde PostgreSQL (sin Dynamics).
+ * Cierra el desplegable al seleccionar, blur o Enter de formulario (sin fantasmas).
  */
 export default function LoteAutocomplete({
   value,
@@ -106,6 +108,7 @@ export default function LoteAutocomplete({
   size = "large",
   className,
   style,
+  inputStyle,
   onKeyDown,
   debounceMs = 250,
 }: Props) {
@@ -116,26 +119,46 @@ export default function LoteAutocomplete({
   const [items, setItems] = useState<LoteSuggestion[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [listBox, setListBox] = useState<{ top: number; left: number; width: number } | null>(null);
   const skipFetchRef = useRef(false);
+  /** Tras elegir/auto-seleccionar, no reabrir hasta que el usuario escriba. */
+  const suppressOpenRef = useRef(false);
   const autoSelectedRef = useRef<string | null>(null);
+  const blurTimerRef = useRef<number | null>(null);
+
+  const closeList = useCallback(() => {
+    setOpen(false);
+    setItems([]);
+    setActiveIdx(0);
+    setListBox(null);
+  }, []);
+
+  const updateListPosition = useCallback(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setListBox({
+      top: r.bottom + 4,
+      left: r.left,
+      width: r.width,
+    });
+  }, []);
 
   const pick = useCallback(
     (item: LoteSuggestion) => {
       skipFetchRef.current = true;
+      suppressOpenRef.current = true;
       autoSelectedRef.current = item.lote;
       onChange(item.lote);
       onSelect?.(item);
-      setOpen(false);
-      setItems([]);
-      setActiveIdx(0);
+      closeList();
     },
-    [onChange, onSelect]
+    [onChange, onSelect, closeList]
   );
 
   useEffect(() => {
     if (readOnly || disabled) {
-      setOpen(false);
-      setItems([]);
+      closeList();
       return;
     }
     if (skipFetchRef.current) {
@@ -145,9 +168,12 @@ export default function LoteAutocomplete({
 
     const q = value.trim();
     if (q.length < 1) {
-      setItems([]);
-      setOpen(false);
+      closeList();
       setLoading(false);
+      return;
+    }
+
+    if (suppressOpenRef.current) {
       return;
     }
 
@@ -156,7 +182,7 @@ export default function LoteAutocomplete({
       setLoading(true);
       api<LoteSuggestion[]>(`/labels/suggest?q=${encodeURIComponent(q)}`, { toast: false })
         .then((rows) => {
-          if (cancelled) return;
+          if (cancelled || suppressOpenRef.current) return;
           const list = Array.isArray(rows) ? rows : [];
           setItems(list);
           setActiveIdx(0);
@@ -168,12 +194,17 @@ export default function LoteAutocomplete({
             pick(list[0]);
             return;
           }
-          setOpen(list.length > 0);
+          if (list.length > 0) {
+            updateListPosition();
+            setOpen(true);
+          } else {
+            setOpen(false);
+            setListBox(null);
+          }
         })
         .catch(() => {
           if (cancelled) return;
-          setItems([]);
-          setOpen(false);
+          closeList();
         })
         .finally(() => {
           if (!cancelled) setLoading(false);
@@ -184,16 +215,36 @@ export default function LoteAutocomplete({
       cancelled = true;
       window.clearTimeout(t);
     };
-  }, [value, debounceMs, readOnly, disabled, pick]);
+  }, [value, debounceMs, readOnly, disabled, pick, closeList, updateListPosition]);
+
+  useEffect(() => {
+    if (!open) return;
+    updateListPosition();
+    const onScroll = () => updateListPosition();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open, updateListPosition]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t)) return;
+      const portal = document.getElementById(listId);
+      if (portal?.contains(t)) return;
+      closeList();
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
+  }, [closeList, listId]);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimerRef.current) window.clearTimeout(blurTimerRef.current);
+    };
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -215,12 +266,60 @@ export default function LoteAutocomplete({
       }
       if (e.key === "Escape") {
         e.preventDefault();
-        setOpen(false);
+        closeList();
         return;
       }
     }
+    // Enter del formulario: cerrar sugerencias para no dejar fantasma
+    if (e.key === "Enter") {
+      suppressOpenRef.current = true;
+      closeList();
+    }
     onKeyDown?.(e);
   };
+
+  const list =
+    open && !readOnly && !disabled && listBox
+      ? createPortal(
+          <div
+            id={listId}
+            className={s.list}
+            role="listbox"
+            style={{
+              top: listBox.top,
+              left: listBox.left,
+              width: listBox.width,
+            }}
+          >
+            {loading && items.length === 0 ? (
+              <div className={s.empty}>Buscando…</div>
+            ) : items.length === 0 ? (
+              <div className={s.empty}>Sin coincidencias</div>
+            ) : (
+              items.map((item, idx) => (
+                <div
+                  key={`${item.lote}-${idx}`}
+                  role="option"
+                  aria-selected={idx === activeIdx}
+                  className={clsx(s.item, s.itemHover, idx === activeIdx && s.itemActive)}
+                  onMouseEnter={() => setActiveIdx(idx)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    pick(item);
+                  }}
+                >
+                  <Text className={s.lote}>{item.lote}</Text>
+                  <Text className={s.meta}>
+                    {item.codigo || "—"} · {item.nombre || "—"}
+                  </Text>
+                  {item.status ? <Text className={s.status}>{item.status}</Text> : null}
+                </div>
+              ))
+            )}
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <div className={s.wrap} ref={wrapRef} style={style}>
@@ -230,6 +329,7 @@ export default function LoteAutocomplete({
         appearance={appearance}
         size={size}
         className={className}
+        style={inputStyle}
         value={value}
         disabled={disabled}
         readOnly={readOnly}
@@ -240,43 +340,23 @@ export default function LoteAutocomplete({
         aria-autocomplete="list"
         onChange={(_, d) => {
           autoSelectedRef.current = null;
+          suppressOpenRef.current = false;
           onChange(d.value);
-          if (!readOnly && !disabled) setOpen(true);
         }}
         onFocus={() => {
-          if (!readOnly && !disabled && items.length > 0) setOpen(true);
+          if (blurTimerRef.current) {
+            window.clearTimeout(blurTimerRef.current);
+            blurTimerRef.current = null;
+          }
+        }}
+        onBlur={() => {
+          blurTimerRef.current = window.setTimeout(() => {
+            closeList();
+          }, 120);
         }}
         onKeyDown={handleKeyDown}
       />
-      {open && !readOnly && !disabled ? (
-        <div id={listId} className={s.list} role="listbox">
-          {loading && items.length === 0 ? (
-            <div className={s.empty}>Buscando…</div>
-          ) : items.length === 0 ? (
-            <div className={s.empty}>Sin coincidencias en base de datos</div>
-          ) : (
-            items.map((item, idx) => (
-              <div
-                key={`${item.lote}-${idx}`}
-                role="option"
-                aria-selected={idx === activeIdx}
-                className={clsx(s.item, s.itemHover, idx === activeIdx && s.itemActive)}
-                onMouseEnter={() => setActiveIdx(idx)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  pick(item);
-                }}
-              >
-                <Text className={s.lote}>{item.lote}</Text>
-                <Text className={s.meta}>
-                  {item.codigo || "—"} · {item.nombre || "—"}
-                </Text>
-                {item.status ? <Text className={s.status}>{item.status}</Text> : null}
-              </div>
-            ))
-          )}
-        </div>
-      ) : null}
+      {list}
     </div>
   );
 }

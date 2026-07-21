@@ -131,7 +131,6 @@ export default function AdminLotsPage() {
       <div className={s.headerRow}>
         <div>
           <h1 className={s.title}>Lotes (administración)</h1>
-          <div className={s.subtitle}>Estado administrativo de etiquetas registradas</div>
         </div>
         <Button appearance="primary" onClick={() => void load()} disabled={refreshing || !!actionId}>
           {refreshing ? "Actualizando…" : refreshLabel}
@@ -163,10 +162,6 @@ export default function AdminLotsPage() {
             <Option value="INACTIVE">INACTIVO</Option>
             <Option value="BAJA">BAJA</Option>
           </Dropdown>
-        </div>
-        <div className={s.filterHint}>
-          Los lotes en baja o inactivos no aparecen en la consulta operativa estándar ni permiten
-          impresión ni cambio de estatus dinámico.
         </div>
       </AppCard>
 

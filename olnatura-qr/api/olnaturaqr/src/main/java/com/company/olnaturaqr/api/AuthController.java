@@ -94,13 +94,8 @@ public ResponseEntity<UserDto.LoginResponse> login(
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    // Solo cuentas con correo corporativo @olnatura.com
-    if (!CredentialRules.isAllowedEmail(user.getEmail())) {
-        System.out.println("LOGIN FAILED:");
-        System.out.println("reason=email_domain");
-        log.info("LOGIN FAILED: email domain not allowed username={}", user.getUsername());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
+    // Nota: la regla @olnatura.com aplica en request-access (altas nuevas),
+    // no en login, para no bloquear cuentas operativas ya existentes.
 
     String jwt = jwtTokenProvider.generateToken(user);
 

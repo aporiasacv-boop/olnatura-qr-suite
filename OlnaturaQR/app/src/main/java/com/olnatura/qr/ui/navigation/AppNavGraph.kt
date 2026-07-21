@@ -11,12 +11,14 @@ import com.olnatura.qr.ui.screen.login.LoginScreen
 import com.olnatura.qr.ui.screen.login.LoginViewModel
 import com.olnatura.qr.ui.screen.requestaccess.RequestAccessScreen
 import com.olnatura.qr.ui.screen.requestaccess.RequestAccessViewModel
+import com.olnatura.qr.ui.screen.report.ReportMode
 import com.olnatura.qr.ui.screen.report.ReportProblemScreen
 import com.olnatura.qr.ui.screen.report.ReportProblemViewModel
 import com.olnatura.qr.ui.screen.result.ResultScreen
 import com.olnatura.qr.ui.screen.result.ResultViewModel
 import com.olnatura.qr.ui.screen.scanner.ScannerScreen
 import com.olnatura.qr.ui.screen.scanner.ScannerViewModel
+import com.olnatura.qr.ui.share.SharePayload
 
 @Composable
 fun AppNavGraph(
@@ -26,7 +28,7 @@ fun AppNavGraph(
     scannerVm: ScannerViewModel,
     resultVmFactory: () -> ResultViewModel,
     reportVm: ReportProblemViewModel,
-    onShare: (lote: String, status: String) -> Unit
+    onShare: (SharePayload) -> Unit
 ) {
     val nav = rememberNavController()
 
@@ -40,12 +42,14 @@ fun AppNavGraph(
         composable(Route.Login.path) {
             LoginScreen(
                 vm = loginVm,
-                onRequestAccess = { nav.navigate(Route.RequestAccess.path) }
-            ) {
-                nav.navigate(Route.Scanner.path) {
-                    popUpTo(Route.Login.path) { inclusive = true }
+                onRequestAccess = { nav.navigate(Route.RequestAccess.path) },
+                onReport = { nav.navigate(Route.ReportAccess.path) },
+                onLoggedIn = {
+                    nav.navigate(Route.Scanner.path) {
+                        popUpTo(Route.Login.path) { inclusive = true }
+                    }
                 }
-            }
+            )
         }
 
         composable(Route.RequestAccess.path) {
@@ -79,7 +83,21 @@ fun AppNavGraph(
 
         composable(Route.Report.path) { backStack ->
             val lote = backStack.arguments?.getString("lote").orEmpty()
-            ReportProblemScreen(vm = reportVm, lote = lote) { nav.popBackStack() }
+            ReportProblemScreen(
+                vm = reportVm,
+                lote = lote,
+                mode = ReportMode.SCAN,
+                onDone = { nav.popBackStack() }
+            )
+        }
+
+        composable(Route.ReportAccess.path) {
+            ReportProblemScreen(
+                vm = reportVm,
+                lote = "ACCESO",
+                mode = ReportMode.ACCESS,
+                onDone = { nav.popBackStack() }
+            )
         }
     }
 }

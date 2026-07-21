@@ -7,12 +7,6 @@ import {
   RadioGroup,
   Dropdown,
   Option,
-  Dialog,
-  DialogSurface,
-  DialogBody,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Link,
 } from "@fluentui/react-components";
 import AppCard from "../components/ui/AppCard";
@@ -25,6 +19,7 @@ import { formatDateDDMMYYYY, isValidDDMMYYYY } from "../utils/dateFormat";
 import type { DynamicsLookupResponse } from "../api/types";
 import LabelPreview from "../components/label/LabelPreview";
 import LoteAutocomplete from "../components/ui/LoteAutocomplete";
+import ZplPrintHelpDialog from "../components/ui/ZplPrintHelpDialog";
 import type { FechaTipo } from "../utils/labelToPng";
 import {
   dynamicsSiteFamily,
@@ -90,6 +85,8 @@ export default function RegisterLabelPage() {
   const [lookupBusy, setLookupBusy] = useState(false);
   const [dynamicsInfo, setDynamicsInfo] = useState<DynamicsLookupResponse | null>(null);
   const [dynamicsLocked, setDynamicsLocked] = useState<DynamicsLocked>({});
+  /** Detalle Dynamics colapsado por defecto (útil, no invasivo en operación diaria). */
+  const [dynamicsOpen, setDynamicsOpen] = useState(false);
   /** Familia Dynamics (MPM/MPS vs MEM/MES) que condiciona el selector de tipo. */
   const [siteFamily, setSiteFamily] = useState<DynamicsSiteFamily>("DESCONOCIDO");
   const [siteCode, setSiteCode] = useState<string | null>(null);
@@ -103,7 +100,18 @@ export default function RegisterLabelPage() {
   const fechaEntradaOk = isValidDDMMYYYY(form.fechaEntrada);
   const envaseTotal = parseInt(form.envaseTotal, 10) || 0;
   const envaseOk = envaseTotal >= 1;
-  const canRegister = canQr && loteOk && fechaEntradaOk && envaseOk && !!form.tipoMaterial.trim() && !busy;
+  const tipoMaterial = form.tipoMaterial.trim();
+  const tipoMaterialOk =
+    siteFamily === "EMPAQUE"
+      ? tipoMaterial === "EMPAQUE_PRIMARIO" || tipoMaterial === "EMPAQUE_SECUNDARIO"
+      : siteFamily === "MATERIA_PRIMA"
+        ? tipoMaterial === "MATERIA_PRIMA"
+        : tipoMaterial === "MATERIA_PRIMA" ||
+          tipoMaterial === "EMPAQUE_PRIMARIO" ||
+          tipoMaterial === "EMPAQUE_SECUNDARIO";
+  /** Resalta en rojo cuando falta elegir primario/secundario (u otro tipo válido). */
+  const tipoMaterialNeedsAttention = canQr && !tipoMaterialOk;
+  const canRegister = canQr && loteOk && fechaEntradaOk && envaseOk && tipoMaterialOk && !busy;
 
   const caducidadDisplay = form.fechaTipo === "CADUCIDAD" ? form.fechaValor : "";
   const reanalisisDisplay = form.fechaTipo === "REANALISIS" ? form.fechaValor : "";
@@ -116,6 +124,7 @@ export default function RegisterLabelPage() {
     setLookupBusy(true);
     setDynamicsInfo(null);
     setDynamicsLocked({});
+    setDynamicsOpen(false);
     setSiteFamily("DESCONOCIDO");
     setSiteCode(null);
 
@@ -200,10 +209,10 @@ export default function RegisterLabelPage() {
       setErr("Captura un lote.");
       return;
     }
-    if (!form.tipoMaterial.trim()) {
+    if (!tipoMaterialOk) {
       setErr(
         siteFamily === "EMPAQUE"
-          ? "Selecciona si el empaque es primario o secundario."
+          ? "Selecciona Empaque Primario o Secundario."
           : "Selecciona el tipo de material."
       );
       return;
@@ -315,6 +324,7 @@ export default function RegisterLabelPage() {
           <FieldLabel
             label="Tipo material (aprobación)"
             fromDynamics={siteFamily === "MATERIA_PRIMA"}
+            needsAttention={tipoMaterialNeedsAttention && siteFamily !== "MATERIA_PRIMA"}
           />
           {siteFamily === "MATERIA_PRIMA" ? (
             <Input
@@ -334,7 +344,10 @@ export default function RegisterLabelPage() {
               onOptionSelect={(_, d) =>
                 setForm((s) => ({ ...s, tipoMaterial: (d.optionValue as string) || "" }))
               }
-              style={{ maxWidth: 420 }}
+              style={{
+                maxWidth: 420,
+                ...inputLook({ needsAttention: tipoMaterialNeedsAttention }),
+              }}
             >
               {siteFamily !== "EMPAQUE" ? (
                 <Option value="MATERIA_PRIMA">Materia Prima</Option>
@@ -343,13 +356,6 @@ export default function RegisterLabelPage() {
               <Option value="EMPAQUE_SECUNDARIO">Material de Empaque Secundario</Option>
             </Dropdown>
           )}
-          <Text style={{ fontSize: 12, color: brand.muted }}>
-            {siteFamily === "MATERIA_PRIMA"
-              ? `${dynamicsSiteLabel(siteCode)} → Materia Prima (Calidad aprueba).`
-              : siteFamily === "EMPAQUE"
-                ? `${dynamicsSiteLabel(siteCode)} → elige primario (Calidad + Inspección) o secundario (Inspección).`
-                : "Define quién puede aprobar. Con Dynamics: MPM/MPS = Materia Prima; MEM/MES = elegir primario/secundario."}
-          </Text>
         </div>
         <Field
           label="Nombre"
@@ -411,14 +417,12 @@ export default function RegisterLabelPage() {
                   void onConsultDynamics();
                 }
               }}
-              placeholder="Captura el lote y consulta Dynamics"
-              style={{
-                flex: "1 1 220px",
-                ...inputLook({
-                  fromDynamics: !!dynamicsLocked.lote,
-                  needsAttention: !dynamicsLocked.lote && !form.lote.trim(),
-                }),
-              }}
+              placeholder="Lote"
+              style={{ flex: "1 1 220px", minWidth: 0 }}
+              inputStyle={inputLook({
+                fromDynamics: !!dynamicsLocked.lote,
+                needsAttention: !dynamicsLocked.lote && !form.lote.trim(),
+              })}
             />
             <Button
               appearance="secondary"
@@ -429,43 +433,62 @@ export default function RegisterLabelPage() {
               {lookupBusy ? "Consultando…" : "Consultar Dynamics"}
             </Button>
           </div>
-          <Text style={{ fontSize: 12, color: brand.muted }}>
-            Busca en ItemBatches, inventario y órdenes de calidad para precargar el formulario.
-          </Text>
         </div>
         {dynamicsInfo ? (
           <div
             style={{
               fontSize: 13,
               color: brand.text2,
-              background: brand.primarySoft,
-              padding: "10px 12px",
-              borderRadius: 8,
+              background: brand.infoBg,
+              border: `1px solid ${brand.border}`,
+              padding: "8px 12px",
+              borderRadius: 10,
               display: "grid",
-              gap: 4,
+              gap: 6,
             }}
           >
-            <Text weight="semibold">Datos de Dynamics</Text>
-            {dynamicsInfo.statusDynamics ? (
-              <Text>Estado calidad: {dynamicsInfo.statusDynamics}</Text>
+            <button
+              type="button"
+              onClick={() => setDynamicsOpen((v) => !v)}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                fontWeight: 600,
+                color: brand.text2,
+              }}
+              aria-expanded={dynamicsOpen}
+            >
+              <span>Datos de Dynamics {dynamicsOpen ? "" : "(consultar detalle)"}</span>
+              <span style={{ fontSize: 12, color: brand.muted }}>{dynamicsOpen ? "Ocultar ▲" : "Mostrar ▼"}</span>
+            </button>
+            {dynamicsOpen ? (
+              <div style={{ display: "grid", gap: 4, paddingTop: 2 }}>
+                {dynamicsInfo.statusDynamics ? (
+                  <Text>Estado calidad: {dynamicsInfo.statusDynamics}</Text>
+                ) : null}
+                {dynamicsInfo.almacen ? <Text>Almacén: {dynamicsInfo.almacen}</Text> : null}
+                {siteCode ? (
+                  <Text>
+                    Sitio Dynamics: {dynamicsSiteLabel(siteCode)}
+                    {siteFamily === "MATERIA_PRIMA"
+                      ? " → categoría: Materia Prima"
+                      : siteFamily === "EMPAQUE"
+                        ? " → elige Empaque Primario o Secundario"
+                        : ""}
+                  </Text>
+                ) : null}
+                {dynamicsInfo.ubicacion ? <Text>Ubicación: {dynamicsInfo.ubicacion}</Text> : null}
+              </div>
             ) : null}
-            {dynamicsInfo.almacen ? <Text>Almacén: {dynamicsInfo.almacen}</Text> : null}
-            {siteCode ? (
-              <Text>
-                Sitio Dynamics: {dynamicsSiteLabel(siteCode)}
-                {siteFamily === "MATERIA_PRIMA"
-                  ? " → categoría: Materia Prima"
-                  : siteFamily === "EMPAQUE"
-                    ? " → elige Empaque Primario o Secundario"
-                    : ""}
-              </Text>
-            ) : null}
-            {dynamicsInfo.ubicacion ? <Text>Ubicación: {dynamicsInfo.ubicacion}</Text> : null}
           </div>
         ) : null}
         <Field
           label="Fecha entrada (DD/MM/YYYY)"
-          placeholder="Captura fecha de entrada"
+          placeholder="DD/MM/YYYY"
           value={form.fechaEntrada}
           onChange={(v) => setForm((s) => ({ ...s, fechaEntrada: v }))}
           fromDynamics={!!dynamicsLocked.fechaEntrada}
@@ -496,8 +519,8 @@ export default function RegisterLabelPage() {
           }
           placeholder={
             form.fechaTipo === "CADUCIDAD"
-              ? "Captura fecha de caducidad"
-              : "Captura fecha de reanálisis"
+              ? "DD/MM/YYYY"
+              : "DD/MM/YYYY"
           }
           value={form.fechaValor}
           onChange={(v) => setForm((s) => ({ ...s, fechaValor: v }))}
@@ -508,16 +531,14 @@ export default function RegisterLabelPage() {
           placeholder="Ej. 30"
           value={form.envaseTotal}
           onChange={(v) => setForm((s) => ({ ...s, envaseTotal: v, envaseNum: "1" }))}
-          hint="Se generarán etiquetas del 1 hasta este total (ej. 30 → 30 etiquetas ZPL)."
           requiredPending
           isFilled={envaseTotal >= 1}
         />
         <Field
           label="Cantidad por envase"
-          placeholder="Captura cantidad por envase"
+          placeholder="Cantidad"
           value={form.cantidadPorEnvase}
           onChange={(v) => setForm((s) => ({ ...s, cantidadPorEnvase: v }))}
-          hint="Solo captura manual (va en la etiqueta ZPL). El inventario Dynamics se ve al escanear el QR."
           requiredPending
           isFilled={form.cantidadPorEnvase.trim().length > 0}
         />
@@ -538,11 +559,6 @@ export default function RegisterLabelPage() {
         <div>
           <Text style={{ fontSize: 15, fontWeight: 600, color: brand.text, display: "block" }}>
             Vista previa
-          </Text>
-          <Text style={{ fontSize: 13, color: brand.muted, marginTop: 4, display: "block" }}>
-            {hasPreview
-              ? "Vista previa del QR para escanear desde la computadora. Para impresora Zebra usa el archivo .zpl."
-              : "Completa el formulario y pulsa «Registrar y generar QR» para ver el código."}
           </Text>
         </div>
 
@@ -680,31 +696,7 @@ export default function RegisterLabelPage() {
         ) : null}
       </AppCard>
 
-      <Dialog open={zplHelpOpen} onOpenChange={(_, data) => setZplHelpOpen(data.open)}>
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>Cómo imprimir archivos ZPL</DialogTitle>
-            <DialogContent>
-              <ul style={{ paddingLeft: 18, margin: "8px 0 0 0" }}>
-                <li>Descarga el archivo .zpl y guárdalo en tu equipo.</li>
-                <li>
-                  En equipos con impresora Zebra, envía el archivo al puerto de la impresora
-                  (por ejemplo, arrastrando el archivo a la impresora o usando utilidades de Zebra).
-                </li>
-                <li>
-                  No intentes abrir el archivo como documento; es código de comandos para la
-                  impresora.
-                </li>
-              </ul>
-            </DialogContent>
-            <DialogActions>
-              <Button appearance="primary" onClick={() => setZplHelpOpen(false)}>
-                Cerrar
-              </Button>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
+      <ZplPrintHelpDialog open={zplHelpOpen} onOpenChange={setZplHelpOpen} />
     </div>
   );
 }
@@ -732,10 +724,26 @@ function inputLook({
   return {};
 }
 
-function FieldLabel({ label, fromDynamics }: { label: string; fromDynamics?: boolean }) {
+function FieldLabel({
+  label,
+  fromDynamics,
+  needsAttention,
+}: {
+  label: string;
+  fromDynamics?: boolean;
+  needsAttention?: boolean;
+}) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <Text style={{ fontSize: 14, fontWeight: 500, color: brand.text2 }}>{label}</Text>
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: 500,
+          color: needsAttention ? brand.dangerFg : brand.text2,
+        }}
+      >
+        {label}
+      </Text>
       {fromDynamics ? (
         <Text
           style={{
@@ -761,7 +769,6 @@ function Field({
   placeholder,
   value,
   onChange,
-  hint,
   fromDynamics,
   requiredPending,
   isFilled,
@@ -770,7 +777,6 @@ function Field({
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
-  hint?: string;
   fromDynamics?: boolean;
   requiredPending?: boolean;
   isFilled?: boolean;
@@ -779,7 +785,7 @@ function Field({
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
-      <FieldLabel label={label} fromDynamics={fromDynamics} />
+      <FieldLabel label={label} fromDynamics={fromDynamics} needsAttention={needsAttention} />
       <Input
         appearance="outline"
         size="large"
@@ -792,7 +798,6 @@ function Field({
         placeholder={placeholder}
         style={inputLook({ fromDynamics, needsAttention })}
       />
-      {hint ? <Text style={{ fontSize: 12, color: brand.muted }}>{hint}</Text> : null}
     </div>
   );
 }

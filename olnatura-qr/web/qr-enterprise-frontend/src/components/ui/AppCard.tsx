@@ -4,13 +4,13 @@ import { brand } from "../../styles/brand";
 
 const useStyles = makeStyles({
   root: {
-    backgroundColor: brand.surface,
+    backgroundColor: brand.surfaceMuted,
     backdropFilter: "blur(6px)",
     borderRadius: "12px",
-    boxShadow: "0 1px 3px rgba(74, 92, 40, 0.06)",
+    boxShadow: "0 1px 3px rgba(74, 92, 40, 0.05)",
     ...shorthands.border("1px", "solid", brand.border),
     ...shorthands.padding("16px"),
-    transition: "box-shadow 0.2s ease, transform 0.2s ease",
+    transition: "box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease",
   },
   clickable: {
     cursor: "pointer",

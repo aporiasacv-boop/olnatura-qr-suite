@@ -3,24 +3,24 @@ import { Button, Input, makeStyles } from "@fluentui/react-components";
 import { EyeRegular, EyeOffRegular } from "@fluentui/react-icons";
 
 const useStyles = makeStyles({
-  wrap: {
-    position: "relative",
-    width: "100%",
-  },
   input: {
     width: "100%",
     minWidth: 0,
-    paddingRight: "44px",
   },
   toggle: {
-    position: "absolute",
-    right: "4px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    minWidth: "36px",
-    height: "36px",
+    minWidth: "32px",
+    height: "32px",
     padding: 0,
     cursor: "pointer",
+    // Evita que el hover global (translateY) desplace el ojo fuera del input
+    ":hover": {
+      transform: "none",
+      opacity: 1,
+      filter: "none",
+    },
+    ":active": {
+      transform: "none",
+    },
   },
 });
 
@@ -54,30 +54,30 @@ export default function PasswordField({
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className={s.wrap}>
-      <Input
-        id={id}
-        name={name}
-        appearance={appearance}
-        size={size}
-        className={className ? `${s.input} ${className}` : s.input}
-        type={visible ? "text" : "password"}
-        value={value}
-        disabled={disabled}
-        placeholder={placeholder}
-        onChange={(_, d) => onChange(d.value)}
-        autoComplete={autoComplete}
-      />
-      <Button
-        type="button"
-        appearance="transparent"
-        className={s.toggle}
-        aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
-        title={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
-        disabled={disabled}
-        icon={visible ? <EyeOffRegular /> : <EyeRegular />}
-        onClick={() => setVisible((v) => !v)}
-      />
-    </div>
+    <Input
+      id={id}
+      name={name}
+      appearance={appearance}
+      size={size}
+      className={className ? `${s.input} ${className}` : s.input}
+      type={visible ? "text" : "password"}
+      value={value}
+      disabled={disabled}
+      placeholder={placeholder}
+      onChange={(_, d) => onChange(d.value)}
+      autoComplete={autoComplete}
+      contentAfter={
+        <Button
+          type="button"
+          appearance="transparent"
+          className={`${s.toggle} password-field-toggle`}
+          aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+          title={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+          disabled={disabled}
+          icon={visible ? <EyeOffRegular /> : <EyeRegular />}
+          onClick={() => setVisible((v) => !v)}
+        />
+      }
+    />
   );
 }

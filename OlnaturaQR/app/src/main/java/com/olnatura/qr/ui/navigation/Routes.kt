@@ -10,4 +10,6 @@ sealed class Route(val path: String) {
     data object Report : Route("report/{lote}") {
         fun create(lote: String) = "report/$lote"
     }
+    /** Reporte desde login (problemas de acceso / cuenta). */
+    data object ReportAccess : Route("report-access")
 }

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Button, Text, makeStyles, shorthands } from "@fluentui/react-components";
+import { Button, Text, Link, makeStyles, shorthands } from "@fluentui/react-components";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { api, ApiError } from "../api/client";
@@ -8,6 +8,7 @@ import { generateQrPlain } from "../utils/qrWithLogo";
 import { downloadLabelZplFile } from "../utils/downloadLabelZpl";
 import LabelPreview from "../components/label/LabelPreview";
 import LoteAutocomplete from "../components/ui/LoteAutocomplete";
+import ZplPrintHelpDialog from "../components/ui/ZplPrintHelpDialog";
 
 function logAudit(actionType: string, lote: string | null) {
   api("/audit/log", {
@@ -33,7 +34,6 @@ const useStyles = makeStyles({
   },
   actions: { display: "flex", gap: "10px", flexWrap: "wrap" },
   error: { color: brand.dangerFg, fontSize: "13px" },
-  hint: { fontSize: "12px", color: brand.muted, marginTop: "4px" },
 });
 
 function parseEnvaseTotal(label: Record<string, unknown> | null): number {
@@ -51,6 +51,7 @@ export default function GenerateQrPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [zplBusy, setZplBusy] = useState(false);
+  const [zplHelpOpen, setZplHelpOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const v = (lote || "").trim();
@@ -178,9 +179,12 @@ export default function GenerateQrPage() {
             >
               {zplBusy ? "Descargando…" : "Descargar Zebra (.zpl)"}
             </Button>
-          </div>
-          <div className={s.hint}>
-            La descarga .zpl es el archivo listo para imprimir en impresora Zebra.
+            <Link
+              onClick={() => setZplHelpOpen(true)}
+              style={{ alignSelf: "center", fontSize: 13 }}
+            >
+              Cómo imprimir
+            </Link>
           </div>
 
           {error ? <div className={s.error}>{error}</div> : null}
@@ -237,6 +241,8 @@ export default function GenerateQrPage() {
           )}
         </div>
       </AppCard>
+
+      <ZplPrintHelpDialog open={zplHelpOpen} onOpenChange={setZplHelpOpen} />
     </div>
   );
 }

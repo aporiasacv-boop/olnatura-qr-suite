@@ -13,7 +13,7 @@ const useStyles = makeStyles({
     backgroundColor: "transparent",
   },
   sidebar: {
-    backgroundColor: "rgba(253, 251, 235, 0.72)",
+    backgroundColor: "rgba(228, 232, 212, 0.92)",
     backdropFilter: "blur(8px)",
     borderRight: `1px solid ${brand.border}`,
   },
@@ -29,10 +29,10 @@ const useStyles = makeStyles({
     backgroundColor: "transparent",
   },
   surface: {
-    backgroundColor: brand.surface,
+    backgroundColor: brand.surfaceSolid,
     backdropFilter: "blur(8px)",
     borderRadius: "12px",
-    boxShadow: "0 4px 18px rgba(74, 92, 40, 0.08)",
+    boxShadow: "0 4px 18px rgba(74, 92, 40, 0.07)",
     ...shorthands.border("1px", "solid", brand.border),
     ...shorthands.padding("24px"),
     minHeight: "100%",

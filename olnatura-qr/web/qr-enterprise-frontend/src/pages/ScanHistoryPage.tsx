@@ -105,13 +105,6 @@ export default function ScanHistoryPage() {
         </form>
       </AppCard>
 
-      {status === "idle" && (
-        <EmptyState
-          title={LABELS.readyToFilter}
-          hint="Ingresa un lote para ver sus eventos."
-        />
-      )}
-
       {status === "loading" && (
         <LoadingState label="Consultando historial…" />
       )}
@@ -126,10 +119,7 @@ export default function ScanHistoryPage() {
 
       {status === "ok" && events && (
         events.length === 0 ? (
-          <EmptyState
-            title={LABELS.noEvents}
-            hint={LABELS.noRecords}
-          />
+          <EmptyState title={LABELS.noEvents} />
         ) : (
           <AppCard>
             <Text weight="semibold">{LABELS.scanHistory}</Text>

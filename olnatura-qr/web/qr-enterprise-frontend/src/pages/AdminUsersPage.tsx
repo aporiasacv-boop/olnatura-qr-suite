@@ -122,7 +122,6 @@ export default function AdminUsersPage() {
         <div className={s.headerRow}>
           <div>
             <h1 className={s.title}>Usuarios</h1>
-            <div className={s.subtitle}>Gestión de cuentas</div>
           </div>
           <Button appearance="primary" onClick={() => void load()} disabled={refreshing || !!actionId}>
             {refreshing ? "Actualizando…" : refreshLabel}

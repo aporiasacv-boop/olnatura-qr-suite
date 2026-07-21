@@ -16,7 +16,9 @@ import com.olnatura.qr.ui.components.LabelValueRow
 import com.olnatura.qr.ui.components.OlnTopBar
 import com.olnatura.qr.ui.components.PillButton
 import com.olnatura.qr.ui.components.StatusBanner
+import com.olnatura.qr.ui.components.TabletContent
 import com.olnatura.qr.ui.components.statusColors
+import com.olnatura.qr.ui.share.SharePayload
 import com.olnatura.qr.ui.theme.OlnCard
 import com.olnatura.qr.ui.theme.OlnCream
 import com.olnatura.qr.ui.theme.OlnGreen
@@ -28,7 +30,7 @@ fun ResultScreen(
     vm: ResultViewModel,
     lote: String,
     onReport: (String) -> Unit,
-    onShare: (String, String) -> Unit,
+    onShare: (SharePayload) -> Unit,
     onGoToLogin: () -> Unit,
     onBack: (() -> Unit)? = null
 ) {
@@ -40,7 +42,8 @@ fun ResultScreen(
 
     Scaffold(
         topBar = { OlnTopBar(title = "Datos de consulta", onBack = onBack) },
-        containerColor = OlnCream
+        containerColor = OlnCream,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Surface(
             color = OlnCream,
@@ -48,9 +51,11 @@ fun ResultScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
+            TabletContent(maxWidth = 720.dp) {
             Column(
                 modifier = Modifier
                     .padding(16.dp)
+                    .padding(bottom = 24.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 when (state.gate) {
@@ -82,6 +87,7 @@ fun ResultScreen(
                         }
                     }
                 }
+            }
             }
         }
     }
@@ -144,7 +150,7 @@ private fun SuccessContent(
     qr: com.olnatura.qr.data.model.QrResponse,
     todayCount: Int,
     onReport: (String) -> Unit,
-    onShare: (String, String) -> Unit
+    onShare: (SharePayload) -> Unit
 ) {
     val label = qr.label
     val dynamic = qr.dynamic
@@ -171,25 +177,40 @@ private fun SuccessContent(
         else -> "—"
     }
 
+    val loteValue = str(label?.lote).ifBlank { lote }
+    val payload = SharePayload(
+        lote = loteValue,
+        status = status,
+        nombre = str(label?.nombre),
+        codigo = str(label?.codigo),
+        ubicacion = str(dynamic?.ubicacion),
+        almacen = str(dynamic?.almacen),
+        inventario = cantidadText,
+        statusDynamics = str(dynamic?.statusDynamics),
+        fechaEntrada = str(label?.fechaEntrada),
+        caducidad = str(label?.caducidad),
+        escaneadoHoy = "V: $todayCount"
+    )
+
     Card(
         colors = CardDefaults.cardColors(containerColor = OlnCard),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(Modifier.padding(18.dp)) {
-            LabelValueRow("Nombre", str(label?.nombre))
-            LabelValueRow("Lote", str(label?.lote).ifBlank { lote })
-            LabelValueRow("Código", str(label?.codigo))
-            LabelValueRow("Escaneado hoy", "V: $todayCount")
-            LabelValueRow("Ubicación", str(dynamic?.ubicacion))
-            LabelValueRow("Almacén", str(dynamic?.almacen))
+            LabelValueRow("Nombre", payload.nombre)
+            LabelValueRow("Lote", payload.lote)
+            LabelValueRow("Código", payload.codigo)
+            LabelValueRow("Escaneado hoy", payload.escaneadoHoy)
+            LabelValueRow("Ubicación", payload.ubicacion)
+            LabelValueRow("Almacén", payload.almacen)
             LabelValueRow(
                 label = "Inventario disponible",
                 value = cantidadText,
                 caption = if (cantidadText != "—") "Actualizado al momento del escaneo" else null
             )
-            LabelValueRow("Estado Dynamics", str(dynamic?.statusDynamics))
-            LabelValueRow("Fecha de entrada", str(label?.fechaEntrada))
-            LabelValueRow("Fecha de caducidad", str(label?.caducidad), showDivider = false)
+            LabelValueRow("Estado Dynamics", payload.statusDynamics)
+            LabelValueRow("Fecha de entrada", payload.fechaEntrada)
+            LabelValueRow("Fecha de caducidad", payload.caducidad, showDivider = false)
         }
     }
 
@@ -205,7 +226,7 @@ private fun SuccessContent(
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         PillButton(
             text = "Compartir",
-            onClick = { onShare(lote, status) },
+            onClick = { onShare(payload) },
             containerColor = OlnGreen,
             modifier = Modifier.weight(1f)
         )
