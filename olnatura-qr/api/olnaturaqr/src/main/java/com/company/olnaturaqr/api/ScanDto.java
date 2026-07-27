@@ -9,6 +9,8 @@ public class ScanDto {
             UUID id,
             String lote,
             UUID scannedBy,
+            String userDisplay,
+            String roleDisplay,
             String deviceId,
             OffsetDateTime createdAt
     ) {}

@@ -34,6 +34,17 @@ export type AccessRequestItem = {
 
 export type ScanEvent = Record<string, any>;
 
+export type LoteComment = {
+  id: string;
+  lote: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  role: string;
+  createdAt: string;
+  comment: string;
+};
+
 export type DynamicsLookupResponse = {
   codigo: string;
   nombre: string | null;
@@ -70,6 +81,9 @@ export type QrPermissions = {
   canApproveInspeccion?: boolean;
   canReject?: boolean;
   canDownloadAuditPdf?: boolean;
+  canCorrectLabel?: boolean;
+  canCorrectStatus?: boolean;
+  allowedStatusCorrections?: string[];
   calidadApproved?: boolean;
   inspeccionApproved?: boolean;
   pendingMessage?: string | null;

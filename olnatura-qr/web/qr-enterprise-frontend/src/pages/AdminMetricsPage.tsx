@@ -24,11 +24,11 @@ type RecentActivity = {
   id: string;
   createdAt: string;
   actionType: string;
-  actorEmail?: string;
-  actorRol?: string;
+  actionTypeDisplay?: string;
+  actorDisplay?: string;
+  actorRoleDisplay?: string;
   lote?: string;
   metadata?: Record<string, unknown>;
-  deviceId?: string;
 };
 
 type LastPowerBiExport = {
@@ -408,6 +408,7 @@ export default function AdminMetricsPage() {
                   <TableHeaderCell>{LABELS.fecha}</TableHeaderCell>
                   <TableHeaderCell>{LABELS.accion}</TableHeaderCell>
                   <TableHeaderCell>{LABELS.usuario}</TableHeaderCell>
+                  <TableHeaderCell>{LABELS.rol}</TableHeaderCell>
                   <TableHeaderCell>Lote</TableHeaderCell>
                   <TableHeaderCell>{LABELS.detalle}</TableHeaderCell>
                 </TableRow>
@@ -415,7 +416,7 @@ export default function AdminMetricsPage() {
               <TableBody>
                 {recent.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5}>
+                    <TableCell colSpan={6}>
                       <Text className={s.muted}>{LABELS.noEvents}</Text>
                     </TableCell>
                   </TableRow>
@@ -430,20 +431,14 @@ export default function AdminMetricsPage() {
                             <div style={{ fontSize: 12, color: brand.muted }}>{time}</div>
                           </div>
                         </TableCell>
-                        <TableCell>{actionTypeDisplay(ev.actionType)}</TableCell>
                         <TableCell>
-                          <div>{ev.actorEmail || "—"}</div>
-                          {ev.actorRol ? (
-                            <div style={{ fontSize: 12, color: brand.muted }}>{ev.actorRol}</div>
-                          ) : null}
+                          {ev.actionTypeDisplay ?? actionTypeDisplay(ev.actionType)}
                         </TableCell>
+                        <TableCell>{ev.actorDisplay ?? "—"}</TableCell>
+                        <TableCell>{ev.actorRoleDisplay ?? "—"}</TableCell>
                         <TableCell>{ev.lote || "—"}</TableCell>
                         <TableCell>
-                          <AuditDetailCell
-                            metadata={ev.metadata}
-                            deviceId={ev.deviceId}
-                            actionType={ev.actionType}
-                          />
+                          <AuditDetailCell metadata={ev.metadata} actionType={ev.actionType} />
                         </TableCell>
                       </TableRow>
                     );

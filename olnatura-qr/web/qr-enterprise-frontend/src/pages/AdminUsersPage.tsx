@@ -28,6 +28,13 @@ type UserAdmin = {
   createdAt?: string;
 };
 
+const truncateCell: React.CSSProperties = {
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  maxWidth: 0,
+};
+
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "16px" },
   headerRow: {
@@ -39,10 +46,14 @@ const useStyles = makeStyles({
     marginBottom: "16px",
   },
   title: { fontSize: "20px", fontWeight: 600, color: brand.text, margin: 0 },
-  subtitle: { fontSize: "14px", color: brand.muted, marginTop: "4px" },
   muted: { color: brand.muted },
   actions: { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px" },
   danger: { color: brand.dangerFg, fontWeight: 600, minHeight: "auto", padding: "0 4px" },
+  table: {
+    width: "100%",
+    tableLayout: "fixed",
+    minWidth: "720px",
+  },
 });
 
 function formatRefreshTime(d: Date | null): string {
@@ -134,15 +145,15 @@ export default function AdminUsersPage() {
           <Text className={s.muted}>No hay usuarios registrados.</Text>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <Table aria-label="Usuarios">
+            <Table aria-label="Usuarios" className={s.table}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell>Usuario</TableHeaderCell>
-                  <TableHeaderCell>Correo</TableHeaderCell>
-                  <TableHeaderCell>Rol</TableHeaderCell>
-                  <TableHeaderCell>Estado</TableHeaderCell>
-                  <TableHeaderCell>Habilitado</TableHeaderCell>
-                  <TableHeaderCell>Acciones</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "18%" }}>Usuario</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "26%" }}>Correo</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "18%" }}>Rol</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>Estado</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "10%" }}>Habilitado</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -151,10 +162,15 @@ export default function AdminUsersPage() {
                   const rowBusy = actionId === u.id;
                   return (
                     <TableRow key={u.id} className="table-hover-row">
-                      <TableCell>{u.username}</TableCell>
-                      <TableCell>{u.email}</TableCell>
-                      <TableCell style={{ minWidth: 140 }}>
+                      <TableCell style={truncateCell} title={u.username}>
+                        {u.username}
+                      </TableCell>
+                      <TableCell style={truncateCell} title={u.email}>
+                        {u.email}
+                      </TableCell>
+                      <TableCell>
                         <Dropdown
+                          style={{ minWidth: 0, width: "100%", maxWidth: "100%" }}
                           value={u.role}
                           selectedOptions={[u.role]}
                           disabled={rowBusy || refreshing || (isSelf && u.role === "ADMIN")}
@@ -170,7 +186,9 @@ export default function AdminUsersPage() {
                           <Option value="INSPECCION">INSPECCIÓN</Option>
                         </Dropdown>
                       </TableCell>
-                      <TableCell>{u.estado}</TableCell>
+                      <TableCell style={truncateCell} title={u.estado}>
+                        {u.estado}
+                      </TableCell>
                       <TableCell>{u.enabled ? "Sí" : "No"}</TableCell>
                       <TableCell>
                         <div className={s.actions}>

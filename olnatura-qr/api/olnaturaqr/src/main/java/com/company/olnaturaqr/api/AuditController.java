@@ -2,8 +2,10 @@ package com.company.olnaturaqr.api;
 
 import com.company.olnaturaqr.domain.audit.AuditEvent;
 import com.company.olnaturaqr.domain.qr.QrLabel;
+import com.company.olnaturaqr.domain.user.User;
 import com.company.olnaturaqr.repository.AuditEventRepository;
 import com.company.olnaturaqr.repository.QrLabelRepository;
+import com.company.olnaturaqr.repository.UserRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
 import com.company.olnaturaqr.support.pdf.AuditPdfService;
 import com.company.olnaturaqr.support.qr.LoteExtractor;
@@ -27,6 +29,10 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -42,6 +48,7 @@ public class AuditController {
     private final AuditService auditService;
     private final AuditEventRepository auditEventRepository;
     private final QrLabelRepository qrLabelRepository;
+    private final UserRepository userRepository;
     private final AuditPdfService auditPdfService;
     private final ObjectMapper objectMapper;
 
@@ -49,12 +56,14 @@ public class AuditController {
             AuditService auditService,
             AuditEventRepository auditEventRepository,
             QrLabelRepository qrLabelRepository,
+            UserRepository userRepository,
             AuditPdfService auditPdfService,
             ObjectMapper objectMapper
     ) {
         this.auditService = auditService;
         this.auditEventRepository = auditEventRepository;
         this.qrLabelRepository = qrLabelRepository;
+        this.userRepository = userRepository;
         this.auditPdfService = auditPdfService;
         this.objectMapper = objectMapper;
     }
@@ -93,11 +102,12 @@ public class AuditController {
         String actualLote = resolveToLote(lote);
 
         List<AuditEvent> events = auditEventRepository.findTop500ByLoteOrderByCreatedAtDesc(actualLote);
+        Map<UUID, User> actorsById = loadActors(events);
         Instant generatedAt = Instant.now();
 
         byte[] pdf;
         try {
-            pdf = auditPdfService.generate(actualLote, events, generatedAt);
+            pdf = auditPdfService.generate(actualLote, events, actorsById, generatedAt);
         } catch (DocumentException e) {
             throw new RuntimeException("Error al generar PDF", e);
         }
@@ -118,7 +128,7 @@ public class AuditController {
 
     @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
     @GetMapping
-    public ResponseEntity<Page<AuditEvent>> list(
+    public ResponseEntity<Page<AuditEventView>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) String actionType,
@@ -127,7 +137,9 @@ public class AuditController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
-        return ResponseEntity.ok(auditService.list(page, size, actionType, lote, actor, from, to));
+        Page<AuditEvent> raw = auditService.list(page, size, actionType, lote, actor, from, to);
+        Map<UUID, User> actorsById = loadActors(raw.getContent());
+        return ResponseEntity.ok(raw.map(e -> AuditEventView.from(e, actorsById.get(e.getActorId()))));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
@@ -141,7 +153,8 @@ public class AuditController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
         List<AuditEvent> events = auditService.listForExport(actionType, lote, actor, from, to);
-        String csv = toCsv(events);
+        Map<UUID, User> actorsById = loadActors(events);
+        String csv = toCsv(events, actorsById);
         byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
 
         Map<String, Object> meta = new HashMap<>();
@@ -162,16 +175,28 @@ public class AuditController {
                 .body(bytes);
     }
 
-    private String toCsv(List<AuditEvent> events) {
+    private Map<UUID, User> loadActors(List<AuditEvent> events) {
+        Set<UUID> ids = events.stream()
+                .map(AuditEvent::getActorId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return userRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+    }
+
+    private String toCsv(List<AuditEvent> events, Map<UUID, User> actorsById) {
         StringBuilder sb = new StringBuilder();
-        sb.append("createdAt,actionType,actorEmail,actorRol,lote,deviceId,metadata\n");
+        sb.append("createdAt,accion,usuario,rol,lote,metadata\n");
         for (AuditEvent e : events) {
+            AuditEventView view = AuditEventView.from(e, actorsById.get(e.getActorId()));
             sb.append(csv(e.getCreatedAt() != null ? e.getCreatedAt().toString() : "")).append(',');
-            sb.append(csv(e.getActionType())).append(',');
-            sb.append(csv(e.getActorEmail())).append(',');
-            sb.append(csv(e.getActorRol())).append(',');
+            sb.append(csv(view.actionTypeDisplay())).append(',');
+            sb.append(csv(view.actorDisplay())).append(',');
+            sb.append(csv(view.actorRoleDisplay())).append(',');
             sb.append(csv(e.getLote())).append(',');
-            sb.append(csv(e.getDeviceId())).append(',');
             sb.append(csv(metadataJson(e.getMetadata()))).append('\n');
         }
         return sb.toString();

@@ -103,16 +103,14 @@ function EntryList({
 
 export default function AuditDetailCell({
   metadata,
-  deviceId,
   actionType,
 }: {
   metadata?: Record<string, unknown> | string | null;
-  deviceId?: string | null;
   actionType?: string | null;
 }) {
   const [showTech, setShowTech] = React.useState(false);
   const [expanded, setExpanded] = React.useState(false);
-  const entries = formatAuditDetail(metadata, deviceId);
+  const entries = formatAuditDetail(metadata);
   const main = entries.filter((e) => !TECHNICAL_LABELS.has(e.label));
   const tech = entries.filter((e) => TECHNICAL_LABELS.has(e.label));
 

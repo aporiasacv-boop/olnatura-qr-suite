@@ -20,24 +20,8 @@ import AppCard from "../components/ui/AppCard";
 import AuditDetailCell from "../components/ui/AuditDetailCell";
 import LoteAutocomplete from "../components/ui/LoteAutocomplete";
 import { brand } from "../styles/brand";
-import { LABELS, formatDateTime, actionTypeDisplay } from "../utils/displayLabels";
-
-const ACTION_OPTIONS = [
-  { value: "", label: "Todas" },
-  { value: "CHANGE_STATUS", label: "Cambio de estado" },
-  { value: "PRINT_LABEL", label: "Impresión etiqueta" },
-  { value: "GENERATE_LABEL", label: "Generar etiqueta" },
-  { value: "EXPORT_AUDIT_PDF", label: "Exportación PDF" },
-  { value: "EXPORT_AUDIT_CSV", label: "Exportación CSV" },
-  { value: "EXPORT_EXECUTIVE_DASHBOARD", label: "Exportación Power BI" },
-  { value: "APPROVE_USER", label: "Aprobación de usuario" },
-  { value: "REJECT_USER", label: "Rechazo de usuario" },
-  { value: "ACCESS_REQUEST", label: "Solicitud de acceso" },
-  { value: "APPROVE_MATERIAL", label: "Aprobación de material" },
-  { value: "REJECT_MATERIAL", label: "Rechazo de material" },
-  { value: "UPDATE_USER", label: "Actualización de usuario" },
-  { value: "CHANGE_LOT_ADMIN_STATUS", label: "Estado administrativo de lote" },
-];
+import { LABELS, formatDateTime, actionTypeDisplay, roleDisplay } from "../utils/displayLabels";
+import { AUDIT_ACTION_FILTER_OPTIONS, resolveUserDisplay } from "../utils/auditActionTranslator";
 
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "20px" },
@@ -74,10 +58,12 @@ type AuditEvent = {
   actorId?: string;
   actorEmail?: string;
   actorRol?: string;
+  actorDisplay?: string;
+  actorRoleDisplay?: string;
   actionType: string;
+  actionTypeDisplay?: string;
   lote?: string;
   metadata?: Record<string, unknown>;
-  deviceId?: string;
 };
 
 type Filters = {
@@ -197,7 +183,7 @@ export default function AdminAuditPage() {
   };
 
   const actionLabel =
-    ACTION_OPTIONS.find((o) => o.value === draft.actionType)?.label ?? "Todas";
+    AUDIT_ACTION_FILTER_OPTIONS.find((o) => o.value === draft.actionType)?.label ?? "Todas";
 
   return (
     <div className={s.wrap}>
@@ -258,7 +244,7 @@ export default function AdminAuditPage() {
                 setDraft((f) => ({ ...f, actionType: data.optionValue ?? "" }))
               }
             >
-              {ACTION_OPTIONS.map((o) => (
+              {AUDIT_ACTION_FILTER_OPTIONS.map((o) => (
                 <Option key={o.value || "all"} value={o.value}>
                   {o.label}
                 </Option>
@@ -298,7 +284,8 @@ export default function AdminAuditPage() {
                 <TableRow>
                   <TableHeaderCell>{LABELS.fecha}</TableHeaderCell>
                   <TableHeaderCell>{LABELS.accion}</TableHeaderCell>
-                  <TableHeaderCell>Actor</TableHeaderCell>
+                  <TableHeaderCell>{LABELS.usuario}</TableHeaderCell>
+                  <TableHeaderCell>{LABELS.rol}</TableHeaderCell>
                   <TableHeaderCell>Lote</TableHeaderCell>
                   <TableHeaderCell>{LABELS.detalle}</TableHeaderCell>
                 </TableRow>
@@ -311,17 +298,18 @@ export default function AdminAuditPage() {
                   return (
                     <TableRow key={e.id} className="table-hover-row">
                       <TableCell>{dateTimeStr}</TableCell>
-                      <TableCell>{actionTypeDisplay(e.actionType)}</TableCell>
                       <TableCell>
-                        {e.actorRol ?? "-"} {e.actorEmail ? `(${e.actorEmail})` : ""}
+                        {e.actionTypeDisplay ?? actionTypeDisplay(e.actionType)}
+                      </TableCell>
+                      <TableCell>
+                        {resolveUserDisplay(e.actorDisplay, undefined, e.actorEmail)}
+                      </TableCell>
+                      <TableCell>
+                        {e.actorRoleDisplay ?? roleDisplay(e.actorRol)}
                       </TableCell>
                       <TableCell>{e.lote ?? "-"}</TableCell>
                       <TableCell>
-                        <AuditDetailCell
-                          metadata={e.metadata}
-                          deviceId={e.deviceId}
-                          actionType={e.actionType}
-                        />
+                        <AuditDetailCell metadata={e.metadata} actionType={e.actionType} />
                       </TableCell>
                     </TableRow>
                   );

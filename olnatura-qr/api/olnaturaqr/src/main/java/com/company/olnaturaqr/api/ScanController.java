@@ -2,8 +2,12 @@ package com.company.olnaturaqr.api;
 
 import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.domain.scan.ScanEvent;
+import com.company.olnaturaqr.domain.user.User;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.repository.ScanEventRepository;
+import com.company.olnaturaqr.repository.UserRepository;
+import com.company.olnaturaqr.support.presentation.RoleDisplayTranslator;
+import com.company.olnaturaqr.support.presentation.UserDisplayHelper;
 import com.company.olnaturaqr.support.qr.LoteExtractor;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
 import com.company.olnaturaqr.support.workflow.LotOperationalGate;
@@ -11,6 +15,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -20,10 +31,16 @@ public class ScanController {
 
     private final ScanEventRepository scanEventRepository;
     private final QrLabelRepository qrLabelRepository;
+    private final UserRepository userRepository;
 
-    public ScanController(ScanEventRepository scanEventRepository, QrLabelRepository qrLabelRepository) {
+    public ScanController(
+            ScanEventRepository scanEventRepository,
+            QrLabelRepository qrLabelRepository,
+            UserRepository userRepository
+    ) {
         this.scanEventRepository = scanEventRepository;
         this.qrLabelRepository = qrLabelRepository;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/{lote}")
@@ -42,28 +59,48 @@ public class ScanController {
         }
 
         ScanEvent saved = scanEventRepository.save(ev);
+        User scanner = saved.getScannedBy() != null
+                ? userRepository.findById(saved.getScannedBy()).orElse(null)
+                : null;
 
-        return ResponseEntity.ok(new ScanDto.Response(
-                saved.getId(),
-                saved.getLote(),
-                saved.getScannedBy(),
-                saved.getDeviceId(),
-                saved.getCreatedAt()));
+        return ResponseEntity.ok(toResponse(saved, scanner));
     }
 
     @GetMapping("/{lote}")
     public ResponseEntity<?> list(@PathVariable String lote) {
         String actualLote = resolveToLote(lote);
+        List<ScanEvent> events = scanEventRepository.findTop50ByLoteOrderByCreatedAtDesc(actualLote);
+        Map<UUID, User> usersById = loadUsers(events);
         return ResponseEntity.ok(
-                scanEventRepository.findTop50ByLoteOrderByCreatedAtDesc(actualLote)
-                        .stream()
-                        .map(ev -> new ScanDto.Response(
-                                ev.getId(),
-                                ev.getLote(),
-                                ev.getScannedBy(),
-                                ev.getDeviceId(),
-                                ev.getCreatedAt()))
+                events.stream()
+                        .map(ev -> toResponse(ev, usersById.get(ev.getScannedBy())))
                         .toList());
+    }
+
+    private Map<UUID, User> loadUsers(List<ScanEvent> events) {
+        Set<UUID> ids = events.stream()
+                .map(ScanEvent::getScannedBy)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return userRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+    }
+
+    private ScanDto.Response toResponse(ScanEvent ev, User scanner) {
+        String roleDisplay = scanner != null && scanner.getRole() != null
+                ? RoleDisplayTranslator.translate(scanner.getRole().getName())
+                : "—";
+        return new ScanDto.Response(
+                ev.getId(),
+                ev.getLote(),
+                ev.getScannedBy(),
+                UserDisplayHelper.displayFromUser(scanner),
+                roleDisplay,
+                ev.getDeviceId(),
+                ev.getCreatedAt());
     }
 
     private String resolveToLote(String raw) {

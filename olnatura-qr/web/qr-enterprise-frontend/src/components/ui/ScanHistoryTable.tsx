@@ -1,6 +1,7 @@
 import { LABELS, formatDateTime } from "../../utils/displayLabels";
+import { resolveUserDisplay, translateAuditAction } from "../../utils/auditActionTranslator";
 
-function pick(ev: any, keys: string[], fallback = "—") {
+function pick(ev: Record<string, unknown>, keys: string[], fallback = "—") {
   for (const k of keys) {
     const v = ev?.[k];
     if (typeof v === "string" && v.trim()) return v;
@@ -10,13 +11,13 @@ function pick(ev: any, keys: string[], fallback = "—") {
   return fallback;
 }
 
-export default function ScanHistoryTable({ events }: { events: Record<string, any>[] }) {
+export default function ScanHistoryTable({ events }: { events: Record<string, unknown>[] }) {
   return (
     <div style={{ border: "1px solid #E6E6E6", borderRadius: 12, overflow: "hidden" }}>
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 0.8fr 1fr 1fr 0.8fr 1fr",
+          gridTemplateColumns: "1fr 0.8fr 1.2fr 1fr 1fr 1fr",
           padding: "10px 12px",
           background: "#F6F7F8",
           fontWeight: 600,
@@ -25,7 +26,7 @@ export default function ScanHistoryTable({ events }: { events: Record<string, an
         <div>{LABELS.fecha}</div>
         <div>{LABELS.hora}</div>
         <div>{LABELS.usuario}</div>
-        <div>{LABELS.dispositivo}</div>
+        <div>{LABELS.rol}</div>
         <div>{LABELS.accion}</div>
         <div>{LABELS.detalle}</div>
       </div>
@@ -33,15 +34,20 @@ export default function ScanHistoryTable({ events }: { events: Record<string, an
       {events.map((ev, idx) => {
         const iso = pick(ev, ["createdAt", "fecha", "timestamp"]);
         const { date, time } = formatDateTime(iso !== "—" ? iso : undefined);
-        const usuario = pick(ev, ["usuario", "user", "username", "scannedBy"]);
-        const dispositivo = pick(ev, ["deviceId", "dispositivo", "device"]);
+        const usuario = resolveUserDisplay(
+          pick(ev, ["userDisplay"], ""),
+          pick(ev, ["username"], ""),
+          undefined,
+          pick(ev, ["scannedBy"], "")
+        );
+        const rol = pick(ev, ["roleDisplay"], "—");
         const detalle = pick(ev, ["lote", "ubicacion", "location"]);
         return (
           <div
-            key={ev?.id ?? idx}
+            key={String(ev?.id ?? idx)}
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 0.8fr 1fr 1fr 0.8fr 1fr",
+              gridTemplateColumns: "1fr 0.8fr 1.2fr 1fr 1fr 1fr",
               padding: "10px 12px",
               borderTop: "1px solid #EFEFEF",
             }}
@@ -49,8 +55,8 @@ export default function ScanHistoryTable({ events }: { events: Record<string, an
             <div>{date}</div>
             <div>{time}</div>
             <div>{usuario !== "—" ? usuario : LABELS.noData}</div>
-            <div>{dispositivo !== "—" ? dispositivo : LABELS.noData}</div>
-            <div>Escaneo</div>
+            <div>{rol !== "—" ? rol : LABELS.noData}</div>
+            <div>{translateAuditAction("SCAN_QR")}</div>
             <div>{detalle !== "—" ? detalle : ""}</div>
           </div>
         );

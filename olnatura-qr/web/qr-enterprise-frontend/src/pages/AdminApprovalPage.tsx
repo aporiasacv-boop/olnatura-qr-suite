@@ -16,6 +16,14 @@ import type { AccessRequestItem } from "../api/types";
 import { useToasts } from "../components/ui/toasts";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
+import { resolveUserDisplay, translateRole } from "../utils/auditActionTranslator";
+
+const truncateCell: React.CSSProperties = {
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  maxWidth: 0,
+};
 
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "16px" },
@@ -28,7 +36,6 @@ const useStyles = makeStyles({
     marginBottom: "16px",
   },
   title: { fontSize: "20px", fontWeight: 600, color: brand.text, margin: 0 },
-  subtitle: { fontSize: "14px", color: brand.muted, marginTop: "4px" },
   muted: { color: brand.muted },
   actions: {
     display: "flex",
@@ -48,6 +55,30 @@ const useStyles = makeStyles({
     rowGap: "16px",
     ...shorthands.padding("24px"),
   },
+  table: {
+    width: "100%",
+    tableLayout: "fixed",
+    minWidth: "640px",
+  },
+  userCell: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+    minWidth: 0,
+  },
+  userPrimary: {
+    fontWeight: 600,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  userSecondary: {
+    fontSize: "12px",
+    color: brand.muted,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
 });
 
 function formatRefreshTime(d: Date | null): string {
@@ -57,6 +88,15 @@ function formatRefreshTime(d: Date | null): string {
     minute: "2-digit",
     second: "2-digit",
   });
+}
+
+function requestUserLabel(r: AccessRequestItem): string {
+  return resolveUserDisplay(
+    undefined,
+    r.username,
+    r.email,
+    undefined
+  );
 }
 
 export default function AdminApprovalPage() {
@@ -177,28 +217,42 @@ export default function AdminApprovalPage() {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <Table aria-label="Solicitudes de acceso">
+            <Table aria-label="Solicitudes de acceso" className={s.table}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell>ID</TableHeaderCell>
-                  <TableHeaderCell>Usuario</TableHeaderCell>
-                  <TableHeaderCell>Correo</TableHeaderCell>
-                  <TableHeaderCell>Rol</TableHeaderCell>
-                  <TableHeaderCell>Creado</TableHeaderCell>
-                  <TableHeaderCell>Acciones</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "28%" }}>Usuario</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "28%" }}>Correo</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>Rol</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>Creado</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {pending.map((r) => {
                   const rowBusy = actionId === String(r.id);
+                  const displayName = requestUserLabel(r);
+                  const showUsernameHint =
+                    !!r.username?.trim() &&
+                    displayName !== "—" &&
+                    displayName !== r.username.trim();
                   return (
                     <TableRow key={String(r.id)} className="table-hover-row">
-                      <TableCell>{String(r.id)}</TableCell>
-                      <TableCell>{r.username}</TableCell>
-                      <TableCell>{r.email}</TableCell>
-                      <TableCell>{r.role}</TableCell>
-                      <TableCell>
+                      <TableCell title={r.username || displayName}>
+                        <div className={s.userCell}>
+                          <span className={s.userPrimary}>{displayName}</span>
+                          {showUsernameHint ? (
+                            <span className={s.userSecondary}>{r.username}</span>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell style={truncateCell} title={r.email}>
+                        {r.email}
+                      </TableCell>
+                      <TableCell style={truncateCell} title={translateRole(r.role)}>
+                        {translateRole(r.role)}
+                      </TableCell>
+                      <TableCell style={truncateCell}>
                         {r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}
                       </TableCell>
                       <TableCell>

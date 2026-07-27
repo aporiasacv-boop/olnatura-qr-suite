@@ -26,7 +26,10 @@ public class QrDto {
             String pendingMessage,
             String tipoMaterialDisplay,
             ApprovalLeg calidad,
-            ApprovalLeg inspeccion
+            ApprovalLeg inspeccion,
+            boolean canCorrectLabel,
+            boolean canCorrectStatus,
+            List<String> allowedStatusCorrections
     ) {}
 
     public record Label(

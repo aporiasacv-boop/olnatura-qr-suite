@@ -1,8 +1,13 @@
 
+import { translateAuditAction, translateRole } from "./auditActionTranslator";
 
 export const LABELS = {
   lookup: "Consulta por lote",
   scanHistory: "Historial de escaneos",
+  comments: "Comentarios",
+  commentsEmpty: "Sin comentarios en este lote",
+  commentsPlaceholder: "Escribe un comentario operativo…",
+  commentsAdd: "Agregar comentario",
   auditLog: "Historial de auditoría",
   metrics: "Métricas operativas",
   label: "Etiqueta",
@@ -10,9 +15,9 @@ export const LABELS = {
   dynamicStatus: "Estado",
   dynamicState: "Estado dinámico",
   statusDynamics: "Estado de Dynamics",
-  qualityOrderStatus: "QualityOrderStatus",
-  passedBatchDispositionCode: "PassedBatchDispositionCode",
-  batchDispositionCode: "BatchDispositionCode",
+  qualityOrderStatus: "Estado de orden de calidad",
+  passedBatchDispositionCode: "Código de disposición (aprobado)",
+  batchDispositionCode: "Código de disposición de lote",
   fuente: "Fuente de datos",
   envase: "Envase",
   cantidad: "Inventario disponible",
@@ -31,7 +36,7 @@ export const LABELS = {
   fecha: "Fecha",
   hora: "Hora",
   usuario: "Usuario",
-  dispositivo: "Dispositivo",
+  rol: "Rol",
   accion: "Acción",
   detalle: "Detalle",
 } as const;
@@ -47,26 +52,11 @@ export function fuenteDisplay(fuente: string | null | undefined): string {
 
 
 export function actionTypeDisplay(actionType: string | null | undefined): string {
-  if (!actionType) return LABELS.noData;
-  const v = actionType.trim().toUpperCase();
-  const map: Record<string, string> = {
-    CHANGE_STATUS: "Cambio de estado",
-    SCAN: "Escaneo",
-    PRINT_LABEL: "Impresión etiqueta",
-    GENERATE_LABEL: "Generar etiqueta",
-    EXPORT_AUDIT_PDF: "Exportación de historial PDF",
-    EXPORT_AUDIT_CSV: "Exportación de historial CSV",
-    EXPORT_EXECUTIVE_DASHBOARD: "Exportación Power BI",
-    APPROVE_USER: "Aprobación de usuario",
-    REJECT_USER: "Rechazo de usuario",
-    ACCESS_REQUEST: "Solicitud de acceso",
-    DOWNLOAD_LABEL: "Descarga de etiqueta",
-    APPROVE_MATERIAL: "Aprobación de material",
-    REJECT_MATERIAL: "Rechazo de material",
-    UPDATE_USER: "Actualización de usuario",
-    CHANGE_LOT_ADMIN_STATUS: "Cambio de estado administrativo",
-  };
-  return map[v] ?? actionType;
+  return translateAuditAction(actionType);
+}
+
+export function roleDisplay(role: string | null | undefined): string {
+  return translateRole(role);
 }
 
 const METADATA_KEY_LABELS: Record<string, string> = {
@@ -101,6 +91,9 @@ const METADATA_KEY_LABELS: Record<string, string> = {
   from: "Desde",
   to: "Hasta",
   deviceId: "Dispositivo",
+  changes: "Campos modificados",
+  commentId: "ID de comentario",
+  preview: "Vista previa",
 };
 
 export function metadataKeyToLabel(key: string): string {
@@ -116,11 +109,7 @@ function formatMetadataValue(key: string, value: unknown): string {
   if (key === "exportType" && v === "PDF") return "PDF";
   if (key === "exportType" && v === "EXECUTIVE_DASHBOARD_XLSX") return "Excel Power BI";
   if (key === "roleRequested" || key === "rol" || key === "approvalRole") {
-    if (v === "ALMACEN") return "Almacén";
-    if (v === "INSPECCION") return "Inspección";
-    if (v === "CALIDAD") return "Calidad";
-    if (v === "ADMIN") return "Administrador";
-    if (v === "PRODUCCION") return "Producción";
+    return translateRole(v);
   }
   if (key === "calidadApproved" || key === "inspeccionApproved") {
     if (v === "TRUE") return "Sí";
@@ -147,17 +136,27 @@ function parseMetadata(raw: unknown): Record<string, unknown> | null {
 
 export type AuditDetailEntry = { label: string; value: string };
 export function formatAuditDetail(
-  metadata: Record<string, unknown> | string | null | undefined,
-  deviceId?: string | null
+  metadata: Record<string, unknown> | string | null | undefined
 ): AuditDetailEntry[] {
   const meta = parseMetadata(metadata);
   const entries: AuditDetailEntry[] = [];
-  if (deviceId && String(deviceId).trim()) {
-    entries.push({ label: "Dispositivo", value: String(deviceId).trim() });
-  }
   if (!meta || Object.keys(meta).length === 0) return entries;
   for (const [k, v] of Object.entries(meta)) {
+    if (k === "deviceId") continue;
     if (v == null || (typeof v === "string" && !v.trim())) continue;
+    if (k === "changes" && Array.isArray(v)) {
+      const lines = v
+        .map((row) => {
+          if (!row || typeof row !== "object") return "";
+          const r = row as Record<string, unknown>;
+          const field = String(r.fieldLabel ?? r.field ?? "Campo");
+          return `${field}: ${String(r.from ?? "—")} → ${String(r.to ?? "—")}`;
+        })
+        .filter(Boolean)
+        .join(" | ");
+      if (lines) entries.push({ label: "Campos modificados", value: lines });
+      continue;
+    }
     const label = metadataKeyToLabel(k);
     const value = formatMetadataValue(k, v);
     entries.push({ label, value });

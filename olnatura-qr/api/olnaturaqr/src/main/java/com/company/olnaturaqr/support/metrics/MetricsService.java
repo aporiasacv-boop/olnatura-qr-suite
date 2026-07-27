@@ -1,9 +1,12 @@
 package com.company.olnaturaqr.support.metrics;
 
 import com.company.olnaturaqr.domain.audit.AuditEvent;
+import com.company.olnaturaqr.domain.user.User;
 import com.company.olnaturaqr.repository.AuditEventRepository;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.repository.ScanEventRepository;
+import com.company.olnaturaqr.repository.UserRepository;
+import com.company.olnaturaqr.api.AuditEventView;
 import com.company.olnaturaqr.support.workflow.AdminLotStatus;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class MetricsService {
@@ -26,15 +33,18 @@ public class MetricsService {
     private final QrLabelRepository qrLabelRepository;
     private final ScanEventRepository scanEventRepository;
     private final AuditEventRepository auditEventRepository;
+    private final UserRepository userRepository;
 
     public MetricsService(
             QrLabelRepository qrLabelRepository,
             ScanEventRepository scanEventRepository,
-            AuditEventRepository auditEventRepository
+            AuditEventRepository auditEventRepository,
+            UserRepository userRepository
     ) {
         this.qrLabelRepository = qrLabelRepository;
         this.scanEventRepository = scanEventRepository;
         this.auditEventRepository = auditEventRepository;
+        this.userRepository = userRepository;
     }
 
     public OperationalMetrics snapshot(int rangeDays) {
@@ -68,11 +78,19 @@ public class MetricsService {
             ));
         }
 
-        List<RecentActivityItem> recent = auditEventRepository
+        List<AuditEvent> recentEvents = auditEventRepository
                 .findAllByOrderByCreatedAtDesc(PageRequest.of(0, RECENT_LIMIT))
-                .getContent()
-                .stream()
-                .map(this::toRecent)
+                .getContent();
+        Set<UUID> actorIds = recentEvents.stream()
+                .map(AuditEvent::getActorId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<UUID, User> actorsById = actorIds.isEmpty()
+                ? Map.of()
+                : userRepository.findAllById(actorIds).stream()
+                        .collect(Collectors.toMap(User::getId, u -> u));
+        List<RecentActivityItem> recent = recentEvents.stream()
+                .map(e -> toRecent(e, actorsById.get(e.getActorId())))
                 .toList();
 
         return new OperationalMetrics(
@@ -112,16 +130,17 @@ public class MetricsService {
         }
     }
 
-    private RecentActivityItem toRecent(AuditEvent e) {
+    private RecentActivityItem toRecent(AuditEvent e, User actor) {
+        AuditEventView view = AuditEventView.from(e, actor);
         return new RecentActivityItem(
                 e.getId() != null ? e.getId().toString() : null,
                 e.getCreatedAt() != null ? e.getCreatedAt().toString() : null,
                 e.getActionType(),
-                e.getActorEmail(),
-                e.getActorRol(),
+                view.actionTypeDisplay(),
+                view.actorDisplay(),
+                view.actorRoleDisplay(),
                 e.getLote(),
-                e.getMetadata(),
-                e.getDeviceId()
+                e.getMetadata()
         );
     }
 
@@ -175,10 +194,10 @@ public class MetricsService {
             String id,
             String createdAt,
             String actionType,
-            String actorEmail,
-            String actorRol,
+            String actionTypeDisplay,
+            String actorDisplay,
+            String actorRoleDisplay,
             String lote,
-            Map<String, Object> metadata,
-            String deviceId
+            Map<String, Object> metadata
     ) {}
 }

@@ -17,7 +17,9 @@ import com.olnatura.qr.core.session.SessionManager
 import com.olnatura.qr.data.device.DeviceIdProvider
 import com.olnatura.qr.data.network.ApiClient
 import com.olnatura.qr.data.network.PersistentCookieJar
+import com.olnatura.qr.data.repo.AdminLotRepository
 import com.olnatura.qr.data.repo.AuthRepository
+import com.olnatura.qr.data.repo.CommentRepository
 import com.olnatura.qr.data.repo.QrRepository
 import com.olnatura.qr.data.repo.ScanRepository
 import com.olnatura.qr.ui.navigation.AppNavGraph
@@ -49,6 +51,8 @@ class MainActivity : ComponentActivity() {
         val qrRepo = QrRepository(api)
         val deviceIdProvider = DeviceIdProvider(applicationContext)
         val scanRepo = ScanRepository(api, deviceIdProvider)
+        val commentRepo = CommentRepository(api)
+        val adminLotRepo = AdminLotRepository(api)
         val loginVm = LoginViewModel(authRepo)
         val usedEmailStore = com.olnatura.qr.data.email.UsedEmailSuggestionsStore(applicationContext)
         val requestAccessVm = RequestAccessViewModel(authRepo, usedEmailStore)
@@ -69,7 +73,7 @@ class MainActivity : ComponentActivity() {
                         loginVm = loginVm,
                         requestAccessVm = requestAccessVm,
                         scannerVm = scannerVm,
-                        resultVmFactory = { ResultViewModel(authRepo, qrRepo, scanRepo) },
+                        resultVmFactory = { ResultViewModel(authRepo, qrRepo, scanRepo, commentRepo, adminLotRepo) },
                         reportVm = reportVm,
                         onShare = { payload ->
                             sharePayload = payload

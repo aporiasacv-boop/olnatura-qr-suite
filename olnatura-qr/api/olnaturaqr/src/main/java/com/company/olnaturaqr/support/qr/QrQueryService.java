@@ -6,6 +6,7 @@ import com.company.olnaturaqr.infra.dynamics.DynamicsLookupDto;
 import com.company.olnaturaqr.infra.dynamics.DynamicsLookupService;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
+import com.company.olnaturaqr.support.workflow.AdminStatusCorrectionService;
 import com.company.olnaturaqr.support.workflow.ApprovalService;
 import com.company.olnaturaqr.support.workflow.LotOperationalGate;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
@@ -111,7 +112,7 @@ public class QrQueryService {
                 : Collections.emptyList();
 
         ApprovalService.ApprovalView av = approvalService.view(label, principal);
-        QrDto.Permissions perms = buildPermissions(principal, av);
+        QrDto.Permissions perms = buildPermissions(principal, av, platformStatus);
 
         return new QrDto.Response(dtoLabel, dyn, transitions, perms);
     }
@@ -154,31 +155,38 @@ public class QrQueryService {
         return value == null || value.isBlank() ? "—" : value;
     }
 
-    private QrDto.Permissions buildPermissions(AuthPrincipal principal, ApprovalService.ApprovalView av) {
+    private QrDto.Permissions buildPermissions(
+            AuthPrincipal principal,
+            ApprovalService.ApprovalView av,
+            String platformStatus
+    ) {
         QrDto.ApprovalLeg calidad = toLeg(av != null ? av.calidad() : null);
         QrDto.ApprovalLeg inspeccion = toLeg(av != null ? av.inspeccion() : null);
+        List<String> adminStatusTargets = AdminStatusCorrectionService.allowedTargets(platformStatus);
         if (principal == null || principal.roles() == null) {
             return new QrDto.Permissions(
                     false, false, false, false, false, false, false,
                     false, false, null, av != null ? av.tipoMaterialDisplay() : null,
-                    calidad, inspeccion
+                    calidad, inspeccion, false, false, Collections.emptyList()
             );
         }
         var roles = principal.roles();
-        boolean canCreateLabel = rolesContains(roles, "ADMIN")
+        boolean isAdmin = rolesContains(roles, "ADMIN");
+        boolean canCreateLabel = isAdmin
                 || rolesContains(roles, "ALMACEN")
                 || rolesContains(roles, "PRODUCCION")
                 || rolesContains(roles, "CALIDAD")
                 || rolesContains(roles, "INSPECCION");
         // Registrar etiqueta (POST) sigue restringido a ADMIN/ALMACEN en el controller.
-        boolean canRegisterScan = rolesContains(roles, "ADMIN")
+        boolean canRegisterScan = isAdmin
                 || rolesContains(roles, "ALMACEN")
                 || rolesContains(roles, "PRODUCCION")
                 || rolesContains(roles, "CALIDAD")
                 || rolesContains(roles, "INSPECCION");
-        boolean canDownloadAuditPdf = rolesContains(roles, "ADMIN")
+        boolean canDownloadAuditPdf = isAdmin
                 || rolesContains(roles, "CALIDAD")
                 || rolesContains(roles, "INSPECCION");
+        boolean canCorrectStatus = isAdmin && !adminStatusTargets.isEmpty();
 
         return new QrDto.Permissions(
                 av.canChangeStatus(),
@@ -193,7 +201,10 @@ public class QrQueryService {
                 av.pendingMessage(),
                 av.tipoMaterialDisplay(),
                 calidad,
-                inspeccion
+                inspeccion,
+                isAdmin,
+                canCorrectStatus,
+                canCorrectStatus ? adminStatusTargets : Collections.emptyList()
         );
     }
 

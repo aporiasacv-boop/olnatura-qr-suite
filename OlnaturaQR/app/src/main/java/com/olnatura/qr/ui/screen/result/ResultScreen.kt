@@ -2,16 +2,23 @@ package com.olnatura.qr.ui.screen.result
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.olnatura.qr.data.model.LoteCommentResponse
 import com.olnatura.qr.ui.components.LabelValueRow
 import com.olnatura.qr.ui.components.OlnTopBar
 import com.olnatura.qr.ui.components.PillButton
@@ -23,6 +30,8 @@ import com.olnatura.qr.ui.theme.OlnCard
 import com.olnatura.qr.ui.theme.OlnCream
 import com.olnatura.qr.ui.theme.OlnGreen
 import java.text.NumberFormat
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -35,6 +44,8 @@ fun ResultScreen(
     onBack: (() -> Unit)? = null
 ) {
     val state by vm.state.collectAsState()
+    var confirmOpen by remember { mutableStateOf(false) }
+    var statusConfirmOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(lote) {
         vm.load(lote)
@@ -81,6 +92,30 @@ fun ResultScreen(
                                 lote = lote,
                                 qr = state.qr!!,
                                 todayCount = state.todayCount,
+                                canCorrect = state.canCorrect,
+                                editing = state.editing,
+                                editForm = state.editForm,
+                                editBusy = state.editBusy,
+                                editError = state.editError,
+                                statusTargets = state.statusTargets,
+                                statusTarget = state.statusTarget,
+                                statusMotivo = state.statusMotivo,
+                                statusCorrectBusy = state.statusCorrectBusy,
+                                statusCorrectError = state.statusCorrectError,
+                                commentsAllowed = state.commentsAllowed,
+                                comments = state.comments,
+                                commentDraft = state.commentDraft,
+                                commentBusy = state.commentBusy,
+                                commentError = state.commentError,
+                                onStartEdit = vm::startEdit,
+                                onCancelEdit = vm::cancelEdit,
+                                onEditForm = vm::onEditForm,
+                                onAskConfirm = { confirmOpen = true },
+                                onStatusTarget = vm::onStatusTarget,
+                                onStatusMotivo = vm::onStatusMotivo,
+                                onAskStatusConfirm = { statusConfirmOpen = true },
+                                onCommentDraft = vm::onCommentDraft,
+                                onSubmitComment = vm::submitComment,
                                 onReport = onReport,
                                 onShare = onShare
                             )
@@ -90,6 +125,59 @@ fun ResultScreen(
             }
             }
         }
+    }
+
+    if (confirmOpen) {
+        AlertDialog(
+            onDismissRequest = { if (!state.editBusy) confirmOpen = false },
+            title = { Text("Confirmar modificación") },
+            text = {
+                Text("Se aplicará la corrección administrativa. El motivo y los valores anteriores/nuevos quedarán en auditoría.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmOpen = false
+                        vm.submitCorrection()
+                    },
+                    enabled = !state.editBusy
+                ) { Text(if (state.editBusy) "Guardando…" else "Confirmar") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { confirmOpen = false },
+                    enabled = !state.editBusy
+                ) { Text("Cancelar") }
+            }
+        )
+    }
+
+    if (statusConfirmOpen) {
+        AlertDialog(
+            onDismissRequest = { if (!state.statusCorrectBusy) statusConfirmOpen = false },
+            title = { Text("Confirmar corrección administrativa") },
+            text = {
+                Text(
+                    "Esto NO es una aprobación. Se corregirá el estado a ${state.statusTarget}. " +
+                        "No altera historial de aprobaciones ni comentarios."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        statusConfirmOpen = false
+                        vm.submitStatusCorrection()
+                    },
+                    enabled = !state.statusCorrectBusy
+                ) { Text(if (state.statusCorrectBusy) "Guardando…" else "Confirmar corrección") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { statusConfirmOpen = false },
+                    enabled = !state.statusCorrectBusy
+                ) { Text("Cancelar") }
+            }
+        )
     }
 }
 
@@ -149,12 +237,35 @@ private fun SuccessContent(
     lote: String,
     qr: com.olnatura.qr.data.model.QrResponse,
     todayCount: Int,
+    canCorrect: Boolean,
+    editing: Boolean,
+    editForm: AdminEditForm,
+    editBusy: Boolean,
+    editError: String?,
+    statusTargets: List<String>,
+    statusTarget: String,
+    statusMotivo: String,
+    statusCorrectBusy: Boolean,
+    statusCorrectError: String?,
+    commentsAllowed: Boolean,
+    comments: List<LoteCommentResponse>,
+    commentDraft: String,
+    commentBusy: Boolean,
+    commentError: String?,
+    onStartEdit: () -> Unit,
+    onCancelEdit: () -> Unit,
+    onEditForm: ((AdminEditForm) -> AdminEditForm) -> Unit,
+    onAskConfirm: () -> Unit,
+    onStatusTarget: (String) -> Unit,
+    onStatusMotivo: (String) -> Unit,
+    onAskStatusConfirm: () -> Unit,
+    onCommentDraft: (String) -> Unit,
+    onSubmitComment: () -> Unit,
     onReport: (String) -> Unit,
     onShare: (SharePayload) -> Unit
 ) {
     val label = qr.label
     val dynamic = qr.dynamic
-    // Platform QR status only — never QualityOrderStatus from Dynamics.
     val status = dynamic?.status ?: "DESCONOCIDO"
     val (bgColor, textColor) = statusColors(status)
 
@@ -163,7 +274,6 @@ private fun SuccessContent(
     fun dateDdMmYyyy(v: String?): String {
         val raw = v?.trim().orEmpty()
         if (raw.isEmpty()) return "—"
-        // yyyy-MM-dd o yyyy-MM-ddTHH:mm:ssZ → dd/MM/yyyy
         if (raw.length >= 10 && raw[4] == '-' && raw[7] == '-') {
             val y = raw.substring(0, 4)
             val m = raw.substring(5, 7)
@@ -173,7 +283,6 @@ private fun SuccessContent(
         return raw
     }
 
-    val envaseText = "${int(label?.envaseNum)} / ${int(label?.envaseTotal)}"
     val numberFmt = NumberFormat.getNumberInstance(Locale.US)
     val inventoryUnit = dynamic?.unidadInventario?.takeIf { it.isNotBlank() }
         ?: dynamic?.uom?.takeIf { it.isNotBlank() }
@@ -209,21 +318,57 @@ private fun SuccessContent(
         colors = CardDefaults.cardColors(containerColor = OlnCard),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(Modifier.padding(18.dp)) {
-            LabelValueRow("Nombre", payload.nombre)
-            LabelValueRow("Lote", payload.lote)
-            LabelValueRow("Código", payload.codigo)
-            LabelValueRow("Escaneado hoy", payload.escaneadoHoy)
-            LabelValueRow("Ubicación", payload.ubicacion)
-            LabelValueRow("Almacén", payload.almacen)
-            LabelValueRow(
-                label = "Inventario disponible",
-                value = cantidadText,
-                caption = if (cantidadText != "—") "Actualizado al momento del escaneo" else null
-            )
-            LabelValueRow("Estado Dynamics", payload.statusDynamics)
-            LabelValueRow("Fecha de entrada", payload.fechaEntrada)
-            LabelValueRow("Fecha de caducidad", payload.caducidad, showDivider = false)
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (canCorrect) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (!editing) {
+                        PillButton(
+                            text = "Editar (Administrador)",
+                            onClick = onStartEdit,
+                            containerColor = OlnGreen,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        PillButton(
+                            text = "Cancelar",
+                            onClick = onCancelEdit,
+                            containerColor = OlnGreen,
+                            modifier = Modifier.weight(1f),
+                            enabled = !editBusy
+                        )
+                        PillButton(
+                            text = "Guardar corrección",
+                            onClick = onAskConfirm,
+                            containerColor = OlnGreen,
+                            modifier = Modifier.weight(1f),
+                            enabled = !editBusy && editForm.motivo.isNotBlank()
+                        )
+                    }
+                }
+            }
+
+            if (editing) {
+                AdminEditFields(editForm = editForm, editBusy = editBusy, onEditForm = onEditForm)
+                if (editError != null) {
+                    Text(editError, color = androidx.compose.ui.graphics.Color(0xFFB00020), fontSize = 13.sp)
+                }
+            } else {
+                LabelValueRow("Nombre", payload.nombre)
+                LabelValueRow("Lote", payload.lote)
+                LabelValueRow("Código", payload.codigo)
+                LabelValueRow("Escaneado hoy", payload.escaneadoHoy)
+                LabelValueRow("Ubicación", payload.ubicacion)
+                LabelValueRow("Almacén", payload.almacen)
+                LabelValueRow(
+                    label = "Inventario disponible",
+                    value = cantidadText,
+                    caption = if (cantidadText != "—") "Actualizado al momento del escaneo" else null
+                )
+                LabelValueRow("Cantidad por envase", str(label?.cantidadPorEnvase))
+                LabelValueRow("Estado Dynamics", payload.statusDynamics)
+                LabelValueRow("Fecha de entrada", payload.fechaEntrada)
+                LabelValueRow("Fecha de caducidad", payload.caducidad, showDivider = false)
+            }
         }
     }
 
@@ -234,6 +379,21 @@ private fun SuccessContent(
         textColor = textColor,
         modifier = Modifier.fillMaxWidth()
     )
+
+    if (canCorrect && statusTargets.isNotEmpty()) {
+        Spacer(Modifier.height(16.dp))
+        AdminStatusCorrectionCard(
+            currentStatus = status,
+            statusTargets = statusTargets,
+            statusTarget = statusTarget,
+            statusMotivo = statusMotivo,
+            statusCorrectBusy = statusCorrectBusy,
+            statusCorrectError = statusCorrectError,
+            onStatusTarget = onStatusTarget,
+            onStatusMotivo = onStatusMotivo,
+            onAskStatusConfirm = onAskStatusConfirm
+        )
+    }
 
     Spacer(Modifier.height(18.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -249,5 +409,218 @@ private fun SuccessContent(
             containerColor = OlnGreen,
             modifier = Modifier.weight(1f)
         )
+    }
+
+    if (commentsAllowed) {
+        Spacer(Modifier.height(22.dp))
+        CommentsSection(
+            comments = comments,
+            commentDraft = commentDraft,
+            commentBusy = commentBusy,
+            commentError = commentError,
+            onCommentDraft = onCommentDraft,
+            onSubmitComment = onSubmitComment
+        )
+    }
+}
+
+@Composable
+private fun AdminStatusCorrectionCard(
+    currentStatus: String,
+    statusTargets: List<String>,
+    statusTarget: String,
+    statusMotivo: String,
+    statusCorrectBusy: Boolean,
+    statusCorrectError: String?,
+    onStatusTarget: (String) -> Unit,
+    onStatusMotivo: (String) -> Unit,
+    onAskStatusConfirm: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = OlnCard),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("Corrección Administrativa", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            Text(
+                "Corrección excepcional del estado. No es una aprobación. No altera historial ni comentarios.",
+                fontSize = 13.sp
+            )
+            Text("Estado actual: $currentStatus", fontWeight = FontWeight.Medium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                statusTargets.forEach { t ->
+                    PillButton(
+                        text = "→ $t",
+                        onClick = { onStatusTarget(t) },
+                        containerColor = if (statusTarget == t) OlnGreen else OlnGreen.copy(alpha = 0.55f),
+                        modifier = Modifier.weight(1f),
+                        enabled = !statusCorrectBusy
+                    )
+                }
+            }
+            OutlinedTextField(
+                value = statusMotivo,
+                onValueChange = onStatusMotivo,
+                label = { Text("Motivo *") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                maxLines = 5,
+                enabled = !statusCorrectBusy,
+                shape = RoundedCornerShape(12.dp)
+            )
+            if (statusCorrectError != null) {
+                Text(statusCorrectError, color = androidx.compose.ui.graphics.Color(0xFFB00020), fontSize = 13.sp)
+            }
+            PillButton(
+                text = if (statusCorrectBusy) "Guardando…" else "Aplicar corrección de estado",
+                onClick = onAskStatusConfirm,
+                containerColor = OlnGreen,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !statusCorrectBusy && statusTarget.isNotBlank() && statusMotivo.isNotBlank()
+            )
+        }
+    }
+}
+
+@Composable
+private fun AdminEditFields(
+    editForm: AdminEditForm,
+    editBusy: Boolean,
+    onEditForm: ((AdminEditForm) -> AdminEditForm) -> Unit
+) {
+    AdminEditField("Tipo material", editForm.tipoMaterial, editBusy) { v -> onEditForm { it.copy(tipoMaterial = v) } }
+    AdminEditField("Nombre", editForm.nombre, editBusy) { v -> onEditForm { it.copy(nombre = v) } }
+    AdminEditField("Código", editForm.codigo, editBusy) { v -> onEditForm { it.copy(codigo = v) } }
+    AdminEditField("Fecha entrada (dd/MM/yyyy)", editForm.fechaEntrada, editBusy) { v -> onEditForm { it.copy(fechaEntrada = v) } }
+    AdminEditField("Caducidad", editForm.caducidad, editBusy) { v -> onEditForm { it.copy(caducidad = v) } }
+    AdminEditField("Reanálisis", editForm.reanalisis, editBusy) { v -> onEditForm { it.copy(reanalisis = v) } }
+    AdminEditField("Envase núm.", editForm.envaseNum, editBusy) { v -> onEditForm { it.copy(envaseNum = v) } }
+    AdminEditField("Envases total", editForm.envaseTotal, editBusy) { v -> onEditForm { it.copy(envaseTotal = v) } }
+    AdminEditField("Cantidad por envase", editForm.cantidadPorEnvase, editBusy) { v -> onEditForm { it.copy(cantidadPorEnvase = v) } }
+    OutlinedTextField(
+        value = editForm.motivo,
+        onValueChange = { v -> onEditForm { it.copy(motivo = v.take(500)) } },
+        label = { Text("Motivo de la modificación *") },
+        modifier = Modifier.fillMaxWidth(),
+        minLines = 3,
+        maxLines = 5,
+        enabled = !editBusy,
+        shape = RoundedCornerShape(12.dp)
+    )
+    Text("Inventario/unidad Dynamics son solo consulta.", fontSize = 12.sp)
+}
+
+@Composable
+private fun AdminEditField(
+    label: String,
+    value: String,
+    enabledBusy: Boolean,
+    onChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        enabled = !enabledBusy,
+        shape = RoundedCornerShape(12.dp)
+    )
+}
+
+@Composable
+private fun CommentsSection(
+    comments: List<LoteCommentResponse>,
+    commentDraft: String,
+    commentBusy: Boolean,
+    commentError: String?,
+    onCommentDraft: (String) -> Unit,
+    onSubmitComment: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = OlnCard),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Comentarios", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            Text(
+                "Bitácora operativa. No se editan ni eliminan. Máx. ${ResultViewModel.COMMENT_MAX} caracteres.",
+                fontSize = 13.sp
+            )
+
+            if (comments.isEmpty()) {
+                Text("Sin comentarios en este lote.", fontSize = 14.sp)
+            } else {
+                comments.forEach { c ->
+                    CommentItem(c)
+                }
+            }
+
+            OutlinedTextField(
+                value = commentDraft,
+                onValueChange = onCommentDraft,
+                label = { Text("Nuevo comentario") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                maxLines = 5,
+                shape = RoundedCornerShape(14.dp),
+                enabled = !commentBusy,
+                supportingText = { Text("${commentDraft.length}/${ResultViewModel.COMMENT_MAX}") }
+            )
+            if (commentError != null) {
+                Text(commentError, color = androidx.compose.ui.graphics.Color(0xFFB00020), fontSize = 13.sp)
+            }
+            PillButton(
+                text = if (commentBusy) "Guardando…" else "Agregar comentario",
+                onClick = onSubmitComment,
+                containerColor = OlnGreen,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !commentBusy && commentDraft.isNotBlank()
+            )
+        }
+    }
+}
+
+@Composable
+private fun CommentItem(c: LoteCommentResponse) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(formatCommentDateTime(c.createdAt), fontSize = 12.sp)
+        Text(roleDisplay(c.role), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        Text(c.displayName?.takeIf { it.isNotBlank() } ?: c.username ?: "—", fontWeight = FontWeight.SemiBold)
+        Text(
+            "\"${c.comment.orEmpty()}\"",
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+private fun roleDisplay(role: String?): String {
+    return when (role?.trim()?.uppercase(Locale.ROOT)) {
+        "INSPECCION" -> "INSPECCIÓN"
+        "CALIDAD" -> "CALIDAD"
+        "ALMACEN" -> "ALMACÉN"
+        "ADMIN" -> "ADMINISTRADOR"
+        else -> role?.uppercase(Locale.ROOT) ?: "—"
+    }
+}
+
+private fun formatCommentDateTime(raw: String?): String {
+    if (raw.isNullOrBlank()) return "—"
+    return try {
+        val odt = OffsetDateTime.parse(raw)
+        odt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale("es", "MX")))
+    } catch (_: Exception) {
+        raw.take(16).replace('T', ' ')
     }
 }

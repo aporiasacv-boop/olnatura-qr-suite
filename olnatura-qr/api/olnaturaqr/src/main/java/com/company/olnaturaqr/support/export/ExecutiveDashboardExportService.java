@@ -9,6 +9,9 @@ import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.repository.ScanEventRepository;
 import com.company.olnaturaqr.repository.UserRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
+import com.company.olnaturaqr.support.presentation.AuditActionTranslator;
+import com.company.olnaturaqr.support.presentation.RoleDisplayTranslator;
+import com.company.olnaturaqr.support.presentation.UserDisplayHelper;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -82,7 +85,7 @@ public class ExecutiveDashboardExportService {
 
             writeQrLabels(wb.createSheet("QR_Labels"), labels, styles);
             writeScanEvents(wb.createSheet("Scan_Events"), scans, usersById, labelsByLote, styles);
-            writeAuditEvents(wb.createSheet("Audit_Events"), audits, styles);
+            writeAuditEvents(wb.createSheet("Audit_Events"), audits, usersById, styles);
             writeUsers(wb.createSheet("Users"), users, styles);
             writeResumen(wb.createSheet("Resumen"), labels, scans, audits, users, styles);
             writeDataDictionary(wb.createSheet("DataDictionary"), styles);
@@ -172,10 +175,9 @@ public class ExecutiveDashboardExportService {
                 "Lote",
                 "Resultado",
                 "EstadoLoteActual",
-                "UsuarioId",
-                "UsuarioUsername",
-                "UsuarioEmail",
-                "DeviceId"
+                "Usuario",
+                "Rol",
+                "UsuarioEmail"
         };
         writeHeader(sheet, headers, styles.header);
         int r = 1;
@@ -193,25 +195,29 @@ public class ExecutiveDashboardExportService {
             writeString(row, c++,
                     label != null ? WorkflowStatus.normalize(label.getStatus()) : null,
                     styles.text);
-            writeString(row, c++, uuid(s.getScannedBy()), styles.text);
-            writeString(row, c++, u != null ? u.getUsername() : null, styles.text);
+            writeString(row, c++, UserDisplayHelper.displayFromUser(u), styles.text);
+            writeString(row, c++,
+                    u != null && u.getRole() != null ? RoleDisplayTranslator.translate(u.getRole().getName()) : null,
+                    styles.text);
             writeString(row, c++, u != null ? u.getEmail() : null, styles.text);
-            writeString(row, c++, s.getDeviceId(), styles.text);
         }
         autosize(sheet, headers.length);
     }
 
-    private void writeAuditEvents(Sheet sheet, List<AuditEvent> audits, Styles styles) {
+    private void writeAuditEvents(
+            Sheet sheet,
+            List<AuditEvent> audits,
+            Map<UUID, User> usersById,
+            Styles styles
+    ) {
         String[] headers = {
                 "Id",
                 "Fecha",
                 "Hora",
-                "ActorId",
-                "ActorEmail",
-                "ActorRol",
-                "ActionType",
+                "Usuario",
+                "Rol",
+                "Accion",
                 "Lote",
-                "DeviceId",
                 "MetadataJson"
         };
         writeHeader(sheet, headers, styles.header);
@@ -219,15 +225,14 @@ public class ExecutiveDashboardExportService {
         for (AuditEvent e : audits) {
             Row row = sheet.createRow(r++);
             int c = 0;
+            User actor = e.getActorId() != null ? usersById.get(e.getActorId()) : null;
             writeString(row, c++, uuid(e.getId()), styles.text);
             writeDate(row, c++, toLocalDate(e.getCreatedAt()), styles.date);
             writeTime(row, c++, toLocalTime(e.getCreatedAt()), styles.time);
-            writeString(row, c++, uuid(e.getActorId()), styles.text);
-            writeString(row, c++, e.getActorEmail(), styles.text);
-            writeString(row, c++, e.getActorRol(), styles.text);
-            writeString(row, c++, e.getActionType(), styles.text);
+            writeString(row, c++, UserDisplayHelper.displayFromUser(actor), styles.text);
+            writeString(row, c++, RoleDisplayTranslator.translate(e.getActorRol()), styles.text);
+            writeString(row, c++, AuditActionTranslator.translate(e.getActionType()), styles.text);
             writeString(row, c++, e.getLote(), styles.text);
-            writeString(row, c++, e.getDeviceId(), styles.text);
             writeString(row, c++, metadataJson(e.getMetadata()), styles.text);
         }
         autosize(sheet, headers.length);
@@ -252,7 +257,9 @@ public class ExecutiveDashboardExportService {
             writeString(row, c++, u.getUsername(), styles.text);
             writeString(row, c++, u.getEmail(), styles.text);
             writeBoolean(row, c++, u.isEnabled(), styles.text);
-            writeString(row, c++, u.getRole() != null ? u.getRole().getName() : null, styles.text);
+            writeString(row, c++,
+                    u.getRole() != null ? RoleDisplayTranslator.translate(u.getRole().getName()) : null,
+                    styles.text);
             writeDate(row, c++, toLocalDate(u.getCreatedAt()), styles.date);
             writeTime(row, c++, toLocalTime(u.getCreatedAt()), styles.time);
         }
@@ -353,20 +360,17 @@ public class ExecutiveDashboardExportService {
         dict.add(d("Scan_Events", "Lote", "Lote escaneado", "scan_events.lote", "Text"));
         dict.add(d("Scan_Events", "Resultado", "Constante SCAN_REGISTERED (único outcome persistido)", "derivado", "Text"));
         dict.add(d("Scan_Events", "EstadoLoteActual", "status actual del lote al exportar", "qr_labels.status", "Text"));
-        dict.add(d("Scan_Events", "UsuarioId", "Usuario que escaneó", "scan_events.scanned_by", "UUID/Text"));
-        dict.add(d("Scan_Events", "UsuarioUsername", "Username del escáner", "users.username", "Text"));
+        dict.add(d("Scan_Events", "Usuario", "Nombre legible del escáner", "users.username", "Text"));
+        dict.add(d("Scan_Events", "Rol", "Rol del escáner", "roles.name", "Text"));
         dict.add(d("Scan_Events", "UsuarioEmail", "Email del escáner", "users.email", "Text"));
-        dict.add(d("Scan_Events", "DeviceId", "Identificador de dispositivo", "scan_events.device_id", "Text"));
         // Audit
         dict.add(d("Audit_Events", "Id", "UUID evento auditoría", "audit_events.id", "UUID/Text"));
         dict.add(d("Audit_Events", "Fecha", "Fecha del evento", "audit_events.created_at", "Date"));
         dict.add(d("Audit_Events", "Hora", "Hora del evento", "audit_events.created_at", "Time"));
-        dict.add(d("Audit_Events", "ActorId", "Usuario actor", "audit_events.actor_id", "UUID/Text"));
-        dict.add(d("Audit_Events", "ActorEmail", "Email actor", "audit_events.actor_email", "Text"));
-        dict.add(d("Audit_Events", "ActorRol", "Rol actor", "audit_events.actor_rol", "Text"));
-        dict.add(d("Audit_Events", "ActionType", "Tipo de acción", "audit_events.action_type", "Text"));
+        dict.add(d("Audit_Events", "Usuario", "Nombre legible del actor", "users.username", "Text"));
+        dict.add(d("Audit_Events", "Rol", "Rol del actor (legible)", "audit_events.actor_rol", "Text"));
+        dict.add(d("Audit_Events", "Accion", "Acción traducida al español", "audit_events.action_type", "Text"));
         dict.add(d("Audit_Events", "Lote", "Lote relacionado", "audit_events.lote", "Text"));
-        dict.add(d("Audit_Events", "DeviceId", "Dispositivo", "audit_events.device_id", "Text"));
         dict.add(d("Audit_Events", "MetadataJson", "Metadata JSON", "audit_events.metadata", "Text"));
         // Users
         dict.add(d("Users", "Id", "UUID usuario", "users.id", "UUID/Text"));
