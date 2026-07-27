@@ -205,21 +205,10 @@ public class LabelController {
         String key = id == null ? "" : id.trim();
         QrLabel q = resolveLabel(key);
 
-        int envaseTotal = (total != null && total >= 1)
-                ? total
-                : Math.max(1, q.getEnvaseTotal());
-        // Por defecto imprimir el rango completo 1..total (todas las etiquetas del lote).
-        int printFrom = (from != null && from >= 1) ? from : 1;
-        int printTo = (to != null && to >= 1)
-                ? Math.min(to, envaseTotal)
-                : envaseTotal;
-
-        if (printFrom > printTo) {
-            throw new ResponseStatusException(BAD_REQUEST, "printFrom no puede ser mayor que printTo");
-        }
-        if (printFrom < 1 || printTo > envaseTotal) {
-            throw new ResponseStatusException(BAD_REQUEST, "Rango debe estar entre 1 y " + envaseTotal);
-        }
+        int[] bounds = resolveReprintBounds(q, total, from, to);
+        int envaseTotal = bounds[0];
+        int printFrom = bounds[1];
+        int printTo = bounds[2];
 
         // Una sola resolución de cantidad por solicitud (solo BD; sin Dynamics).
         String cantidadStr = resolveCantidadForZpl(q);
@@ -272,21 +261,10 @@ public class LabelController {
         String key = id == null ? "" : id.trim();
         QrLabel q = resolveLabel(key);
 
-        int envaseTotal = (total != null && total >= 1)
-                ? total
-                : Math.max(1, q.getEnvaseTotal());
-        // Por defecto imprimir el rango completo 1..total (todas las etiquetas del lote).
-        int printFrom = (from != null && from >= 1) ? from : 1;
-        int printTo = (to != null && to >= 1)
-                ? Math.min(to, envaseTotal)
-                : envaseTotal;
-
-        if (printFrom > printTo) {
-            throw new ResponseStatusException(BAD_REQUEST, "printFrom no puede ser mayor que printTo");
-        }
-        if (printFrom < 1 || printTo > envaseTotal) {
-            throw new ResponseStatusException(BAD_REQUEST, "Rango debe estar entre 1 y " + envaseTotal);
-        }
+        int[] bounds = resolveReprintBounds(q, total, from, to);
+        int envaseTotal = bounds[0];
+        int printFrom = bounds[1];
+        int printTo = bounds[2];
 
         // Una sola resolución de cantidad por solicitud (solo BD; sin Dynamics).
         String cantidadStr = resolveCantidadForZpl(q);
@@ -321,6 +299,42 @@ public class LabelController {
                 .headers(headers)
                 .contentType(new MediaType("text", "plain", ZPL_OUT_CHARSET))
                 .body(zplBytes);
+    }
+
+    /**
+     * Reimpresión: el total es siempre el registrado en BD.
+     * No se permite aumentar (ni alterar) envases; from/to deben estar en 1..total.
+     *
+     * @return int[]{envaseTotal, printFrom, printTo}
+     */
+    private int[] resolveReprintBounds(QrLabel q, Integer totalParam, Integer from, Integer to) {
+        int registeredTotal = Math.max(1, q.getEnvaseTotal());
+        if (totalParam != null && totalParam >= 1 && totalParam != registeredTotal) {
+            if (totalParam > registeredTotal) {
+                throw new ResponseStatusException(BAD_REQUEST,
+                        "No se puede aumentar el total de envases. Este lote tiene "
+                                + registeredTotal + " registrados.");
+            }
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "El total de envases debe coincidir con el registrado (" + registeredTotal + ").");
+        }
+
+        int printFrom = (from != null) ? from : 1;
+        int printTo = (to != null) ? to : registeredTotal;
+
+        if (printFrom < 1 || printTo < 1) {
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "El rango debe comenzar en 1. Este lote tiene " + registeredTotal + " envase(s).");
+        }
+        if (printFrom > printTo) {
+            throw new ResponseStatusException(BAD_REQUEST, "Desde no puede ser mayor que Hasta");
+        }
+        if (printFrom > registeredTotal || printTo > registeredTotal) {
+            throw new ResponseStatusException(BAD_REQUEST,
+                    "Rango inválido: solo existen etiquetas del 1 al " + registeredTotal
+                            + " para este lote.");
+        }
+        return new int[]{registeredTotal, printFrom, printTo};
     }
 
     /**

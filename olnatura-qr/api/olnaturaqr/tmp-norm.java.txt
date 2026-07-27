@@ -1,0 +1,4 @@
+import com.company.olnaturaqr.support.zpl.ZplTextNormalizer;
+System.out.println(ZplTextNormalizer.normalize("Caf? Ni?o ? prueba""));
+System.out.println(ZplTextNormalizer.normalize("Rean?lisis""));
+System.out.println(ZplTextNormalizer.normalize("????????????""));

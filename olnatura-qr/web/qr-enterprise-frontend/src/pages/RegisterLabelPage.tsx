@@ -139,6 +139,7 @@ export default function RegisterLabelPage() {
       const nombre = data.nombre?.trim() || "";
       const loteDyn = data.lote?.trim() || lote;
       const caducidadFmt = data.caducidad ? formatDateDDMMYYYY(data.caducidad) : "";
+      const fechaEntradaFmt = data.fechaEntrada ? formatDateDDMMYYYY(data.fechaEntrada) : "";
 
       const code = extractDynamicsSiteCode(data.almacen, loteDyn);
       const family = dynamicsSiteFamily(data.almacen, loteDyn);
@@ -154,6 +155,7 @@ export default function RegisterLabelPage() {
         codigo: !!codigo,
         nombre: !!nombre,
         lote: !!loteDyn,
+        fechaEntrada: !!fechaEntradaFmt,
         // Dynamics solo entrega BatchExpirationDate (fecha), sin indicar si es
         // caducidad o reanálisis → el tipo queda siempre elegible.
         fechaTipo: false,
@@ -174,6 +176,7 @@ export default function RegisterLabelPage() {
         codigo: codigo || s.codigo,
         nombre: nombre || s.nombre,
         lote: loteDyn || s.lote,
+        fechaEntrada: fechaEntradaFmt || s.fechaEntrada,
         fechaTipo: caducidadFmt ? "CADUCIDAD" : s.fechaTipo,
         fechaValor: caducidadFmt || s.fechaValor,
       }));
@@ -482,6 +485,9 @@ export default function RegisterLabelPage() {
                   </Text>
                 ) : null}
                 {dynamicsInfo.ubicacion ? <Text>Ubicación: {dynamicsInfo.ubicacion}</Text> : null}
+                {dynamicsInfo.fechaEntrada ? (
+                  <Text>Fecha de entrada: {formatDateDDMMYYYY(dynamicsInfo.fechaEntrada)}</Text>
+                ) : null}
               </div>
             ) : null}
           </div>

@@ -1,0 +1,14 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#QualityOrderHeaders(ItemBatchNumber,ItemNumber,QualityOrderStatus,PassedBatchDispositionCode,WarehouseId,WarehouseLocationId)",
+    "value":  [
+                  {
+                      "@odata.etag":  "W/\"JzEsNTYzNzc3Njg0Myc=\"",
+                      "ItemBatchNumber":  "260713-MEM0003662",
+                      "ItemNumber":  "400615440900",
+                      "QualityOrderStatus":  "Open",
+                      "PassedBatchDispositionCode":  "",
+                      "WarehouseId":  "MEM",
+                      "WarehouseLocationId":  "Disponible"
+                  }
+              ]
+}

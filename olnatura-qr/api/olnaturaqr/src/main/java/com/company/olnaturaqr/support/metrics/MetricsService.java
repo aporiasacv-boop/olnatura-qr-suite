@@ -80,8 +80,36 @@ public class MetricsService {
                 days,
                 new Summary(labelsToday, scansToday, activeLots, auditInRange),
                 dailySeries,
-                recent
+                recent,
+                resolveLastPowerBiExport()
         );
+    }
+
+    private LastPowerBiExport resolveLastPowerBiExport() {
+        AuditEvent e = auditEventRepository.findFirstByActionTypeOrderByCreatedAtDesc(
+                "EXPORT_EXECUTIVE_DASHBOARD");
+        if (e == null) {
+            return null;
+        }
+        Map<String, Object> md = e.getMetadata() != null ? e.getMetadata() : Map.of();
+        return new LastPowerBiExport(
+                e.getCreatedAt() != null ? e.getCreatedAt().toString() : null,
+                e.getActorEmail(),
+                asLong(md.get("labelsExported")),
+                asLong(md.get("scansExported")),
+                asLong(md.get("auditsExported")),
+                asLong(md.get("usersExported"))
+        );
+    }
+
+    private static Long asLong(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number n) return n.longValue();
+        try {
+            return Long.parseLong(value.toString());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private RecentActivityItem toRecent(AuditEvent e) {
@@ -121,7 +149,17 @@ public class MetricsService {
             int rangeDays,
             Summary summary,
             List<DailyPoint> dailySeries,
-            List<RecentActivityItem> recentActivity
+            List<RecentActivityItem> recentActivity,
+            LastPowerBiExport lastPowerBiExport
+    ) {}
+
+    public record LastPowerBiExport(
+            String exportedAt,
+            String actorEmail,
+            Long labelsExported,
+            Long scansExported,
+            Long auditsExported,
+            Long usersExported
     ) {}
 
     public record Summary(

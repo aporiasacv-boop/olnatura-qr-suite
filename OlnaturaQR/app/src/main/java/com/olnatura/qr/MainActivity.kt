@@ -50,7 +50,8 @@ class MainActivity : ComponentActivity() {
         val deviceIdProvider = DeviceIdProvider(applicationContext)
         val scanRepo = ScanRepository(api, deviceIdProvider)
         val loginVm = LoginViewModel(authRepo)
-        val requestAccessVm = RequestAccessViewModel(authRepo)
+        val usedEmailStore = com.olnatura.qr.data.email.UsedEmailSuggestionsStore(applicationContext)
+        val requestAccessVm = RequestAccessViewModel(authRepo, usedEmailStore)
         val scannerVm = ScannerViewModel()
         val reportVm = ReportProblemViewModel()
 
@@ -63,6 +64,8 @@ class MainActivity : ComponentActivity() {
 
                     AppNavGraph(
                         sessionManager = sessionManager,
+                        authRepo = authRepo,
+                        cookieJar = cookieJar,
                         loginVm = loginVm,
                         requestAccessVm = requestAccessVm,
                         scannerVm = scannerVm,

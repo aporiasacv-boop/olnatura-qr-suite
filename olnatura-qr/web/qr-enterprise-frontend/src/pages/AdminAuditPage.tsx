@@ -29,6 +29,7 @@ const ACTION_OPTIONS = [
   { value: "GENERATE_LABEL", label: "Generar etiqueta" },
   { value: "EXPORT_AUDIT_PDF", label: "Exportación PDF" },
   { value: "EXPORT_AUDIT_CSV", label: "Exportación CSV" },
+  { value: "EXPORT_EXECUTIVE_DASHBOARD", label: "Exportación Power BI" },
   { value: "APPROVE_USER", label: "Aprobación de usuario" },
   { value: "REJECT_USER", label: "Rechazo de usuario" },
   { value: "ACCESS_REQUEST", label: "Solicitud de acceso" },
@@ -316,7 +317,11 @@ export default function AdminAuditPage() {
                       </TableCell>
                       <TableCell>{e.lote ?? "-"}</TableCell>
                       <TableCell>
-                        <AuditDetailCell metadata={e.metadata} deviceId={e.deviceId} />
+                        <AuditDetailCell
+                          metadata={e.metadata}
+                          deviceId={e.deviceId}
+                          actionType={e.actionType}
+                        />
                       </TableCell>
                     </TableRow>
                   );

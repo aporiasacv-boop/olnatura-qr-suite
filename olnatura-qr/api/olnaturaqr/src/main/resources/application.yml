@@ -32,6 +32,10 @@ app:
     connect-timeout: ${APP_DYNAMICS_CONNECT_TIMEOUT:3s}
     read-timeout: ${APP_DYNAMICS_READ_TIMEOUT:10s}
 
+  diagnostics:
+    # Carpeta donde se guardan capturas JSON (ANTES/DESPUES). Override con APP_DIAGNOSTICS_DIR.
+    dir: ${APP_DIAGNOSTICS_DIR:diagnostics}
+
   auth:
     cookie:
       name: "qr_session"

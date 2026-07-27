@@ -31,6 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -56,7 +57,11 @@ import com.olnatura.qr.ui.theme.OlnaturaColors
 import java.util.concurrent.Executors
 
 @Composable
-fun ScannerScreen(vm: ScannerViewModel, onLoteDetected: (String) -> Unit) {
+fun ScannerScreen(
+    vm: ScannerViewModel,
+    onLoteDetected: (String) -> Unit,
+    onLogout: (() -> Unit)? = null
+) {
     val s by vm.state.collectAsState()
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -97,6 +102,11 @@ fun ScannerScreen(vm: ScannerViewModel, onLoteDetected: (String) -> Unit) {
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         Text("Escanea el código QR del producto", style = MaterialTheme.typography.titleLarge)
+                        if (onLogout != null) {
+                            TextButton(onClick = onLogout) {
+                                Text("Cerrar sesión")
+                            }
+                        }
                         if (s.error != null) {
                             AssistChip(
                                 onClick = { vm.clearError() },
@@ -123,7 +133,22 @@ fun ScannerScreen(vm: ScannerViewModel, onLoteDetected: (String) -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Text("Escanea el código QR del producto", style = MaterialTheme.typography.titleLarge)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Escanea el código QR del producto",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (onLogout != null) {
+                            TextButton(onClick = onLogout) {
+                                Text("Cerrar sesión")
+                            }
+                        }
+                    }
 
                     OlnaturaCard(modifier = Modifier.weight(1f).fillMaxWidth()) {
                         CameraPreviewPane(

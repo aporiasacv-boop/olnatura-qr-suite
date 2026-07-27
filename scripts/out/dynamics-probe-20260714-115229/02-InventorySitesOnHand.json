@@ -1,0 +1,11 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventorySitesOnHand(ItemNumber,ProductName,AvailableOnHandQuantity,InventorySiteId)",
+    "value":  [
+                  {
+                      "ItemNumber":  "400615440900",
+                      "ProductName":  "QG5 FOLLETO",
+                      "AvailableOnHandQuantity":  62738,
+                      "InventorySiteId":  "OLNATURA"
+                  }
+              ]
+}

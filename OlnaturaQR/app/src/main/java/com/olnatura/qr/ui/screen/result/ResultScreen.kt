@@ -106,7 +106,7 @@ private fun UnauthorizedContent(onGoToLogin: () -> Unit) {
         ) {
             Text("Pide autorización para ver el contenido")
             PillButton(
-                text = "Ir a inicio de sesión",
+                text = "Cerrar sesión",
                 onClick = onGoToLogin,
                 containerColor = OlnGreen,
                 modifier = Modifier.fillMaxWidth()
@@ -160,6 +160,18 @@ private fun SuccessContent(
 
     fun str(v: String?) = v?.takeIf { it.isNotBlank() } ?: "—"
     fun int(v: Int?) = v?.toString() ?: "—"
+    fun dateDdMmYyyy(v: String?): String {
+        val raw = v?.trim().orEmpty()
+        if (raw.isEmpty()) return "—"
+        // yyyy-MM-dd o yyyy-MM-ddTHH:mm:ssZ → dd/MM/yyyy
+        if (raw.length >= 10 && raw[4] == '-' && raw[7] == '-') {
+            val y = raw.substring(0, 4)
+            val m = raw.substring(5, 7)
+            val d = raw.substring(8, 10)
+            return "$d/$m/$y"
+        }
+        return raw
+    }
 
     val envaseText = "${int(label?.envaseNum)} / ${int(label?.envaseTotal)}"
     val numberFmt = NumberFormat.getNumberInstance(Locale.US)
@@ -178,6 +190,7 @@ private fun SuccessContent(
     }
 
     val loteValue = str(label?.lote).ifBlank { lote }
+    val fechaEntradaRaw = dynamic?.fechaEntrada?.takeIf { it.isNotBlank() } ?: label?.fechaEntrada
     val payload = SharePayload(
         lote = loteValue,
         status = status,
@@ -187,8 +200,8 @@ private fun SuccessContent(
         almacen = str(dynamic?.almacen),
         inventario = cantidadText,
         statusDynamics = str(dynamic?.statusDynamics),
-        fechaEntrada = str(label?.fechaEntrada),
-        caducidad = str(label?.caducidad),
+        fechaEntrada = dateDdMmYyyy(fechaEntradaRaw),
+        caducidad = dateDdMmYyyy(label?.caducidad),
         escaneadoHoy = "V: $todayCount"
     )
 

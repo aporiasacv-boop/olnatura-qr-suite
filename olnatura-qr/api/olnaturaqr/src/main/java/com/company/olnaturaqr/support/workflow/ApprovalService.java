@@ -94,7 +94,8 @@ public class ApprovalService {
         LotOperationalGate.requireActive(label);
         String status = WorkflowStatus.normalize(label.getStatus());
         if (!WorkflowStatus.CUARENTENA.equals(status)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El lote ya no está en cuarentena");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "El estado del lote es definitivo y no puede modificarse");
         }
 
         String tipo = MaterialType.normalize(label.getTipoMaterial());
@@ -180,7 +181,8 @@ public class ApprovalService {
         LotOperationalGate.requireActive(label);
         String status = WorkflowStatus.normalize(label.getStatus());
         if (!WorkflowStatus.CUARENTENA.equals(status)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El lote ya no está en cuarentena");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "El estado del lote es definitivo y no puede modificarse");
         }
 
         String tipo = MaterialType.normalize(label.getTipoMaterial());

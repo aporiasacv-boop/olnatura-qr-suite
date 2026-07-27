@@ -14,15 +14,16 @@ import androidx.compose.ui.unit.dp
 import com.olnatura.qr.ui.components.TabletContent
 import com.olnatura.qr.ui.theme.OlnaturaColors
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestAccessScreen(
     vm: RequestAccessViewModel,
     onBackToLogin: () -> Unit
 ) {
     val s by vm.state.collectAsState()
+    var emailMenuExpanded by remember { mutableStateOf(false) }
 
-    Surface(Modifier.fillMaxSize()) {
+    Surface(modifier = Modifier.fillMaxSize()) {
         TabletContent {
             Column(
                 modifier = Modifier
@@ -67,15 +68,54 @@ fun RequestAccessScreen(
                 shape = RoundedCornerShape(14.dp)
             )
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = s.email,
-                onValueChange = vm::setEmail,
-                label = { Text("Email") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp)
+
+            ExposedDropdownMenuBox(
+                expanded = emailMenuExpanded && s.emailSuggestions.isNotEmpty(),
+                onExpandedChange = { emailMenuExpanded = it },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = s.email,
+                    onValueChange = {
+                        vm.setEmail(it)
+                        emailMenuExpanded = true
+                    },
+                    label = { Text("Email") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    shape = RoundedCornerShape(14.dp),
+                    trailingIcon = {
+                        if (s.emailSuggestions.isNotEmpty()) {
+                            ExposedDropdownMenuDefaults.TrailingIcon(
+                                expanded = emailMenuExpanded && s.emailSuggestions.isNotEmpty()
+                            )
+                        }
+                    }
+                )
+                ExposedDropdownMenu(
+                    expanded = emailMenuExpanded && s.emailSuggestions.isNotEmpty(),
+                    onDismissRequest = { emailMenuExpanded = false }
+                ) {
+                    s.emailSuggestions.forEach { suggestion ->
+                        DropdownMenuItem(
+                            text = { Text(suggestion) },
+                            onClick = {
+                                vm.selectEmailSuggestion(suggestion)
+                                emailMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            Text(
+                "Puedes elegir una sugerencia o escribir otro correo @olnatura.com.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
             )
+
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = s.password,
@@ -89,9 +129,8 @@ fun RequestAccessScreen(
             Spacer(Modifier.height(12.dp))
             Text("Rol solicitado", style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(8.dp))
-            // Mismos roles que la web (credenciales compartidas con el backend)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = s.role == "ALMACEN",
                         onClick = { vm.setRole("ALMACEN") },
@@ -103,7 +142,7 @@ fun RequestAccessScreen(
                         label = { Text("PRODUCCIÓN") }
                     )
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = s.role == "CALIDAD",
                         onClick = { vm.setRole("CALIDAD") },

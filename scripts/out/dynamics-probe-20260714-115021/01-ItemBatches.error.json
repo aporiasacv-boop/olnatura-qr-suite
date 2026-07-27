@@ -1,0 +1,6 @@
+﻿{
+    "message":  "No se puede resolver el nombre remoto: \u0027olnatura-production.operations.dynamics.com\u0027",
+    "status":  null,
+    "body":  null,
+    "uri":  "https://olnatura-production.operations.dynamics.com/data/ItemBatches?$filter=BatchNumber%20eq%20\u0027260713-MEM0003662\u0027\u0026$top=1\u0026$select=ItemNumber%2CBatchNumber%2CBatchExpirationDate"
+}

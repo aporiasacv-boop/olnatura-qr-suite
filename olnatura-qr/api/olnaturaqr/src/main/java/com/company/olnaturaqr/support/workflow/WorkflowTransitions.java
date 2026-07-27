@@ -12,12 +12,13 @@ public final class WorkflowTransitions {
 
     private WorkflowTransitions() {}
 
-    /** Transiciones de estado agregadas (UI legacy). La aprobación real usa ApprovalService. */
+    /** Transiciones permitidas. APROBADO y RECHAZADO son terminales (sin salida). */
     public static List<String> allowedFrom(String currentStatus) {
         String normalized = WorkflowStatus.normalize(currentStatus);
         if (WorkflowStatus.CUARENTENA.equals(normalized)) {
             return FROM_CUARENTENA;
         }
+        // APROBADO / RECHAZADO: no se puede volver a CUARENTENA ni cruzar entre sí.
         return Collections.emptyList();
     }
 }

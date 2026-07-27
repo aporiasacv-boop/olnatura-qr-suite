@@ -51,8 +51,17 @@ public class QrDto {
             Double cantidadAlmacen,
             /** InventoryUnitSymbol (ReleasedProductsV2); null si no aplica. */
             String unidadInventario,
+            /** Fecha de entrada Dynamics (MIN DatePhysical Received|Purchased); null si no aplica. */
+            String fechaEntrada,
             String status,
+            /** Resumen informativo Dynamics (QualityOrderStatus); no sincroniza estado QR. */
             String statusDynamics,
+            /** QualityOrderHeaders.QualityOrderStatus — diagnóstico. */
+            String qualityOrderStatus,
+            /** QualityOrderHeaders.PassedBatchDispositionCode — diagnóstico. */
+            String passedBatchDispositionCode,
+            /** ItemBatches.BatchDispositionCode — diagnóstico. */
+            String batchDispositionCode,
             String almacen,
             String ubicacion,
             String fuente

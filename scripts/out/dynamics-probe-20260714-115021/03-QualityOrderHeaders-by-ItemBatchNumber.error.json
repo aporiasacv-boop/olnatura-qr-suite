@@ -1,0 +1,6 @@
+﻿{
+    "message":  "No se puede resolver el nombre remoto: \u0027olnatura-production.operations.dynamics.com\u0027",
+    "status":  null,
+    "body":  null,
+    "uri":  "https://olnatura-production.operations.dynamics.com/data/QualityOrderHeaders?$filter=ItemBatchNumber%20eq%20\u0027260713-MEM0003662\u0027\u0026$top=5\u0026$select=ItemBatchNumber%2CItemNumber%2CQualityOrderStatus%2CPassedBatchDispositionCode%2CWarehouseId%2CWarehouseLocationId"
+}

@@ -9,7 +9,10 @@ export const LABELS = {
   labelData: "Datos fijos (Etiqueta)",
   dynamicStatus: "Estado",
   dynamicState: "Estado dinámico",
-  statusDynamics: "Estado Dynamics (referencia)",
+  statusDynamics: "Estado de Dynamics",
+  qualityOrderStatus: "QualityOrderStatus",
+  passedBatchDispositionCode: "PassedBatchDispositionCode",
+  batchDispositionCode: "BatchDispositionCode",
   fuente: "Fuente de datos",
   envase: "Envase",
   cantidad: "Inventario disponible",
@@ -19,7 +22,6 @@ export const LABELS = {
   unidadInventario: "Unidad de inventario",
   downloadZpl: "Descargar etiqueta Zebra",
   downloadAuditPdf: "Descargar historial (PDF)",
-  registerScan: "Registrar escaneo",
   noData: "Sin dato",
   noRecords: "No hay registros disponibles",
   noScans: "Sin escaneos",
@@ -54,6 +56,7 @@ export function actionTypeDisplay(actionType: string | null | undefined): string
     GENERATE_LABEL: "Generar etiqueta",
     EXPORT_AUDIT_PDF: "Exportación de historial PDF",
     EXPORT_AUDIT_CSV: "Exportación de historial CSV",
+    EXPORT_EXECUTIVE_DASHBOARD: "Exportación Power BI",
     APPROVE_USER: "Aprobación de usuario",
     REJECT_USER: "Rechazo de usuario",
     ACCESS_REQUEST: "Solicitud de acceso",
@@ -74,6 +77,12 @@ const METADATA_KEY_LABELS: Record<string, string> = {
   exportType: "Tipo de exportación",
   count: "Cantidad",
   countEvents: "Eventos exportados",
+  bytes: "Tamaño (bytes)",
+  filename: "Archivo",
+  labelsExported: "Etiquetas exportadas",
+  scansExported: "Escaneos exportados",
+  auditsExported: "Auditorías exportadas",
+  usersExported: "Usuarios exportados",
   labelId: "ID de etiqueta",
   requester: "Solicitante",
   lote: "Lote",
@@ -105,6 +114,7 @@ function formatMetadataValue(key: string, value: unknown): string {
   const v = str.toUpperCase();
   if (key === "mode" && v === "ZPL_DOWNLOAD") return "Descarga ZPL";
   if (key === "exportType" && v === "PDF") return "PDF";
+  if (key === "exportType" && v === "EXECUTIVE_DASHBOARD_XLSX") return "Excel Power BI";
   if (key === "roleRequested" || key === "rol" || key === "approvalRole") {
     if (v === "ALMACEN") return "Almacén";
     if (v === "INSPECCION") return "Inspección";

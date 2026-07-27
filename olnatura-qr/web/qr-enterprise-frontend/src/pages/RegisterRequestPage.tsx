@@ -19,6 +19,11 @@ import {
   passwordChecks,
   PASSWORD_RULE_LABELS,
 } from "../utils/credentialRules";
+import {
+  filterEmailSuggestions,
+  loadUsedEmailSuggestions,
+  markEmailSuggestionUsed,
+} from "../utils/emailSuggestions";
 
 const useStyles = makeStyles({
   root: {
@@ -60,6 +65,7 @@ const useStyles = makeStyles({
   row: {
     display: "grid",
     rowGap: "8px",
+    position: "relative",
   },
   label: {
     fontSize: "14px",
@@ -67,6 +73,34 @@ const useStyles = makeStyles({
     color: brand.text2,
   },
   input: { width: "100%", minWidth: 0 },
+  suggestions: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    marginTop: "2px",
+    backgroundColor: brand.surface,
+    ...shorthands.border("1px", "solid", brand.border),
+    borderRadius: "8px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+    maxHeight: "180px",
+    overflowY: "auto",
+  },
+  suggestionItem: {
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    ...shorthands.padding("10px", "12px"),
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    fontSize: "14px",
+    color: brand.text,
+    ":hover": {
+      backgroundColor: "rgba(74, 92, 40, 0.08)",
+    },
+  },
   hintOk: {
     fontSize: "12px",
     color: brand.successFg,
@@ -130,6 +164,8 @@ export default function RegisterRequestPage() {
   const [success, setSuccess] = React.useState(false);
   const [touchedEmail, setTouchedEmail] = React.useState(false);
   const [touchedPassword, setTouchedPassword] = React.useState(false);
+  const [usedEmails, setUsedEmails] = React.useState<Set<string>>(() => loadUsedEmailSuggestions());
+  const [showSuggestions, setShowSuggestions] = React.useState(false);
 
   const emailMsg = emailValidationMessage(correo);
   const emailOk = isAllowedEmail(correo);
@@ -137,6 +173,7 @@ export default function RegisterRequestPage() {
   const passwordOk = isValidPassword(password);
   const showEmailHint = touchedEmail || correo.trim().length > 0;
   const showPasswordHints = touchedPassword || password.length > 0;
+  const suggestions = filterEmailSuggestions(correo, usedEmails);
 
   const canSubmit =
     nombre.trim().length > 0 &&
@@ -145,6 +182,11 @@ export default function RegisterRequestPage() {
     area !== "" &&
     !busy;
 
+  const markUsedAndRefresh = (email: string) => {
+    markEmailSuggestionUsed(email);
+    setUsedEmails(loadUsedEmailSuggestions());
+  };
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setTouchedEmail(true);
@@ -152,6 +194,7 @@ export default function RegisterRequestPage() {
     setBusy(true);
     setError(null);
     setSuccess(false);
+    setShowSuggestions(false);
 
     try {
       if (area === "") {
@@ -170,9 +213,10 @@ export default function RegisterRequestPage() {
         return;
       }
 
+      const emailNorm = correo.trim().toLowerCase();
       const payload: RequestUserPayload = {
         username: nombre.trim(),
-        email: correo.trim().toLowerCase(),
+        email: emailNorm,
         roleRequested: area,
         password: password,
       };
@@ -183,6 +227,7 @@ export default function RegisterRequestPage() {
         toast: false,
       });
 
+      markUsedAndRefresh(emailNorm);
       setSuccess(true);
       setNombre("");
       setCorreo("");
@@ -192,7 +237,11 @@ export default function RegisterRequestPage() {
       setTouchedPassword(false);
     } catch (err) {
       const ae = err as ApiError;
-      setError(ae?.message || "No se pudo enviar la solicitud.");
+      const msg = ae?.message || "No se pudo enviar la solicitud.";
+      if (/ya existe|already|conflict|409/i.test(msg) || ae?.status === 409) {
+        markUsedAndRefresh(correo);
+      }
+      setError(msg);
     } finally {
       setBusy(false);
     }
@@ -230,12 +279,37 @@ export default function RegisterRequestPage() {
               size="large"
               className={s.input}
               value={correo}
-              onChange={(_, d) => setCorreo(d.value)}
-              onBlur={() => setTouchedEmail(true)}
+              onChange={(_, d) => {
+                setCorreo(d.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => {
+                setTouchedEmail(true);
+                window.setTimeout(() => setShowSuggestions(false), 150);
+              }}
               placeholder="nombre@olnatura.com"
               type="email"
               autoComplete="email"
             />
+            {showSuggestions && suggestions.length > 0 ? (
+              <div className={s.suggestions} role="listbox" aria-label="Sugerencias de correo">
+                {suggestions.map((email) => (
+                  <button
+                    key={email}
+                    type="button"
+                    className={s.suggestionItem}
+                    onMouseDown={(ev) => {
+                      ev.preventDefault();
+                      setCorreo(email);
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    {email}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {showEmailHint ? (
               emailOk ? (
                 <span className={s.hintOk}>Correo corporativo válido.</span>
@@ -243,7 +317,9 @@ export default function RegisterRequestPage() {
                 <span className={s.hintErr}>{emailMsg}</span>
               )
             ) : (
-              <span className={s.hintMuted}>Solo correos @olnatura.com.</span>
+              <span className={s.hintMuted}>
+                Solo correos @olnatura.com. Puedes elegir una sugerencia o escribir otro.
+              </span>
             )}
           </div>
 

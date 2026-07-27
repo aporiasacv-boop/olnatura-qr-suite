@@ -1,0 +1,89 @@
+﻿{
+    "batchNumber":  "260713-MEM0003662",
+    "baseUrl":  "https://olnatura-production.operations.dynamics.com",
+    "outDir":  "C:\\Users\\BecarioQR\\OneDrive - OLNATURA, S.A. DE CV\\Escritorio\\olnatura-qr-suite\\qr-suite\\olnatura-qr-suite\\scripts\\out\\dynamics-probe-20260714-115021",
+    "itemBatchesOk":  false,
+    "onHandEntityUsed":  "InventorySitesOnHand",
+    "onHandOk":  false,
+    "qualityOk":  false,
+    "qualityFilterUsed":  "ItemBatchNumber eq \u0027260713-MEM0003662\u0027",
+    "camposOk":  2,
+    "camposFaltantes":  7,
+    "checklist":  [
+                      {
+                          "campo":  "codigo",
+                          "ok":  false,
+                          "valor":  null
+                      },
+                      {
+                          "campo":  "nombre",
+                          "ok":  false,
+                          "valor":  null
+                      },
+                      {
+                          "campo":  "lote",
+                          "ok":  true,
+                          "valor":  "260713-MEM0003662"
+                      },
+                      {
+                          "campo":  "caducidad",
+                          "ok":  false,
+                          "valor":  null
+                      },
+                      {
+                          "campo":  "cantidadAlmacen",
+                          "ok":  false,
+                          "valor":  null
+                      },
+                      {
+                          "campo":  "status",
+                          "ok":  false,
+                          "valor":  null
+                      },
+                      {
+                          "campo":  "almacen",
+                          "ok":  false,
+                          "valor":  null
+                      },
+                      {
+                          "campo":  "ubicacion",
+                          "ok":  false,
+                          "valor":  null
+                      },
+                      {
+                          "campo":  "fuente",
+                          "ok":  true,
+                          "valor":  "REAL_DYNAMICS"
+                      }
+                  ],
+    "objeto":  {
+                   "codigo":  null,
+                   "nombre":  null,
+                   "lote":  "260713-MEM0003662",
+                   "caducidad":  null,
+                   "cantidadAlmacen":  null,
+                   "status":  null,
+                   "almacen":  null,
+                   "ubicacion":  null,
+                   "fuente":  "REAL_DYNAMICS"
+               },
+    "pasos":  {
+                  "InventoryOnHand":  {
+                                          "ok":  false,
+                                          "entity":  "InventorySitesOnHand",
+                                          "status":  null,
+                                          "uri":  null
+                                      },
+                  "ItemBatches":  {
+                                      "ok":  false,
+                                      "status":  null,
+                                      "uri":  "https://olnatura-production.operations.dynamics.com/data/ItemBatches?$filter=BatchNumber%20eq%20\u0027260713-MEM0003662\u0027\u0026$top=1\u0026$select=ItemNumber%2CBatchNumber%2CBatchExpirationDate"
+                                  },
+                  "QualityOrderHeaders":  {
+                                              "filter":  "ItemBatchNumber eq \u0027260713-MEM0003662\u0027",
+                                              "ok":  false,
+                                              "status":  null,
+                                              "uri":  "https://olnatura-production.operations.dynamics.com/data/QualityOrderHeaders?$filter=ItemBatchNumber%20eq%20\u0027260713-MEM0003662\u0027\u0026$top=5\u0026$select=ItemBatchNumber%2CItemNumber%2CQualityOrderStatus%2CPassedBatchDispositionCode%2CWarehouseId%2CWarehouseLocationId"
+                                          }
+              }
+}

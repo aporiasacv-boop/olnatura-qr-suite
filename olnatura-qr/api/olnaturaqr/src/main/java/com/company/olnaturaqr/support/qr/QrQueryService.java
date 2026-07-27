@@ -10,6 +10,8 @@ import com.company.olnaturaqr.support.workflow.ApprovalService;
 import com.company.olnaturaqr.support.workflow.LotOperationalGate;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.support.workflow.WorkflowTransitions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,6 +26,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class QrQueryService {
+
+    private static final Logger log = LoggerFactory.getLogger(QrQueryService.class);
 
     private final QrLabelRepository qrLabelRepository;
     private final DynamicsLookupService dynamicsLookupService;
@@ -76,20 +80,31 @@ public class QrQueryService {
         String platformStatus = WorkflowStatus.normalize(label.getStatus());
 
         QrDto.Dynamic dyn = lookupDynamicsOrFail(lote)
-                .map(d -> toDynamicDto(d, platformStatus))
-                .orElseGet(() -> new QrDto.Dynamic(
+                .map(d -> {
+                    logEstadoDiag(lote, platformStatus, d);
+                    return toDynamicDto(d, platformStatus);
+                })
+                .orElseGet(() -> {
+                    log.info("[EstadoDiag] lote={} EstadoQR={} QualityOrderStatus=— PassedBatchDispositionCode=— BatchDispositionCode=— (sin Dynamics)",
+                            lote, platformStatus);
+                    return new QrDto.Dynamic(
                         label.getCodigo(),
                         label.getNombre(),
                         lote,
                         label.getCaducidad() != null ? label.getCaducidad().toString() : null,
                         null,
                         null,
+                        null,
                         platformStatus,
                         null,
                         null,
                         null,
+                        null,
+                        null,
+                        null,
                         "DB_ONLY"
-                ));
+                    );
+                });
 
         List<String> transitions = principal != null
                 ? WorkflowTransitions.allowedFrom(platformStatus)
@@ -113,12 +128,30 @@ public class QrQueryService {
                 d.caducidad(),
                 d.cantidadAlmacen(),
                 d.unidadInventario(),
+                d.fechaEntrada(),
                 platformStatus,
                 d.statusDynamics(),
+                d.qualityOrderStatus(),
+                d.passedBatchDispositionCode(),
+                d.batchDispositionCode(),
                 d.almacen(),
                 d.ubicacion(),
                 d.fuente()
         );
+    }
+
+    /** Log temporal: comparar estado QR (fuente de verdad) vs campos Dynamics (solo referencia). */
+    private static void logEstadoDiag(String lote, String estadoQr, DynamicsLookupDto d) {
+        log.info("[EstadoDiag] lote={} EstadoQR={} QualityOrderStatus={} PassedBatchDispositionCode={} BatchDispositionCode={}",
+                lote,
+                estadoQr,
+                dash(d.qualityOrderStatus()),
+                dash(d.passedBatchDispositionCode()),
+                dash(d.batchDispositionCode()));
+    }
+
+    private static String dash(String value) {
+        return value == null || value.isBlank() ? "—" : value;
     }
 
     private QrDto.Permissions buildPermissions(AuthPrincipal principal, ApprovalService.ApprovalView av) {

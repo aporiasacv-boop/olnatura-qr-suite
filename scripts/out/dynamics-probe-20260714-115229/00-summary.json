@@ -1,0 +1,89 @@
+﻿{
+    "batchNumber":  "260713-MEM0003662",
+    "baseUrl":  "https://olnatura-produccion.operations.dynamics.com",
+    "outDir":  "C:\\Users\\BecarioQR\\OneDrive - OLNATURA, S.A. DE CV\\Escritorio\\olnatura-qr-suite\\qr-suite\\olnatura-qr-suite\\scripts\\out\\dynamics-probe-20260714-115229",
+    "itemBatchesOk":  true,
+    "onHandEntityUsed":  "InventorySitesOnHand",
+    "onHandOk":  true,
+    "qualityOk":  true,
+    "qualityFilterUsed":  "ItemBatchNumber eq \u0027260713-MEM0003662\u0027",
+    "camposOk":  9,
+    "camposFaltantes":  0,
+    "checklist":  [
+                      {
+                          "campo":  "codigo",
+                          "ok":  true,
+                          "valor":  "400615440900"
+                      },
+                      {
+                          "campo":  "nombre",
+                          "ok":  true,
+                          "valor":  "QG5 FOLLETO"
+                      },
+                      {
+                          "campo":  "lote",
+                          "ok":  true,
+                          "valor":  "260713-MEM0003662"
+                      },
+                      {
+                          "campo":  "caducidad",
+                          "ok":  true,
+                          "valor":  "2027-01-02T12:00:00Z"
+                      },
+                      {
+                          "campo":  "cantidadAlmacen",
+                          "ok":  true,
+                          "valor":  62738
+                      },
+                      {
+                          "campo":  "status",
+                          "ok":  true,
+                          "valor":  "Open"
+                      },
+                      {
+                          "campo":  "almacen",
+                          "ok":  true,
+                          "valor":  "MEM"
+                      },
+                      {
+                          "campo":  "ubicacion",
+                          "ok":  true,
+                          "valor":  "Disponible"
+                      },
+                      {
+                          "campo":  "fuente",
+                          "ok":  true,
+                          "valor":  "REAL_DYNAMICS"
+                      }
+                  ],
+    "objeto":  {
+                   "codigo":  "400615440900",
+                   "nombre":  "QG5 FOLLETO",
+                   "lote":  "260713-MEM0003662",
+                   "caducidad":  "2027-01-02T12:00:00Z",
+                   "cantidadAlmacen":  62738,
+                   "status":  "Open",
+                   "almacen":  "MEM",
+                   "ubicacion":  "Disponible",
+                   "fuente":  "REAL_DYNAMICS"
+               },
+    "pasos":  {
+                  "InventoryOnHand":  {
+                                          "ok":  true,
+                                          "entity":  "InventorySitesOnHand",
+                                          "status":  200,
+                                          "uri":  "https://olnatura-produccion.operations.dynamics.com/data/InventorySitesOnHand?$filter=ItemNumber%20eq%20\u0027400615440900\u0027\u0026$top=5\u0026$select=ItemNumber%2CProductName%2CAvailableOnHandQuantity%2CInventorySiteId"
+                                      },
+                  "ItemBatches":  {
+                                      "ok":  true,
+                                      "status":  200,
+                                      "uri":  "https://olnatura-produccion.operations.dynamics.com/data/ItemBatches?$filter=BatchNumber%20eq%20\u0027260713-MEM0003662\u0027\u0026$top=1\u0026$select=ItemNumber%2CBatchNumber%2CBatchExpirationDate"
+                                  },
+                  "QualityOrderHeaders":  {
+                                              "filter":  "ItemBatchNumber eq \u0027260713-MEM0003662\u0027",
+                                              "ok":  true,
+                                              "status":  200,
+                                              "uri":  "https://olnatura-produccion.operations.dynamics.com/data/QualityOrderHeaders?$filter=ItemBatchNumber%20eq%20\u0027260713-MEM0003662\u0027\u0026$top=5\u0026$select=ItemBatchNumber%2CItemNumber%2CQualityOrderStatus%2CPassedBatchDispositionCode%2CWarehouseId%2CWarehouseLocationId"
+                                          }
+              }
+}

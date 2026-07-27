@@ -41,7 +41,15 @@ export type DynamicsLookupResponse = {
   caducidad: string | null;
   cantidadAlmacen: number | null;
   unidadInventario?: string | null;
+  /** MIN(DatePhysical) Received desde InventTrans; ISO Dynamics. */
+  fechaEntrada?: string | null;
   statusDynamics: string | null;
+  /** QualityOrderHeaders — diagnóstico / referencia. */
+  qualityOrderStatus?: string | null;
+  /** QualityOrderHeaders — diagnóstico / referencia. */
+  passedBatchDispositionCode?: string | null;
+  /** ItemBatches — diagnóstico / referencia. */
+  batchDispositionCode?: string | null;
   almacen: string | null;
   ubicacion: string | null;
   fuente: string;

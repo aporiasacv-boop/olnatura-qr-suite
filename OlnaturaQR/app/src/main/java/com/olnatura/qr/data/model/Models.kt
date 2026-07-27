@@ -42,6 +42,8 @@ data class DynamicDto(
     val cantidadAlmacen: Double? = null,
     /** InventoryUnitSymbol desde ReleasedProductsV2. */
     val unidadInventario: String? = null,
+    /** MIN(DatePhysical) Received desde InventTrans. */
+    val fechaEntrada: String? = null,
     val status: String? = null,
     val statusDynamics: String? = null,
     val almacen: String? = null,

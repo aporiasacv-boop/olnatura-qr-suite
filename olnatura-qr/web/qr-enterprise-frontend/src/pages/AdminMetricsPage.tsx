@@ -11,7 +11,7 @@ import {
   TableRow,
   Text,
 } from "@fluentui/react-components";
-import { api, ApiError } from "../api/client";
+import { api, ApiError, API_BASE } from "../api/client";
 import { useToasts } from "../components/ui/toasts";
 import AppCard from "../components/ui/AppCard";
 import AuditDetailCell from "../components/ui/AuditDetailCell";
@@ -31,6 +31,15 @@ type RecentActivity = {
   deviceId?: string;
 };
 
+type LastPowerBiExport = {
+  exportedAt?: string | null;
+  actorEmail?: string | null;
+  labelsExported?: number | null;
+  scansExported?: number | null;
+  auditsExported?: number | null;
+  usersExported?: number | null;
+};
+
 type OperationalMetrics = {
   generatedAt: string;
   rangeDays: number;
@@ -42,6 +51,7 @@ type OperationalMetrics = {
   };
   dailySeries: DailyPoint[];
   recentActivity: RecentActivity[];
+  lastPowerBiExport?: LastPowerBiExport | null;
 };
 
 const useStyles = makeStyles({
@@ -76,7 +86,30 @@ const useStyles = makeStyles({
   },
   chartHint: { fontSize: "12px", color: brand.muted, marginBottom: "12px" },
   muted: { color: brand.muted },
+  powerBiCard: {
+    display: "grid",
+    gap: "10px",
+  },
+  powerBiWhen: {
+    fontSize: "18px",
+    fontWeight: 600,
+    color: brand.text,
+    marginTop: "4px",
+  },
+  powerBiStats: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+    gap: "10px",
+    marginTop: "4px",
+  },
+  powerBiStatLabel: { fontSize: "12px", color: brand.muted },
+  powerBiStatValue: { fontSize: "16px", fontWeight: 600, color: brand.text, marginTop: "2px" },
 });
+
+function formatCount(n?: number | null): string {
+  if (n == null || Number.isNaN(Number(n))) return "—";
+  return Number(n).toLocaleString("es-MX");
+}
 
 function formatDayLabel(isoDate: string): string {
   const parts = isoDate.split("-");
@@ -170,6 +203,7 @@ export default function AdminMetricsPage() {
   const toasts = useToasts();
   const [data, setData] = React.useState<OperationalMetrics | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const [exporting, setExporting] = React.useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = React.useState<Date | null>(null);
 
   const load = React.useCallback(async () => {
@@ -195,9 +229,47 @@ export default function AdminMetricsPage() {
     load();
   }, [load]);
 
+  const exportPowerBi = async () => {
+    setExporting(true);
+    try {
+      const base = API_BASE.replace(/\/+$/, "");
+      const url = `${base}/api/v1/admin/metrics/export/powerbi`;
+      const res = await fetch(url, { method: "GET", credentials: "include" });
+      if (!res.ok) {
+        throw new Error(res.status === 403 ? "Sin permiso (solo ADMIN)" : `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      const cd = res.headers.get("Content-Disposition") || "";
+      const match = /filename="?([^"]+)"?/i.exec(cd);
+      a.download = match?.[1] || "Executive_Dashboard_Export.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+      toasts.push({
+        intent: "success",
+        title: "Excel descargado",
+        message: "Executive_Dashboard_Export.xlsx listo para Power BI.",
+      });
+      await load();
+    } catch (err) {
+      toasts.push({
+        intent: "error",
+        title: "No se pudo exportar",
+        message: err instanceof Error ? err.message : "Intenta de nuevo.",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const summary = data?.summary;
   const series = data?.dailySeries ?? [];
   const recent = data?.recentActivity ?? [];
+  const lastExport = data?.lastPowerBiExport ?? null;
   const updateLabel = lastUpdatedAt
     ? `Actualizar · ${lastUpdatedAt.toLocaleTimeString("es-MX", {
         hour: "2-digit",
@@ -213,10 +285,74 @@ export default function AdminMetricsPage() {
           <h1 className={s.title}>{LABELS.metrics}</h1>
           <div className={s.subtitle}>Últimos {data?.rangeDays ?? 7} días</div>
         </div>
-        <Button appearance="primary" onClick={load} disabled={busy} title={lastUpdatedAt ? `Última actualización: ${lastUpdatedAt.toLocaleString("es-MX")}` : undefined}>
-          {busy ? "Cargando…" : updateLabel}
-        </Button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Button
+            appearance="secondary"
+            onClick={exportPowerBi}
+            disabled={exporting || busy}
+          >
+            {exporting ? "Exportando…" : "Exportar datos para Power BI"}
+          </Button>
+          <Button
+            appearance="primary"
+            onClick={load}
+            disabled={busy}
+            title={
+              lastUpdatedAt
+                ? `Última actualización: ${lastUpdatedAt.toLocaleString("es-MX")}`
+                : undefined
+            }
+          >
+            {busy ? "Cargando…" : updateLabel}
+          </Button>
+        </div>
       </div>
+
+      <section>
+        <AppCard>
+          <div className={s.powerBiCard}>
+            <Text weight="semibold">Última exportación Power BI</Text>
+            {lastExport?.exportedAt ? (
+              <>
+                <div className={s.powerBiWhen}>
+                  {(() => {
+                    const dt = formatDateTime(lastExport.exportedAt);
+                    return `${dt.date} ${dt.time}`;
+                  })()}
+                </div>
+                {lastExport.actorEmail ? (
+                  <Text className={s.muted} size={200}>
+                    Por {lastExport.actorEmail}
+                  </Text>
+                ) : null}
+                <div className={s.powerBiStats}>
+                  <div>
+                    <div className={s.powerBiStatLabel}>Etiquetas exportadas</div>
+                    <div className={s.powerBiStatValue}>{formatCount(lastExport.labelsExported)}</div>
+                  </div>
+                  <div>
+                    <div className={s.powerBiStatLabel}>Escaneos exportados</div>
+                    <div className={s.powerBiStatValue}>{formatCount(lastExport.scansExported)}</div>
+                  </div>
+                  <div>
+                    <div className={s.powerBiStatLabel}>Auditorías exportadas</div>
+                    <div className={s.powerBiStatValue}>{formatCount(lastExport.auditsExported)}</div>
+                  </div>
+                  <div>
+                    <div className={s.powerBiStatLabel}>Usuarios</div>
+                    <div className={s.powerBiStatValue}>{formatCount(lastExport.usersExported)}</div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <Text className={s.muted}>
+                Aún no hay exportaciones. Usa “Exportar datos para Power BI” para generar el
+                Excel ejecutivo.
+              </Text>
+            )}
+          </div>
+        </AppCard>
+      </section>
 
       <section>
         <h2 className={s.sectionTitle}>Resumen hoy y estado</h2>
@@ -303,7 +439,11 @@ export default function AdminMetricsPage() {
                         </TableCell>
                         <TableCell>{ev.lote || "—"}</TableCell>
                         <TableCell>
-                          <AuditDetailCell metadata={ev.metadata} deviceId={ev.deviceId} />
+                          <AuditDetailCell
+                            metadata={ev.metadata}
+                            deviceId={ev.deviceId}
+                            actionType={ev.actionType}
+                          />
                         </TableCell>
                       </TableRow>
                     );

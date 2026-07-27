@@ -24,4 +24,6 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, UUID>, J
     List<AuditEvent> findByLoteAndActionTypeInOrderByCreatedAtAsc(String lote, Collection<String> actionTypes);
 
     long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(Instant from, Instant to);
+
+    AuditEvent findFirstByActionTypeOrderByCreatedAtDesc(String actionType);
 }
