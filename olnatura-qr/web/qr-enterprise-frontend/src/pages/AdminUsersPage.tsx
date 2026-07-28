@@ -17,6 +17,13 @@ import { useAuth } from "../auth/AuthContext";
 import { useToasts } from "../components/ui/toasts";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
+import { displayUserIdentity } from "../utils/auditActionTranslator";
+import {
+  TABLE_FIXED_STYLE,
+  TABLE_SCROLL_WRAP,
+  TRUNCATE_CELL,
+  cellTitle,
+} from "../utils/tablePresentation";
 
 type UserAdmin = {
   id: string;
@@ -26,13 +33,6 @@ type UserAdmin = {
   estado: string;
   enabled: boolean;
   createdAt?: string;
-};
-
-const truncateCell: React.CSSProperties = {
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  maxWidth: 0,
 };
 
 const useStyles = makeStyles({
@@ -49,11 +49,6 @@ const useStyles = makeStyles({
   muted: { color: brand.muted },
   actions: { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px" },
   danger: { color: brand.dangerFg, fontWeight: 600, minHeight: "auto", padding: "0 4px" },
-  table: {
-    width: "100%",
-    tableLayout: "fixed",
-    minWidth: "720px",
-  },
 });
 
 function formatRefreshTime(d: Date | null): string {
@@ -144,28 +139,29 @@ export default function AdminUsersPage() {
         ) : items.length === 0 ? (
           <Text className={s.muted}>No hay usuarios registrados.</Text>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <Table aria-label="Usuarios" className={s.table}>
+          <div style={TABLE_SCROLL_WRAP}>
+            <Table aria-label="Usuarios" style={{ ...TABLE_FIXED_STYLE, minWidth: 760 }}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "18%" }}>Usuario</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "20%" }}>Usuario</TableHeaderCell>
                   <TableHeaderCell style={{ width: "26%" }}>Correo</TableHeaderCell>
                   <TableHeaderCell style={{ width: "18%" }}>Rol</TableHeaderCell>
                   <TableHeaderCell style={{ width: "12%" }}>Estado</TableHeaderCell>
                   <TableHeaderCell style={{ width: "10%" }}>Habilitado</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "16%" }}>Acciones</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "14%" }}>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((u) => {
                   const isSelf = me?.id != null && String(me.id) === String(u.id);
                   const rowBusy = actionId === u.id;
+                  const usuario = displayUserIdentity(undefined, u.username);
                   return (
                     <TableRow key={u.id} className="table-hover-row">
-                      <TableCell style={truncateCell} title={u.username}>
-                        {u.username}
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(usuario)}>
+                        {usuario}
                       </TableCell>
-                      <TableCell style={truncateCell} title={u.email}>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(u.email)}>
                         {u.email}
                       </TableCell>
                       <TableCell>
@@ -186,7 +182,7 @@ export default function AdminUsersPage() {
                           <Option value="INSPECCION">INSPECCIÓN</Option>
                         </Dropdown>
                       </TableCell>
-                      <TableCell style={truncateCell} title={u.estado}>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(u.estado)}>
                         {u.estado}
                       </TableCell>
                       <TableCell>{u.enabled ? "Sí" : "No"}</TableCell>

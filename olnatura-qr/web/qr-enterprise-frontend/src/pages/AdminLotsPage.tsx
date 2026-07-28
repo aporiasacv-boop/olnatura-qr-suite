@@ -16,6 +16,12 @@ import { api, ApiError } from "../api/client";
 import { useToasts } from "../components/ui/toasts";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
+import {
+  TABLE_FIXED_STYLE,
+  TABLE_SCROLL_WRAP,
+  TRUNCATE_CELL,
+  cellTitle,
+} from "../utils/tablePresentation";
 
 type LotAdmin = {
   id: string;
@@ -172,29 +178,40 @@ export default function AdminLotsPage() {
         ) : items.length === 0 ? (
           <Text className={s.muted}>No hay lotes para este filtro.</Text>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <Table aria-label="Lotes">
+          <div style={TABLE_SCROLL_WRAP}>
+            <Table aria-label="Lotes" style={{ ...TABLE_FIXED_STYLE, minWidth: 820 }}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell>Lote</TableHeaderCell>
-                  <TableHeaderCell>Código</TableHeaderCell>
-                  <TableHeaderCell>Nombre</TableHeaderCell>
-                  <TableHeaderCell>Estado</TableHeaderCell>
-                  <TableHeaderCell>Alta en sistema</TableHeaderCell>
-                  <TableHeaderCell>Acciones</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>Lote</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>Código</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "24%" }}>Nombre</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>Estado</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "18%" }}>Alta en sistema</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "18%" }}>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((row) => {
                   const busy = actionId === row.id;
+                  const alta = row.createdAt
+                    ? new Date(row.createdAt).toLocaleString("es-MX")
+                    : "—";
                   return (
                     <TableRow key={row.id} className="table-hover-row">
-                      <TableCell>{row.lote}</TableCell>
-                      <TableCell>{row.codigo}</TableCell>
-                      <TableCell>{row.nombre}</TableCell>
-                      <TableCell>{row.adminStatusDisplay}</TableCell>
-                      <TableCell>
-                        {row.createdAt ? new Date(row.createdAt).toLocaleString("es-MX") : "—"}
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(row.lote)}>
+                        {row.lote}
+                      </TableCell>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(row.codigo)}>
+                        {row.codigo}
+                      </TableCell>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(row.nombre)}>
+                        {row.nombre}
+                      </TableCell>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(row.adminStatusDisplay)}>
+                        {row.adminStatusDisplay}
+                      </TableCell>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(alta)}>
+                        {alta}
                       </TableCell>
                       <TableCell>
                         <div className={s.actions}>

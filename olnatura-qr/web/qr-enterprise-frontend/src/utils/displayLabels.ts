@@ -1,24 +1,32 @@
-
 import { translateAuditAction, translateRole } from "./auditActionTranslator";
 
 export const LABELS = {
-  lookup: "Consulta por lote",
+  lookup: "Centro de información del lote",
+  lookupNav: "Consulta por lote",
   scanHistory: "Historial de escaneos",
-  comments: "Comentarios",
+  comments: "Comentarios del lote",
   commentsEmpty: "Sin comentarios en este lote",
   commentsPlaceholder: "Escribe un comentario operativo…",
   commentsAdd: "Agregar comentario",
+  commentsSave: "Guardar",
+  commentsCancel: "Cancelar",
+  operationalSummary: "Resumen operativo",
+  statusOrigin: "Origen",
   auditLog: "Historial de auditoría",
   metrics: "Métricas operativas",
   label: "Etiqueta",
-  labelData: "Datos fijos (Etiqueta)",
-  dynamicStatus: "Estado",
-  dynamicState: "Estado dinámico",
-  statusDynamics: "Estado de Dynamics",
-  qualityOrderStatus: "Estado de orden de calidad",
-  passedBatchDispositionCode: "Código de disposición (aprobado)",
-  batchDispositionCode: "Código de disposición de lote",
-  fuente: "Fuente de datos",
+  labelData: "Información del lote",
+  dynamicStatus: "Estado Operativo",
+  dynamicState: "Estado Operativo Dynamics",
+  statusSource: "Fuente",
+  operationalStatusRule: "Regla aplicada",
+  statusDynamics: "BatchDisposition (resumen)",
+  qualityOrderStatus: "QualityOrderStatus",
+  passedBatchDispositionCode: "PassedBatchDispositionCode",
+  batchDispositionCode: "BatchDispositionCode",
+  technicalDetails: "Información técnica Dynamics",
+  ruleDeterminedBy: "Estado determinado mediante",
+  fuente: "Fuente Dynamics",
   envase: "Envase",
   cantidad: "Inventario disponible",
   ubicacion: "Ubicación",
@@ -41,7 +49,6 @@ export const LABELS = {
   detalle: "Detalle",
 } as const;
 
-
 export function fuenteDisplay(fuente: string | null | undefined): string {
   if (!fuente || typeof fuente !== "string") return LABELS.noData;
   const v = fuente.trim().toUpperCase();
@@ -49,7 +56,6 @@ export function fuenteDisplay(fuente: string | null | undefined): string {
   if (v === "DB_ONLY") return "Base de datos local (sin Dynamics)";
   return fuente;
 }
-
 
 export function actionTypeDisplay(actionType: string | null | undefined): string {
   return translateAuditAction(actionType);
@@ -90,7 +96,6 @@ const METADATA_KEY_LABELS: Record<string, string> = {
   userId: "ID de usuario",
   from: "Desde",
   to: "Hasta",
-  deviceId: "Dispositivo",
   changes: "Campos modificados",
   commentId: "ID de comentario",
   preview: "Vista previa",

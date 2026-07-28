@@ -8,8 +8,6 @@ import {
   DialogSurface,
   DialogTitle,
   Input,
-  Tab,
-  TabList,
   Text,
   Textarea,
   Tooltip,
@@ -25,8 +23,11 @@ import { useToasts } from "../components/ui/toasts";
 import LoadingState from "../components/ui/LoadingState";
 import EmptyState from "../components/ui/EmptyState";
 import ErrorState from "../components/ui/ErrorState";
-import StatusTag from "../components/ui/StatusTag";
+import StatusTag, {
+  normalizeOperationalStatus,
+} from "../components/ui/StatusTag";
 import { LABELS, fuenteDisplay, formatDateTime } from "../utils/displayLabels";
+import { displayUserIdentity } from "../utils/auditActionTranslator";
 import { formatDateDDMMYYYY } from "../utils/dateFormat";
 import ScanHistoryTable from "../components/ui/ScanHistoryTable";
 import LoteAutocomplete from "../components/ui/LoteAutocomplete";
@@ -142,9 +143,10 @@ const STATUS_OPTIONS = [
   { value: "RECHAZADO", label: "RECHAZADO" },
 ] as const;
 
-function statusToDisplayLabel(backendValue: string): string {
+/** Etiqueta del estado de plataforma (workflow interno / corrección admin). */
+function platformStatusLabel(backendValue: string): string {
   const v = (backendValue ?? "").trim().toUpperCase();
-  if (!v || v === "—" || v === "PENDING" || v === "PENDIENTE" || v === "LIBERADO" || v === "DESCONOCIDO" || v === "OPEN") {
+  if (!v || v === "—" || v === "PENDING" || v === "PENDIENTE" || v === "LIBERADO" || v === "OPEN") {
     return "CUARENTENA";
   }
   const opt = STATUS_OPTIONS.find((o) => o.value === v);
@@ -161,14 +163,34 @@ const useStyles = makeStyles({
     alignItems: "flex-end",
   },
   searchInput: { flex: 1 },
-  resultGrid: {
+  centerGrid: {
     display: "grid",
-    gridTemplateColumns: "1.2fr 0.8fr",
-    gap: "24px",
+    gridTemplateColumns: "minmax(0, 7fr) minmax(280px, 3fr)",
+    gap: "20px",
     alignItems: "start",
+    "@media (max-width: 960px)": {
+      gridTemplateColumns: "1fr",
+    },
+  },
+  columnOrderLeft: {
+    "@media (max-width: 960px)": {
+      order: 2,
+    },
+  },
+  columnOrderRight: {
+    "@media (max-width: 960px)": {
+      order: 1,
+    },
+  },
+  leftStack: {
+    display: "grid",
+    gap: "16px",
+  },
+  rightStack: {
+    display: "grid",
+    gap: "16px",
   },
   historyFull: { width: "100%" },
-  tabPanel: { marginTop: "12px" },
   commentList: { display: "grid", gap: "12px", marginTop: "12px" },
   commentCard: {
     ...shorthands.border("1px", "solid", brand.border),
@@ -212,9 +234,9 @@ export default function BatchLookupPage() {
   const [data, setData] = useState<QrResponse | null>(null);
   const [scans, setScans] = useState<ScanEvent[] | null>(null);
   const [comments, setComments] = useState<LoteComment[] | null>(null);
-  const [activeTab, setActiveTab] = useState<"resumen" | "comentarios">("resumen");
   const [commentDraft, setCommentDraft] = useState("");
   const [commentBusy, setCommentBusy] = useState(false);
+  const [commentComposerOpen, setCommentComposerOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [editBusy, setEditBusy] = useState(false);
@@ -243,7 +265,7 @@ export default function BatchLookupPage() {
     setScans(null);
     setComments(null);
     setCommentDraft("");
-    setActiveTab("resumen");
+    setCommentComposerOpen(false);
     setEditing(false);
     setEditForm(null);
     setConfirmOpen(false);
@@ -319,6 +341,7 @@ export default function BatchLookupPage() {
       });
       setComments((prev) => [...(prev ?? []), created]);
       setCommentDraft("");
+      setCommentComposerOpen(false);
       toasts.push({
         intent: "success",
         title: "Comentario registrado",
@@ -479,7 +502,16 @@ export default function BatchLookupPage() {
     return fromLabel === "—" ? "—" : formatDateDDMMYYYY(fromLabel);
   }, [data]);
 
-  const dynamicStatus = String((data as any)?.dynamic?.status ?? "").trim().toUpperCase();
+  const caducidadResumen = useMemo(() => {
+    const raw = readLabel(data, "caducidad");
+    return raw === "—" ? "—" : formatDateDDMMYYYY(raw);
+  }, [data]);
+
+  const operationalStatus = String((data as any)?.dynamic?.status ?? "").trim().toUpperCase();
+  const operationalRule = String((data as any)?.dynamic?.operationalStatusRule ?? "").trim();
+  const platformStatus = String(
+    (data as any)?.dynamic?.platformStatus ?? ""
+  ).trim().toUpperCase();
   const statusDynamicsRef = (data as any)?.dynamic?.statusDynamics;
   const dynamicCantidad = useMemo(() => {
     const qty = (data as any)?.dynamic?.cantidadAlmacen ?? (data as any)?.dynamic?.cantidad;
@@ -506,16 +538,31 @@ export default function BatchLookupPage() {
     const fromApi = data?.permissions?.allowedStatusCorrections;
     if (Array.isArray(fromApi) && fromApi.length > 0) return fromApi;
     if (!hasRole("ADMIN")) return [] as string[];
-    const s = String((data as any)?.dynamic?.status ?? "").trim().toUpperCase();
+    const s = platformStatus || "CUARENTENA";
     if (s === "CUARENTENA") return ["APROBADO"];
     if (s === "APROBADO" || s === "RECHAZADO") return ["CUARENTENA"];
     return [] as string[];
-  }, [data, hasRole]);
+  }, [data, hasRole, platformStatus]);
   const canCorrectStatus =
     !!data?.permissions?.canCorrectStatus || (hasRole("ADMIN") && allowedStatusCorrections.length > 0);
 
   const dynamicFuenteRaw = (data as any)?.dynamic?.fuente ?? "";
   const fuenteDisplayLabel = fuenteDisplay(dynamicFuenteRaw);
+
+  const sortedComments = useMemo(() => {
+    if (!comments) return null;
+    return [...comments].sort((a, b) => {
+      const ta = new Date(a.createdAt).getTime();
+      const tb = new Date(b.createdAt).getTime();
+      return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
+    });
+  }, [comments]);
+
+  const ruleDisplay =
+    operationalRule ||
+    (normalizeOperationalStatus(operationalStatus) === "DESCONOCIDO"
+      ? "Información insuficiente"
+      : "—");
 
   const handleCopy = async (label: string, value: string) => {
     const v = (value ?? "").toString().trim();
@@ -534,6 +581,11 @@ export default function BatchLookupPage() {
         message: "Intenta de nuevo o copia manualmente.",
       });
     }
+  };
+
+  const cancelCommentComposer = () => {
+    setCommentComposerOpen(false);
+    setCommentDraft("");
   };
 
   return (
@@ -581,318 +633,145 @@ export default function BatchLookupPage() {
 
       {status === "ok" && data && (
         <>
-          <TabList
-            selectedValue={activeTab}
-            onTabSelect={(_, d) => setActiveTab(d.value as "resumen" | "comentarios")}
-          >
-            <Tab value="resumen">Resumen</Tab>
-            <Tab value="comentarios">{LABELS.comments}</Tab>
-          </TabList>
-
-          {activeTab === "resumen" && (
-            <div className={s.tabPanel}>
-              <div className={s.resultGrid}>
-                <AppCard>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                    <Text weight="semibold">{LABELS.labelData}</Text>
-                    {canCorrect && !editing ? (
-                      <Button appearance="secondary" size="small" onClick={startEdit}>
-                        Editar (Administrador)
-                      </Button>
-                    ) : null}
-                    {editing ? (
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <Button appearance="secondary" size="small" onClick={cancelEdit} disabled={editBusy}>
-                          Cancelar
-                        </Button>
-                        <Button
-                          appearance="primary"
-                          size="small"
-                          disabled={editBusy || !(editForm?.motivo ?? "").trim()}
-                          onClick={() => setConfirmOpen(true)}
-                        >
-                          Guardar corrección
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {editing && editForm ? (
-                    <div className={s.editGrid}>
-                      <div>
-                        <Text className={s.fieldLabel}>Tipo material</Text>
-                        <Input
-                          value={editForm.tipoMaterial}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, tipoMaterial: d.value })}
-                        />
-                      </div>
-                      <div>
-                        <Text className={s.fieldLabel}>Nombre</Text>
-                        <Input
-                          value={editForm.nombre}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, nombre: d.value })}
-                        />
-                      </div>
-                      <div>
-                        <Text className={s.fieldLabel}>Código</Text>
-                        <Input
-                          value={editForm.codigo}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, codigo: d.value })}
-                        />
-                      </div>
-                      <div>
-                        <Text className={s.fieldLabel}>Fecha entrada (dd/MM/yyyy)</Text>
-                        <Input
-                          value={editForm.fechaEntrada}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, fechaEntrada: d.value })}
-                        />
-                      </div>
-                      <div>
-                        <Text className={s.fieldLabel}>Caducidad</Text>
-                        <Input
-                          value={editForm.caducidad}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, caducidad: d.value })}
-                        />
-                      </div>
-                      <div>
-                        <Text className={s.fieldLabel}>Reanálisis</Text>
-                        <Input
-                          value={editForm.reanalisis}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, reanalisis: d.value })}
-                        />
-                      </div>
-                      <div>
-                        <Text className={s.fieldLabel}>Envase núm.</Text>
-                        <Input
-                          value={editForm.envaseNum}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, envaseNum: d.value })}
-                        />
-                      </div>
-                      <div>
-                        <Text className={s.fieldLabel}>Envases total</Text>
-                        <Input
-                          value={editForm.envaseTotal}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, envaseTotal: d.value })}
-                        />
-                      </div>
-                      <div className={s.editFull}>
-                        <Text className={s.fieldLabel}>Cantidad por envase (incluye unidad si aplica)</Text>
-                        <Input
-                          value={editForm.cantidadPorEnvase}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, cantidadPorEnvase: d.value })}
-                        />
-                      </div>
-                      <div className={s.editFull}>
-                        <Text className={s.fieldLabel}>Motivo de la modificación *</Text>
-                        <Textarea
-                          value={editForm.motivo}
-                          onChange={(_, d) => setEditForm((f) => f && { ...f, motivo: d.value })}
-                          placeholder="Ej. Error de captura detectado durante revisión."
-                          rows={3}
-                          resize="vertical"
-                          maxLength={500}
-                        />
-                      </div>
-                      <Text className={s.editFull} style={{ color: brand.muted, fontSize: 12 }}>
-                        El inventario y la unidad de Dynamics no se corrigen aquí (solo consulta).
-                      </Text>
-                    </div>
-                  ) : (
-                    <div className={s.dataGrid}>
-                      <Field label="Tipo material" value={readLabel(data, "tipoMaterial")} />
-                      <Field label="Nombre" value={readLabel(data, "nombre")} />
-                      <CopyField
-                        label="Código"
-                        value={readLabel(data, "codigo")}
-                        onCopy={handleCopy}
-                      />
-                      <CopyField
-                        label="Lote"
-                        value={readLabel(data, "lote")}
-                        onCopy={handleCopy}
-                      />
-                      <Field label="Fecha entrada" value={fechaEntradaDisplay} />
-                      <Field label="Caducidad" value={readLabel(data, "caducidad")} />
-                      <Field label="Reanálisis" value={readLabel(data, "reanalisis")} />
-                      <Field label={LABELS.envase} value={labelEnvase} />
-                      <Field
-                        label="Cantidad por envase"
-                        value={readLabel(data, "cantidadPorEnvase")}
-                      />
-                    </div>
-                  )}
-                </AppCard>
-
-                <AppCard>
-                  <Text weight="semibold">{LABELS.dynamicState}</Text>
-
-                  <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <Text>{LABELS.dynamicStatus}</Text>
-                      <StatusTag status={statusToDisplayLabel(dynamicStatus)} />
-                    </div>
-
-                    <Field label="Tipo de material" value={tipoMaterialDisplay} />
-
-                    {(needsCalidadApproval(tipoMaterialCode) || needsInspeccionApproval(tipoMaterialCode)) && (
-                      <div style={{ fontSize: 13, color: brand.text2, display: "grid", gap: 8 }}>
-                        {needsCalidadApproval(tipoMaterialCode) ? (
-                          <ApprovalLegBlock
-                            title="Calidad"
-                            approved={calidadApproved}
-                            leg={calidadLeg}
-                          />
-                        ) : null}
-                        {needsInspeccionApproval(tipoMaterialCode) ? (
-                          <ApprovalLegBlock
-                            title="Inspección"
-                            approved={inspeccionApproved}
-                            leg={inspeccionLeg}
-                          />
-                        ) : null}
-                        {pendingMessage ? (
-                          <Text style={{ color: brand.warningFg, fontWeight: 600 }}>{pendingMessage}</Text>
-                        ) : null}
-                      </div>
-                    )}
-
-                    {(canApprove || canReject) && (
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {canApprove ? (
-                          <Button
-                            appearance="primary"
-                            size="small"
-                            onClick={() => void changeStatus("approve")}
-                            disabled={statusBusy}
-                          >
-                            {statusBusy ? "…" : "Aprobar"}
-                          </Button>
-                        ) : null}
-                        {canReject ? (
-                          <Button
-                            appearance="secondary"
-                            size="small"
-                            onClick={() => void changeStatus("reject")}
-                            disabled={statusBusy}
-                          >
-                            Rechazar
-                          </Button>
-                        ) : null}
-                      </div>
-                    )}
-
-                    {!canChangeStatus && dynamicStatus === "CUARENTENA" && !canCorrectStatus ? (
-                      <Text style={{ color: brand.muted, fontSize: 12 }}>
-                        No tienes permiso para aprobar o rechazar este material.
-                      </Text>
-                    ) : null}
-
-                    {(dynamicStatus === "APROBADO" || dynamicStatus === "RECHAZADO") && !canCorrectStatus ? (
-                      <Text style={{ color: brand.muted, fontSize: 12 }}>
-                        El estado del lote es definitivo y no puede modificarse.
-                      </Text>
-                    ) : null}
-
-                    {canCorrectStatus ? (
-                      <div
-                        style={{
-                          border: `1px solid ${brand.border}`,
-                          borderRadius: 10,
-                          padding: 12,
-                          display: "grid",
-                          gap: 10,
-                          background: brand.surfaceMuted,
-                        }}
-                      >
-                        <Text weight="semibold">Corrección Administrativa</Text>
-                        <Text style={{ color: brand.muted, fontSize: 12 }}>
-                          Corrección excepcional del estado. No es una aprobación ni un rechazo operativo.
-                          No altera historial de aprobaciones ni comentarios.
-                        </Text>
-                        <Text style={{ fontSize: 13 }}>
-                          Estado actual: <strong>{statusToDisplayLabel(dynamicStatus)}</strong>
-                        </Text>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          {allowedStatusCorrections.map((t) => (
-                            <Button
-                              key={t}
-                              size="small"
-                              appearance={statusTarget === t ? "primary" : "secondary"}
-                              onClick={() => setStatusTarget(t)}
-                              disabled={statusCorrectBusy}
-                            >
-                              → {t}
-                            </Button>
-                          ))}
-                        </div>
-                        <div>
-                          <Text className={s.fieldLabel}>Motivo *</Text>
-                          <Textarea
-                            value={statusMotivo}
-                            onChange={(_, d) => setStatusMotivo(d.value)}
-                            placeholder='Ej. "Error de liberación detectado."'
-                            rows={3}
-                            resize="vertical"
-                            maxLength={500}
-                          />
-                        </div>
-                        <Button
-                          appearance="primary"
-                          size="small"
-                          disabled={!statusTarget || !statusMotivo.trim() || statusCorrectBusy}
-                          onClick={() => setStatusConfirmOpen(true)}
-                        >
-                          Aplicar corrección de estado
-                        </Button>
-                      </div>
-                    ) : null}
-
-                    <Field label={LABELS.statusDynamics} value={asText(statusDynamicsRef)} />
-                    <Field label={LABELS.qualityOrderStatus} value={readDynamic(data, "qualityOrderStatus")} />
-                    <Field label={LABELS.passedBatchDispositionCode} value={readDynamic(data, "passedBatchDispositionCode")} />
-                    <Field label={LABELS.batchDispositionCode} value={readDynamic(data, "batchDispositionCode")} />
-                    <Field label={LABELS.ubicacion} value={readDynamic(data, "ubicacion")} />
-                    <Field label={LABELS.almacen} value={readDynamic(data, "almacen")} />
-                    <Field label={LABELS.cantidad} value={dynamicCantidad} />
-                    <Field label={LABELS.fuente} value={fuenteDisplayLabel} />
-                  </div>
-                </AppCard>
-              </div>
-
-              <AppCard className={s.historyFull} style={{ marginTop: 24 }}>
-                <Text weight="semibold">{LABELS.scanHistory}</Text>
-                <div style={{ marginTop: 12 }}>
-                  {scans === null ? null : scans.length === 0 ? (
-                    <EmptyState title={LABELS.noScans} />
-                  ) : (
-                    <ScanHistoryTable events={scans} />
-                  )}
-                </div>
-                {canDownloadPdf && (
-                  <div style={{ marginTop: 12 }}>
-                    <Button
-                      appearance="secondary"
-                      size="small"
-                      onClick={() =>
-                        downloadAuditPdf(loteTrim, (msg) =>
-                          toasts.push({ intent: "error", title: "Error", message: msg })
-                        )
-                      }
-                    >
-                      {LABELS.downloadAuditPdf}
+          <div className={s.centerGrid}>
+            {/* Left: lot info + comments (order 2 on mobile) */}
+            <div className={`${s.leftStack} ${s.columnOrderLeft}`}>
+              <AppCard>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <Text weight="semibold">{LABELS.labelData}</Text>
+                  {canCorrect && !editing ? (
+                    <Button appearance="secondary" size="small" onClick={startEdit}>
+                      Editar (Administrador)
                     </Button>
+                  ) : null}
+                  {editing ? (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <Button appearance="secondary" size="small" onClick={cancelEdit} disabled={editBusy}>
+                        Cancelar
+                      </Button>
+                      <Button
+                        appearance="primary"
+                        size="small"
+                        disabled={editBusy || !(editForm?.motivo ?? "").trim()}
+                        onClick={() => setConfirmOpen(true)}
+                      >
+                        Guardar corrección
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+
+                {editing && editForm ? (
+                  <div className={s.editGrid}>
+                    <div>
+                      <Text className={s.fieldLabel}>Tipo material</Text>
+                      <Input
+                        value={editForm.tipoMaterial}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, tipoMaterial: d.value })}
+                      />
+                    </div>
+                    <div>
+                      <Text className={s.fieldLabel}>Nombre</Text>
+                      <Input
+                        value={editForm.nombre}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, nombre: d.value })}
+                      />
+                    </div>
+                    <div>
+                      <Text className={s.fieldLabel}>Código</Text>
+                      <Input
+                        value={editForm.codigo}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, codigo: d.value })}
+                      />
+                    </div>
+                    <div>
+                      <Text className={s.fieldLabel}>Fecha entrada (dd/MM/yyyy)</Text>
+                      <Input
+                        value={editForm.fechaEntrada}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, fechaEntrada: d.value })}
+                      />
+                    </div>
+                    <div>
+                      <Text className={s.fieldLabel}>Caducidad</Text>
+                      <Input
+                        value={editForm.caducidad}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, caducidad: d.value })}
+                      />
+                    </div>
+                    <div>
+                      <Text className={s.fieldLabel}>Reanálisis</Text>
+                      <Input
+                        value={editForm.reanalisis}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, reanalisis: d.value })}
+                      />
+                    </div>
+                    <div>
+                      <Text className={s.fieldLabel}>Envase núm.</Text>
+                      <Input
+                        value={editForm.envaseNum}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, envaseNum: d.value })}
+                      />
+                    </div>
+                    <div>
+                      <Text className={s.fieldLabel}>Envases total</Text>
+                      <Input
+                        value={editForm.envaseTotal}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, envaseTotal: d.value })}
+                      />
+                    </div>
+                    <div className={s.editFull}>
+                      <Text className={s.fieldLabel}>Cantidad por envase (incluye unidad si aplica)</Text>
+                      <Input
+                        value={editForm.cantidadPorEnvase}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, cantidadPorEnvase: d.value })}
+                      />
+                    </div>
+                    <div className={s.editFull}>
+                      <Text className={s.fieldLabel}>Motivo de la modificación *</Text>
+                      <Textarea
+                        value={editForm.motivo}
+                        onChange={(_, d) => setEditForm((f) => f && { ...f, motivo: d.value })}
+                        placeholder="Ej. Error de captura detectado durante revisión."
+                        rows={3}
+                        resize="vertical"
+                        maxLength={500}
+                      />
+                    </div>
+                    <Text className={s.editFull} style={{ color: brand.muted, fontSize: 12 }}>
+                      El inventario y la unidad de Dynamics no se corrigen aquí (solo consulta).
+                    </Text>
+                  </div>
+                ) : (
+                  <div className={s.dataGrid}>
+                    <Field label="Tipo material" value={readLabel(data, "tipoMaterial")} />
+                    <Field label="Nombre" value={readLabel(data, "nombre")} />
+                    <CopyField
+                      label="Código"
+                      value={readLabel(data, "codigo")}
+                      onCopy={handleCopy}
+                    />
+                    <CopyField
+                      label="Lote"
+                      value={readLabel(data, "lote")}
+                      onCopy={handleCopy}
+                    />
+                    <Field label="Fecha entrada" value={fechaEntradaDisplay} />
+                    <Field label="Caducidad" value={readLabel(data, "caducidad")} />
+                    <Field label="Reanálisis" value={readLabel(data, "reanalisis")} />
+                    <Field label={LABELS.envase} value={labelEnvase} />
+                    <Field
+                      label="Cantidad por envase"
+                      value={readLabel(data, "cantidadPorEnvase")}
+                    />
                   </div>
                 )}
               </AppCard>
-            </div>
-          )}
 
-          {activeTab === "comentarios" && (
-            <div className={s.tabPanel}>
-              <AppCard className={s.historyFull}>
+              <AppCard>
                 <Text weight="semibold">{LABELS.comments}</Text>
                 <Text style={{ display: "block", marginTop: 4, color: brand.muted, fontSize: 13 }}>
-                  Bitácora operativa del lote. Los comentarios no se pueden editar ni eliminar. Máx. {COMMENT_MAX} caracteres.
+                  Bitácora operativa del lote. Los comentarios no se pueden editar ni eliminar. Máx.{" "}
+                  {COMMENT_MAX} caracteres.
                 </Text>
 
                 {!commentsAllowed ? (
@@ -902,18 +781,20 @@ export default function BatchLookupPage() {
                 ) : (
                   <>
                     <div className={s.commentList}>
-                      {comments === null ? (
+                      {sortedComments === null ? (
                         <LoadingState label="Cargando comentarios…" />
-                      ) : comments.length === 0 ? (
+                      ) : sortedComments.length === 0 ? (
                         <EmptyState title={LABELS.commentsEmpty} />
                       ) : (
-                        comments.map((c) => {
+                        sortedComments.map((c) => {
                           const when = formatDateTime(c.createdAt);
                           return (
                             <div key={c.id} className={s.commentCard}>
                               <div className={s.commentMeta}>{`${when.date} ${when.time}`}</div>
+                              <div className={s.commentAuthor}>
+                                {displayUserIdentity(c.displayName, c.username)}
+                              </div>
                               <div className={s.commentRole}>{roleDisplay(c.role)}</div>
-                              <div className={s.commentAuthor}>{c.displayName || c.username || "—"}</div>
                               <div className={s.commentBody}>{`"${c.comment}"`}</div>
                             </div>
                           );
@@ -921,33 +802,250 @@ export default function BatchLookupPage() {
                       )}
                     </div>
 
-                    <div className={s.commentForm}>
-                      <Textarea
-                        value={commentDraft}
-                        onChange={(_, d) => setCommentDraft(d.value.slice(0, COMMENT_MAX))}
-                        placeholder={LABELS.commentsPlaceholder}
-                        rows={4}
-                        resize="vertical"
-                        maxLength={COMMENT_MAX}
-                      />
-                      <Text style={{ color: brand.muted, fontSize: 12 }}>
-                        {commentDraft.length}/{COMMENT_MAX}
-                      </Text>
-                      <div>
-                        <Button
-                          appearance="primary"
-                          disabled={!commentDraft.trim() || commentBusy}
-                          onClick={() => void submitComment()}
-                        >
-                          {commentBusy ? "…" : LABELS.commentsAdd}
+                    {commentComposerOpen ? (
+                      <div className={s.commentForm}>
+                        <Textarea
+                          value={commentDraft}
+                          onChange={(_, d) => setCommentDraft(d.value.slice(0, COMMENT_MAX))}
+                          placeholder={LABELS.commentsPlaceholder}
+                          rows={4}
+                          resize="vertical"
+                          maxLength={COMMENT_MAX}
+                        />
+                        <Text style={{ color: brand.muted, fontSize: 12 }}>
+                          {commentDraft.length}/{COMMENT_MAX}
+                        </Text>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          <Button
+                            appearance="primary"
+                            disabled={!commentDraft.trim() || commentBusy}
+                            onClick={() => void submitComment()}
+                          >
+                            {commentBusy ? "…" : LABELS.commentsSave}
+                          </Button>
+                          <Button
+                            appearance="secondary"
+                            disabled={commentBusy}
+                            onClick={cancelCommentComposer}
+                          >
+                            {LABELS.commentsCancel}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 16 }}>
+                        <Button appearance="primary" onClick={() => setCommentComposerOpen(true)}>
+                          {LABELS.commentsAdd}
                         </Button>
                       </div>
-                    </div>
+                    )}
                   </>
                 )}
               </AppCard>
             </div>
-          )}
+
+            {/* Right: status + summary + technical (order 1 on mobile) */}
+            <div className={`${s.rightStack} ${s.columnOrderRight}`}>
+              <AppCard>
+                <Text weight="semibold">{LABELS.dynamicState}</Text>
+
+                <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <StatusTag status={operationalStatus} />
+                  </div>
+
+                  <Text style={{ fontSize: 12, color: brand.muted }}>
+                    {LABELS.statusOrigin}: Dynamics 365 Finance & Operations
+                  </Text>
+
+                  <Field label="Tipo de material" value={tipoMaterialDisplay} />
+
+                  {(needsCalidadApproval(tipoMaterialCode) || needsInspeccionApproval(tipoMaterialCode)) && (
+                    <div style={{ fontSize: 13, color: brand.text2, display: "grid", gap: 8 }}>
+                      {needsCalidadApproval(tipoMaterialCode) ? (
+                        <ApprovalLegBlock
+                          title="Calidad"
+                          approved={calidadApproved}
+                          leg={calidadLeg}
+                        />
+                      ) : null}
+                      {needsInspeccionApproval(tipoMaterialCode) ? (
+                        <ApprovalLegBlock
+                          title="Inspección"
+                          approved={inspeccionApproved}
+                          leg={inspeccionLeg}
+                        />
+                      ) : null}
+                      {pendingMessage ? (
+                        <Text style={{ color: brand.warningFg, fontWeight: 600 }}>{pendingMessage}</Text>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {(canApprove || canReject) && (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {canApprove ? (
+                        <Button
+                          appearance="primary"
+                          size="small"
+                          onClick={() => void changeStatus("approve")}
+                          disabled={statusBusy}
+                        >
+                          {statusBusy ? "…" : "Aprobar"}
+                        </Button>
+                      ) : null}
+                      {canReject ? (
+                        <Button
+                          appearance="secondary"
+                          size="small"
+                          onClick={() => void changeStatus("reject")}
+                          disabled={statusBusy}
+                        >
+                          Rechazar
+                        </Button>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {!canChangeStatus && platformStatus === "CUARENTENA" && !canCorrectStatus ? (
+                    <Text style={{ color: brand.muted, fontSize: 12 }}>
+                      No tienes permiso para aprobar o rechazar este material.
+                    </Text>
+                  ) : null}
+
+                  {(platformStatus === "APROBADO" || platformStatus === "RECHAZADO") && !canCorrectStatus ? (
+                    <Text style={{ color: brand.muted, fontSize: 12 }}>
+                      El workflow interno del lote es definitivo y no puede modificarse aquí.
+                    </Text>
+                  ) : null}
+
+                  {canCorrectStatus ? (
+                    <div
+                      style={{
+                        border: `1px solid ${brand.border}`,
+                        borderRadius: 10,
+                        padding: 12,
+                        display: "grid",
+                        gap: 10,
+                        background: brand.surfaceMuted,
+                      }}
+                    >
+                      <Text weight="semibold">Corrección Administrativa</Text>
+                      <Text style={{ color: brand.muted, fontSize: 12 }}>
+                        Corrección excepcional del estado interno de plataforma. No altera el Estado Operativo
+                        (Dynamics) ni el historial de aprobaciones/comentarios.
+                      </Text>
+                      <Text style={{ fontSize: 13 }}>
+                        Estado plataforma: <strong>{platformStatusLabel(platformStatus)}</strong>
+                      </Text>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {allowedStatusCorrections.map((t) => (
+                          <Button
+                            key={t}
+                            size="small"
+                            appearance={statusTarget === t ? "primary" : "secondary"}
+                            onClick={() => setStatusTarget(t)}
+                            disabled={statusCorrectBusy}
+                          >
+                            → {t}
+                          </Button>
+                        ))}
+                      </div>
+                      <div>
+                        <Text className={s.fieldLabel}>Motivo *</Text>
+                        <Textarea
+                          value={statusMotivo}
+                          onChange={(_, d) => setStatusMotivo(d.value)}
+                          placeholder='Ej. "Error de liberación detectado."'
+                          rows={3}
+                          resize="vertical"
+                          maxLength={500}
+                        />
+                      </div>
+                      <Button
+                        appearance="primary"
+                        size="small"
+                        disabled={!statusTarget || !statusMotivo.trim() || statusCorrectBusy}
+                        onClick={() => setStatusConfirmOpen(true)}
+                      >
+                        Aplicar corrección de estado
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              </AppCard>
+
+              <AppCard>
+                <Text weight="semibold">{LABELS.operationalSummary}</Text>
+                <div className={s.dataGrid}>
+                  <Field label={LABELS.almacen} value={readDynamic(data, "almacen")} />
+                  <Field label={LABELS.ubicacion} value={readDynamic(data, "ubicacion")} />
+                  <Field label={LABELS.cantidad} value={dynamicCantidad} />
+                  <Field label="Fecha de entrada" value={fechaEntradaDisplay} />
+                  <Field label="Caducidad" value={caducidadResumen} />
+                  <Field label={LABELS.fuente} value={fuenteDisplayLabel} />
+                </div>
+              </AppCard>
+
+              <details>
+                <summary
+                  style={{
+                    cursor: "pointer",
+                    color: brand.muted,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    userSelect: "none",
+                  }}
+                >
+                  {LABELS.technicalDetails}
+                </summary>
+                <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+                  <Field
+                    label={LABELS.batchDispositionCode}
+                    value={readDynamic(data, "batchDispositionCode")}
+                  />
+                  <Field
+                    label={LABELS.passedBatchDispositionCode}
+                    value={readDynamic(data, "passedBatchDispositionCode")}
+                  />
+                  <Field
+                    label={LABELS.qualityOrderStatus}
+                    value={readDynamic(data, "qualityOrderStatus")}
+                  />
+                  <Field label={LABELS.statusDynamics} value={asText(statusDynamicsRef)} />
+                  <Text style={{ fontSize: 13, color: brand.text2 }}>
+                    {LABELS.ruleDeterminedBy}: {ruleDisplay}
+                  </Text>
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <AppCard className={s.historyFull} style={{ marginTop: 4 }}>
+            <Text weight="semibold">{LABELS.scanHistory}</Text>
+            <div style={{ marginTop: 12 }}>
+              {scans === null ? null : scans.length === 0 ? (
+                <EmptyState title={LABELS.noScans} />
+              ) : (
+                <ScanHistoryTable events={scans} />
+              )}
+            </div>
+            {canDownloadPdf && (
+              <div style={{ marginTop: 12 }}>
+                <Button
+                  appearance="secondary"
+                  size="small"
+                  onClick={() =>
+                    downloadAuditPdf(loteTrim, (msg) =>
+                      toasts.push({ intent: "error", title: "Error", message: msg })
+                    )
+                  }
+                >
+                  {LABELS.downloadAuditPdf}
+                </Button>
+              </div>
+            )}
+          </AppCard>
 
           <Dialog open={confirmOpen} onOpenChange={(_, d) => setConfirmOpen(!!d.open)}>
             <DialogSurface>
@@ -975,11 +1073,11 @@ export default function BatchLookupPage() {
               <DialogBody>
                 <DialogTitle>Confirmar corrección administrativa</DialogTitle>
                 <DialogContent>
-                  Esto <strong>no es una aprobación</strong>. Se corregirá el estado del lote{" "}
+                  Esto <strong>no es una aprobación</strong>. Se corregirá el estado de plataforma del lote{" "}
                   <strong>{loteTrim}</strong> de{" "}
-                  <strong>{statusToDisplayLabel(dynamicStatus)}</strong> a{" "}
+                  <strong>{platformStatusLabel(platformStatus)}</strong> a{" "}
                   <strong>{statusTarget}</strong>. Quedará registrado en auditoría con el motivo
-                  indicado.
+                  indicado. El Estado Operativo (Dynamics) no cambia.
                 </DialogContent>
                 <DialogActions>
                   <Button

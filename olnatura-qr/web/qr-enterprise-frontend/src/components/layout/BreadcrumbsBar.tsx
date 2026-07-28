@@ -14,7 +14,7 @@ import { brand } from "../../styles/brand";
 
 function labelFor(seg: string) {
   if (!seg) return "Inicio";
-  if (seg === "lookup") return LABELS.lookup;
+  if (seg === "lookup") return LABELS.lookupNav ?? LABELS.lookup;
   if (seg === "scan-history") return LABELS.scanHistory;
   if (seg === "register-label") return "Registrar etiqueta";
   if (seg === "generate-qr") return "Generar etiqueta";

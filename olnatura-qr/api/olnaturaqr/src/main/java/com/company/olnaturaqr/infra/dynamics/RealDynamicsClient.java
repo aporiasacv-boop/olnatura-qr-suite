@@ -14,10 +14,8 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Cliente HTTP puro hacia Dynamics OData. No obtiene tokens ni arma DTOs de negocio.
@@ -188,7 +186,12 @@ public class RealDynamicsClient implements DynamicsClient {
         // Logs temporales de prueba (fecha de entrada).
         log.info("[FechaEntrada] Lote consultado={}", batchNumber);
 
-        List<String> inventDimIds = findInventDimIdsByBatch(batchNumber, accessToken);
+        List<InventDimRecord> dims = findInventDimsByBatch(batchNumber, accessToken);
+        List<String> inventDimIds = dims.stream()
+                .map(InventDimRecord::inventDimId)
+                .filter(id -> id != null && !id.isBlank())
+                .distinct()
+                .toList();
         log.info("[FechaEntrada] inventDimId encontrados={} lote={}", inventDimIds.size(), batchNumber);
 
         if (inventDimIds.isEmpty()) {
@@ -250,7 +253,8 @@ public class RealDynamicsClient implements DynamicsClient {
         return Optional.of(new BatchEntryDateRecord(minRaw));
     }
 
-    private List<String> findInventDimIdsByBatch(String batchNumber, String accessToken) {
+    @Override
+    public List<InventDimRecord> findInventDimsByBatch(String batchNumber, String accessToken) {
         String filter = "inventBatchId eq '" + escapeOdataLiteral(batchNumber) + "'";
         log.debug("Dynamics OData GET InventDimBiEntities lote={}", batchNumber);
         try {
@@ -258,7 +262,7 @@ public class RealDynamicsClient implements DynamicsClient {
                     .uri(uriBuilder -> uriBuilder
                             .path("/data/InventDimBiEntities")
                             .queryParam("$filter", filter)
-                            .queryParam("$select", "inventDimId,inventBatchId")
+                            .queryParam("$select", "inventDimId,inventBatchId,InventLocationId,wMSLocationId")
                             .queryParam("$top", 50)
                             .build())
                     .headers(headers -> headers.setBearerAuth(accessToken))
@@ -270,14 +274,18 @@ public class RealDynamicsClient implements DynamicsClient {
             if (body == null || body.value == null || body.value.isEmpty()) {
                 return List.of();
             }
-            Set<String> ids = new LinkedHashSet<>();
+            List<InventDimRecord> out = new ArrayList<>();
             for (InventDimRow row : body.value) {
                 if (row == null || row.inventDimId == null || row.inventDimId.isBlank()) {
                     continue;
                 }
-                ids.add(row.inventDimId.trim());
+                out.add(new InventDimRecord(
+                        row.inventDimId.trim(),
+                        blankToNull(row.InventLocationId),
+                        blankToNull(row.wMSLocationId)
+                ));
             }
-            return new ArrayList<>(ids);
+            return List.copyOf(out);
         } catch (RestClientException ex) {
             log.warn("Dynamics OData InventDimBiEntities falló lote={} tipo={}",
                     batchNumber, ex.getClass().getSimpleName());
@@ -376,6 +384,13 @@ public class RealDynamicsClient implements DynamicsClient {
         return value.replace("'", "''");
     }
 
+    private static String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
     private static class ItemBatchesResponse {
         public List<ItemBatchesRow> value;
     }
@@ -427,6 +442,8 @@ public class RealDynamicsClient implements DynamicsClient {
     private static class InventDimRow {
         public String inventDimId;
         public String inventBatchId;
+        public String InventLocationId;
+        public String wMSLocationId;
     }
 
     private static class InventTransResponse {

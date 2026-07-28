@@ -45,8 +45,16 @@ data class DynamicDto(
     val unidadInventario: String? = null,
     /** MIN(DatePhysical) Received desde InventTrans. */
     val fechaEntrada: String? = null,
+    /** Estado Operativo (Dynamics). */
     val status: String? = null,
+    val operationalStatusRule: String? = null,
+    val statusSource: String? = null,
+    /** Estado interno plataforma (compatibilidad); no es el banner. */
+    val platformStatus: String? = null,
     val statusDynamics: String? = null,
+    val qualityOrderStatus: String? = null,
+    val passedBatchDispositionCode: String? = null,
+    val batchDispositionCode: String? = null,
     val almacen: String? = null,
     val ubicacion: String? = null,
     val fuente: String? = null,

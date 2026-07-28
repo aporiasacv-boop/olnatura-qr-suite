@@ -21,7 +21,13 @@ import AuditDetailCell from "../components/ui/AuditDetailCell";
 import LoteAutocomplete from "../components/ui/LoteAutocomplete";
 import { brand } from "../styles/brand";
 import { LABELS, formatDateTime, actionTypeDisplay, roleDisplay } from "../utils/displayLabels";
-import { AUDIT_ACTION_FILTER_OPTIONS, resolveUserDisplay } from "../utils/auditActionTranslator";
+import { AUDIT_ACTION_FILTER_OPTIONS, displayUserIdentity } from "../utils/auditActionTranslator";
+import {
+  TABLE_FIXED_STYLE,
+  TABLE_SCROLL_WRAP,
+  TRUNCATE_CELL,
+  cellTitle,
+} from "../utils/tablePresentation";
 
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "20px" },
@@ -273,41 +279,49 @@ export default function AdminAuditPage() {
       </AppCard>
 
       <AppCard>
-        <div style={{ overflowX: "auto" }}>
+        <div style={TABLE_SCROLL_WRAP}>
           {events.length === 0 ? (
             <div style={{ padding: 24, textAlign: "center", color: brand.muted }}>
               {LABELS.noRecords}
             </div>
           ) : (
-            <Table aria-label={LABELS.auditLog}>
+            <Table aria-label={LABELS.auditLog} style={{ ...TABLE_FIXED_STYLE, minWidth: 900 }}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell>{LABELS.fecha}</TableHeaderCell>
-                  <TableHeaderCell>{LABELS.accion}</TableHeaderCell>
-                  <TableHeaderCell>{LABELS.usuario}</TableHeaderCell>
-                  <TableHeaderCell>{LABELS.rol}</TableHeaderCell>
-                  <TableHeaderCell>Lote</TableHeaderCell>
-                  <TableHeaderCell>{LABELS.detalle}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>{LABELS.fecha}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "18%" }}>{LABELS.accion}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>{LABELS.usuario}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>{LABELS.rol}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "14%" }}>Lote</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "28%" }}>{LABELS.detalle}</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {events.map((e) => {
                   const { date, time } = formatDateTime(e.createdAt);
-                  const dateTimeStr =
-                    date !== LABELS.noData && time !== LABELS.noData ? `${date} ${time}` : "—";
+                  const accion = e.actionTypeDisplay ?? actionTypeDisplay(e.actionType);
+                  const usuario = displayUserIdentity(e.actorDisplay);
+                  const rol = e.actorRoleDisplay ?? roleDisplay(e.actorRol);
                   return (
                     <TableRow key={e.id} className="table-hover-row">
-                      <TableCell>{dateTimeStr}</TableCell>
                       <TableCell>
-                        {e.actionTypeDisplay ?? actionTypeDisplay(e.actionType)}
+                        <div style={{ whiteSpace: "nowrap" }}>
+                          <div>{date}</div>
+                          <div style={{ fontSize: 12, color: brand.muted }}>{time}</div>
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        {resolveUserDisplay(e.actorDisplay, undefined, e.actorEmail)}
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(accion)}>
+                        {accion}
                       </TableCell>
-                      <TableCell>
-                        {e.actorRoleDisplay ?? roleDisplay(e.actorRol)}
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(usuario)}>
+                        {usuario}
                       </TableCell>
-                      <TableCell>{e.lote ?? "-"}</TableCell>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(rol)}>
+                        {rol}
+                      </TableCell>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(e.lote ?? undefined)}>
+                        {e.lote ?? "—"}
+                      </TableCell>
                       <TableCell>
                         <AuditDetailCell metadata={e.metadata} actionType={e.actionType} />
                       </TableCell>

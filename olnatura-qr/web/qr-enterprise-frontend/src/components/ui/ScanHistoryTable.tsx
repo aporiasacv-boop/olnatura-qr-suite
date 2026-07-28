@@ -1,66 +1,77 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
+} from "@fluentui/react-components";
 import { LABELS, formatDateTime } from "../../utils/displayLabels";
-import { resolveUserDisplay, translateAuditAction } from "../../utils/auditActionTranslator";
+import { displayUserIdentity, translateAuditAction } from "../../utils/auditActionTranslator";
+import {
+  TABLE_FIXED_STYLE,
+  TABLE_SCROLL_WRAP,
+  TRUNCATE_CELL,
+  cellTitle,
+} from "../../utils/tablePresentation";
 
 function pick(ev: Record<string, unknown>, keys: string[], fallback = "—") {
   for (const k of keys) {
     const v = ev?.[k];
     if (typeof v === "string" && v.trim()) return v;
     if (typeof v === "number") return String(v);
-    if (v != null && typeof v === "object" && !Array.isArray(v)) return String(v);
   }
   return fallback;
 }
 
 export default function ScanHistoryTable({ events }: { events: Record<string, unknown>[] }) {
   return (
-    <div style={{ border: "1px solid #E6E6E6", borderRadius: 12, overflow: "hidden" }}>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 0.8fr 1.2fr 1fr 1fr 1fr",
-          padding: "10px 12px",
-          background: "#F6F7F8",
-          fontWeight: 600,
-        }}
-      >
-        <div>{LABELS.fecha}</div>
-        <div>{LABELS.hora}</div>
-        <div>{LABELS.usuario}</div>
-        <div>{LABELS.rol}</div>
-        <div>{LABELS.accion}</div>
-        <div>{LABELS.detalle}</div>
-      </div>
-
-      {events.map((ev, idx) => {
-        const iso = pick(ev, ["createdAt", "fecha", "timestamp"]);
-        const { date, time } = formatDateTime(iso !== "—" ? iso : undefined);
-        const usuario = resolveUserDisplay(
-          pick(ev, ["userDisplay"], ""),
-          pick(ev, ["username"], ""),
-          undefined,
-          pick(ev, ["scannedBy"], "")
-        );
-        const rol = pick(ev, ["roleDisplay"], "—");
-        const detalle = pick(ev, ["lote", "ubicacion", "location"]);
-        return (
-          <div
-            key={String(ev?.id ?? idx)}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 0.8fr 1.2fr 1fr 1fr 1fr",
-              padding: "10px 12px",
-              borderTop: "1px solid #EFEFEF",
-            }}
-          >
-            <div>{date}</div>
-            <div>{time}</div>
-            <div>{usuario !== "—" ? usuario : LABELS.noData}</div>
-            <div>{rol !== "—" ? rol : LABELS.noData}</div>
-            <div>{translateAuditAction("SCAN_QR")}</div>
-            <div>{detalle !== "—" ? detalle : ""}</div>
-          </div>
-        );
-      })}
+    <div style={TABLE_SCROLL_WRAP}>
+      <Table aria-label={LABELS.scanHistory} style={{ ...TABLE_FIXED_STYLE, minWidth: 680 }}>
+        <TableHeader>
+          <TableRow>
+            <TableHeaderCell style={{ width: "11%" }}>{LABELS.fecha}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "9%" }}>{LABELS.hora}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "24%" }}>{LABELS.usuario}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "14%" }}>{LABELS.rol}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "22%" }}>{LABELS.accion}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "20%" }}>Lote</TableHeaderCell>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {events.map((ev, idx) => {
+            const iso = pick(ev, ["createdAt", "fecha", "timestamp"]);
+            const { date, time } = formatDateTime(iso !== "—" ? iso : undefined);
+            const userDisplay = pick(ev, ["userDisplay"], "");
+            const username = pick(ev, ["username"], "");
+            const usuario = displayUserIdentity(
+              userDisplay !== "—" ? userDisplay : undefined,
+              username !== "—" ? username : undefined
+            );
+            const rol = pick(ev, ["roleDisplay"], "—");
+            const lote = pick(ev, ["lote"], "—");
+            const accion = translateAuditAction("SCAN_QR");
+            return (
+              <TableRow key={String(ev?.id ?? idx)} className="table-hover-row">
+                <TableCell style={{ whiteSpace: "nowrap" }}>{date}</TableCell>
+                <TableCell style={{ whiteSpace: "nowrap" }}>{time}</TableCell>
+                <TableCell style={TRUNCATE_CELL} title={cellTitle(usuario)}>
+                  {usuario !== "—" ? usuario : LABELS.noData}
+                </TableCell>
+                <TableCell style={TRUNCATE_CELL} title={cellTitle(rol !== "—" ? rol : undefined)}>
+                  {rol !== "—" ? rol : LABELS.noData}
+                </TableCell>
+                <TableCell style={TRUNCATE_CELL} title={cellTitle(accion)}>
+                  {accion}
+                </TableCell>
+                <TableCell style={TRUNCATE_CELL} title={cellTitle(lote !== "—" ? lote : undefined)}>
+                  {lote !== "—" ? lote : ""}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

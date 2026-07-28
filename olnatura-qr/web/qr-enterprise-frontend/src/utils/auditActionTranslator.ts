@@ -38,6 +38,33 @@ const ROLE_LABELS: Record<string, string> = {
 const UUID_PATTERN =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
+export function looksLikeUuid(value: string | null | undefined): boolean {
+  return !!value && UUID_PATTERN.test(value.trim());
+}
+
+function looksLikeEmail(value: string): boolean {
+  return value.includes("@");
+}
+
+/**
+ * Identidad visible del usuario: nombre legible o username.
+ * Nunca UUID. Nunca correo como identificador principal.
+ */
+export function displayUserIdentity(
+  actorDisplay?: string | null,
+  username?: string | null
+): string {
+  if (username?.trim()) {
+    const formatted = formatUsernameForDisplay(username);
+    if (formatted !== "—") return formatted;
+  }
+  if (actorDisplay?.trim() && actorDisplay !== "—") {
+    const d = actorDisplay.trim();
+    if (!looksLikeUuid(d) && !looksLikeEmail(d)) return d;
+  }
+  return "—";
+}
+
 export function translateAuditAction(actionType: string | null | undefined): string {
   if (!actionType) return "—";
   const key = actionType.trim().toUpperCase();
@@ -53,34 +80,29 @@ export function translateRole(role: string | null | undefined): string {
 export function formatUsernameForDisplay(username: string | null | undefined): string {
   if (!username || !username.trim()) return "—";
   const trimmed = username.trim();
-  if (UUID_PATTERN.test(trimmed)) return "—";
-  if (trimmed.includes(".") && !trimmed.includes("@")) {
-    const parts = trimmed
-      .split(".")
-      .filter(Boolean)
-      .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase());
-    if (parts.length > 0) return parts.join(" ");
+  if (looksLikeUuid(trimmed)) return "—";
+  if (looksLikeEmail(trimmed)) return "—";
+  if ((trimmed.includes(".") || trimmed.includes("_")) && !trimmed.includes("@")) {
+    const parts = trimmed.split(/[._]/).filter(Boolean);
+    if (parts.length > 1) {
+      return parts
+        .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+        .join(" ");
+    }
   }
   return trimmed;
 }
 
+/** @deprecated Preferir displayUserIdentity para columnas de usuario. */
 export function resolveUserDisplay(
   actorDisplay?: string | null,
   username?: string | null,
-  actorEmail?: string | null,
+  _actorEmail?: string | null,
   scannedBy?: string | null
 ): string {
-  if (actorDisplay && actorDisplay.trim() && actorDisplay !== "—") {
-    return actorDisplay.trim();
-  }
-  if (username && username.trim()) {
-    const formatted = formatUsernameForDisplay(username);
-    if (formatted !== "—") return formatted;
-  }
-  if (actorEmail && actorEmail.trim() && !UUID_PATTERN.test(actorEmail.trim())) {
-    return actorEmail.trim();
-  }
-  if (scannedBy && !UUID_PATTERN.test(String(scannedBy).trim())) {
+  const fromIdentity = displayUserIdentity(actorDisplay, username);
+  if (fromIdentity !== "—") return fromIdentity;
+  if (scannedBy && !looksLikeUuid(String(scannedBy).trim())) {
     return formatUsernameForDisplay(String(scannedBy));
   }
   return "—";

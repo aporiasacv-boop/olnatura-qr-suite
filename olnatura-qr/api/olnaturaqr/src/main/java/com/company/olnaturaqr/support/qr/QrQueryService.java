@@ -9,6 +9,7 @@ import com.company.olnaturaqr.support.security.AuthPrincipal;
 import com.company.olnaturaqr.support.workflow.AdminStatusCorrectionService;
 import com.company.olnaturaqr.support.workflow.ApprovalService;
 import com.company.olnaturaqr.support.workflow.LotOperationalGate;
+import com.company.olnaturaqr.support.workflow.OperationalStatusResolver;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.support.workflow.WorkflowTransitions;
 import org.slf4j.Logger;
@@ -77,7 +78,7 @@ public class QrQueryService {
                 label.getCantidadPorEnvase()
         );
 
-        // Estado del material: solo plataforma (CUARENTENA/APROBADO/RECHAZADO). Nunca Dynamics Open/Pending.
+        // Plataforma (qr_labels.status): solo workflow interno (aprobaciones / corrección admin).
         String platformStatus = WorkflowStatus.normalize(label.getStatus());
 
         QrDto.Dynamic dyn = lookupDynamicsOrFail(lote)
@@ -86,7 +87,7 @@ public class QrQueryService {
                     return toDynamicDto(d, platformStatus);
                 })
                 .orElseGet(() -> {
-                    log.info("[EstadoDiag] lote={} EstadoQR={} QualityOrderStatus=— PassedBatchDispositionCode=— BatchDispositionCode=— (sin Dynamics)",
+                    log.info("[EstadoOperativo] lote={} status=DESCONOCIDO rule=Información insuficiente (sin Dynamics) platformStatus={}",
                             lote, platformStatus);
                     return new QrDto.Dynamic(
                         label.getCodigo(),
@@ -96,6 +97,9 @@ public class QrQueryService {
                         null,
                         null,
                         null,
+                        OperationalStatusResolver.STATUS_DESCONOCIDO,
+                        OperationalStatusResolver.RULE_INSUFFICIENT,
+                        OperationalStatusResolver.SOURCE_DYNAMICS,
                         platformStatus,
                         null,
                         null,
@@ -130,6 +134,9 @@ public class QrQueryService {
                 d.cantidadAlmacen(),
                 d.unidadInventario(),
                 d.fechaEntrada(),
+                d.operationalStatus(),
+                d.operationalStatusRule(),
+                d.statusSource(),
                 platformStatus,
                 d.statusDynamics(),
                 d.qualityOrderStatus(),
@@ -141,13 +148,12 @@ public class QrQueryService {
         );
     }
 
-    /** Log temporal: comparar estado QR (fuente de verdad) vs campos Dynamics (solo referencia). */
-    private static void logEstadoDiag(String lote, String estadoQr, DynamicsLookupDto d) {
-        log.info("[EstadoDiag] lote={} EstadoQR={} QualityOrderStatus={} PassedBatchDispositionCode={} BatchDispositionCode={}",
+    private static void logEstadoDiag(String lote, String platformStatus, DynamicsLookupDto d) {
+        log.info("[EstadoOperativo] lote={} operationalStatus={} rule={} platformStatus(histórico)={} BatchDispositionCode={}",
                 lote,
-                estadoQr,
-                dash(d.qualityOrderStatus()),
-                dash(d.passedBatchDispositionCode()),
+                d.operationalStatus(),
+                d.operationalStatusRule(),
+                platformStatus,
                 dash(d.batchDispositionCode()));
     }
 
@@ -177,7 +183,6 @@ public class QrQueryService {
                 || rolesContains(roles, "PRODUCCION")
                 || rolesContains(roles, "CALIDAD")
                 || rolesContains(roles, "INSPECCION");
-        // Registrar etiqueta (POST) sigue restringido a ADMIN/ALMACEN en el controller.
         boolean canRegisterScan = isAdmin
                 || rolesContains(roles, "ALMACEN")
                 || rolesContains(roles, "PRODUCCION")

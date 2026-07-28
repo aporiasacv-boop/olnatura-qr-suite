@@ -56,7 +56,20 @@ public class QrDto {
             String unidadInventario,
             /** Fecha de entrada Dynamics (MIN DatePhysical Received|Purchased); null si no aplica. */
             String fechaEntrada,
+            /**
+             * Estado Operativo (banner): APROBADO|CUARENTENA|RECHAZADO|DESCONOCIDO.
+             * Interpretado desde Dynamics; no usa qr_labels.status.
+             */
             String status,
+            /** Regla aplicada al Estado Operativo (transparencia). */
+            String operationalStatusRule,
+            /** Fuente textual del Estado Operativo. */
+            String statusSource,
+            /**
+             * Estado interno de plataforma ({@code qr_labels.status}), solo compatibilidad /
+             * workflow de aprobaciones y corrección admin. No es el banner.
+             */
+            String platformStatus,
             /** Resumen informativo Dynamics (QualityOrderStatus); no sincroniza estado QR. */
             String statusDynamics,
             /** QualityOrderHeaders.QualityOrderStatus — diagnóstico. */

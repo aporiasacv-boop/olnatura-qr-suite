@@ -24,11 +24,13 @@ import com.olnatura.qr.ui.components.OlnTopBar
 import com.olnatura.qr.ui.components.PillButton
 import com.olnatura.qr.ui.components.StatusBanner
 import com.olnatura.qr.ui.components.TabletContent
+import com.olnatura.qr.ui.components.operationalStatusLabel
 import com.olnatura.qr.ui.components.statusColors
 import com.olnatura.qr.ui.share.SharePayload
 import com.olnatura.qr.ui.theme.OlnCard
 import com.olnatura.qr.ui.theme.OlnCream
 import com.olnatura.qr.ui.theme.OlnGreen
+import com.olnatura.qr.ui.theme.OlnTextMuted
 import java.text.NumberFormat
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -267,6 +269,10 @@ private fun SuccessContent(
     val label = qr.label
     val dynamic = qr.dynamic
     val status = dynamic?.status ?: "DESCONOCIDO"
+    val platformStatus = dynamic?.platformStatus?.takeIf { it.isNotBlank() } ?: status
+    val statusRule = dynamic?.operationalStatusRule?.takeIf { it.isNotBlank() }
+    val statusSource = dynamic?.statusSource?.takeIf { it.isNotBlank() }
+        ?: "Dynamics 365 Finance & Operations"
     val (bgColor, textColor) = statusColors(status)
 
     fun str(v: String?) = v?.takeIf { it.isNotBlank() } ?: "—"
@@ -374,16 +380,29 @@ private fun SuccessContent(
 
     Spacer(Modifier.height(16.dp))
     StatusBanner(
-        text = status,
+        text = operationalStatusLabel(status),
         bgColor = bgColor,
         textColor = textColor,
         modifier = Modifier.fillMaxWidth()
     )
+    Spacer(Modifier.height(6.dp))
+    Text(
+        text = "Fuente: $statusSource",
+        fontSize = 12.sp,
+        color = OlnTextMuted
+    )
+    if (statusRule != null) {
+        Text(
+            text = "Regla aplicada: $statusRule",
+            fontSize = 12.sp,
+            color = OlnTextMuted
+        )
+    }
 
     if (canCorrect && statusTargets.isNotEmpty()) {
         Spacer(Modifier.height(16.dp))
         AdminStatusCorrectionCard(
-            currentStatus = status,
+            currentStatus = platformStatus,
             statusTargets = statusTargets,
             statusTarget = statusTarget,
             statusMotivo = statusMotivo,

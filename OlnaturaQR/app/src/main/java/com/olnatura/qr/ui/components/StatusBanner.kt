@@ -62,6 +62,17 @@ fun statusColors(status: String?): Pair<Color, Color> {
         s in listOf("APROBADO", "LIBERADO", "VERIFICADO") -> OlnSuccessBg to OlnSuccessText
         s in listOf("RECHAZADO") -> Color(0xFFFEE2E2) to Color(0xFF991B1B)
         s in listOf("CUARENTENA", "PENDIENTE") -> Color(0xFFFEF3C7) to Color(0xFF92400E)
+        s in listOf("DESCONOCIDO") -> Color(0xFFF3F4F6) to Color(0xFF6B7280)
         else -> Color(0xFFF3F4F6) to Color(0xFF6B7280)
+    }
+}
+
+fun operationalStatusLabel(status: String?): String {
+    val s = (status ?: "").trim().uppercase()
+    return when (s) {
+        "APROBADO" -> "🟢 Aprobado"
+        "CUARENTENA" -> "🟡 Cuarentena"
+        "RECHAZADO" -> "🔴 Rechazado"
+        else -> "⚪ Estado no determinado"
     }
 }

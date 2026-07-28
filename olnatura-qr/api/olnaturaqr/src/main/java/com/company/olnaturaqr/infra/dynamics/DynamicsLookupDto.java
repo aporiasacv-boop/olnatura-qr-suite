@@ -17,6 +17,15 @@ public record DynamicsLookupDto(
          */
         String fechaEntrada,
         /**
+         * Estado Operativo interpretado (APROBADO|CUARENTENA|RECHAZADO|DESCONOCIDO).
+         * Fuente de verdad del banner; no usa qr_labels.status.
+         */
+        String operationalStatus,
+        /** Regla aplicada: "Almacén REM" | "Almacén RES" | "Almacén CUARENTENA" | "BatchDispositionCode" | … */
+        String operationalStatusRule,
+        /** Texto fijo de transparencia: Dynamics 365 Finance & Operations */
+        String statusSource,
+        /**
          * Compat / resumen: QualityOrderStatus (informativo; no sincroniza estado QR).
          * Preferir qualityOrderStatus / passedBatchDispositionCode / batchDispositionCode.
          */

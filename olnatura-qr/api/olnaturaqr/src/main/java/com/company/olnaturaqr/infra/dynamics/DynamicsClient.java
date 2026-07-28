@@ -44,6 +44,16 @@ public interface DynamicsClient {
             String datePhysical
     ) {}
 
+    /**
+     * Dimensión de inventario del lote (InventDimBiEntities).
+     * {@code inventLocationId} = almacén (p.ej. MPM, REM, RES, CUARENTENA).
+     */
+    record InventDimRecord(
+            String inventDimId,
+            String inventLocationId,
+            String wmsLocationId
+    ) {}
+
     java.util.Optional<ItemBatchRecord> findItemBatch(String batchNumber, String accessToken);
 
     java.util.Optional<InventoryOnHandRecord> findInventorySitesOnHand(String itemNumber, String accessToken);
@@ -58,4 +68,10 @@ public interface DynamicsClient {
      * Empty si no hay inventDimId o no hay movimientos válidos.
      */
     java.util.Optional<BatchEntryDateRecord> findBatchEntryDate(String batchNumber, String accessToken);
+
+    /**
+     * Dimensiones de inventario del lote (almacenes/ubicaciones).
+     * Empty si no hay filas InventDim.
+     */
+    java.util.List<InventDimRecord> findInventDimsByBatch(String batchNumber, String accessToken);
 }

@@ -1,11 +1,14 @@
 package com.company.olnaturaqr.infra.dynamics;
 
 import com.company.olnaturaqr.support.qr.LoteExtractor;
+import com.company.olnaturaqr.support.workflow.OperationalStatusResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -35,7 +38,7 @@ public class DynamicsLookupService {
 
     /**
      * Busca por BatchNumber: token → ItemBatches → InventorySitesOnHand → ReleasedProductsV2
-     * → InventDim/InventTrans (fecha entrada) → QualityOrderHeaders → DTO.
+     * → InventDim/InventTrans (fecha entrada + almacenes) → QualityOrderHeaders → Estado Operativo → DTO.
      *
      * @return empty si el lote no existe en ItemBatches
      * @throws DynamicsException si falla OAuth, OData crítico, timeout o error interno
@@ -72,10 +75,9 @@ public class DynamicsLookupService {
                     dynamicsClient.findInventorySitesOnHand(itemNumber, accessToken);
             DynamicsClient.InventoryOnHandRecord onHand = onHandOpt.orElse(null);
 
-            // Unidad de inventario: solo InventoryUnitSymbol. Si falla, se omite (solo número).
             String unidadInventario = resolveInventoryUnit(itemNumber, accessToken);
 
-            // Fecha de entrada: InventDimBiEntities → InventTrans (MIN DatePhysical Received|Purchased).
+            List<DynamicsClient.InventDimRecord> inventDims = resolveInventDims(batchNumber, accessToken);
             String fechaEntrada = resolveFechaEntrada(batchNumber, accessToken);
 
             Optional<DynamicsClient.QualityOrderRecord> qualityOpt =
@@ -86,18 +88,40 @@ public class DynamicsLookupService {
             String passedBatchDispositionCode = quality != null
                     ? blankToNull(quality.passedBatchDispositionCode()) : null;
             String batchDispositionCode = blankToNull(batch.batchDispositionCode());
-            // Resumen legado (informativo): QualityOrderStatus; no sincroniza estado QR.
             String statusDynamics = firstNonBlank(qualityOrderStatus, passedBatchDispositionCode);
 
-            String almacen = null;
-            String ubicacion = null;
-            if (quality != null) {
-                almacen = blankToNull(quality.warehouseId());
-                ubicacion = blankToNull(quality.warehouseLocationId());
+            String qualityWarehouse = quality != null ? blankToNull(quality.warehouseId()) : null;
+            String qualityLocation = quality != null ? blankToNull(quality.warehouseLocationId()) : null;
+
+            List<String> inventLocationIds = new ArrayList<>();
+            String firstInventLocation = null;
+            String firstInventWms = null;
+            for (DynamicsClient.InventDimRecord dim : inventDims) {
+                if (dim == null) {
+                    continue;
+                }
+                if (dim.inventLocationId() != null && !dim.inventLocationId().isBlank()) {
+                    inventLocationIds.add(dim.inventLocationId());
+                    if (firstInventLocation == null) {
+                        firstInventLocation = dim.inventLocationId();
+                        firstInventWms = dim.wmsLocationId();
+                    }
+                }
             }
+
+            OperationalStatusResolver.Result op = OperationalStatusResolver.resolve(
+                    inventLocationIds,
+                    qualityWarehouse,
+                    batchDispositionCode,
+                    true
+            );
+
+            // Almacén/ubicación mostrados: el decisivo del Estado Operativo si aplica; si no, Quality / InventDim.
+            String almacen = firstNonBlank(op.warehouseApplied(), qualityWarehouse, firstInventLocation);
             if (almacen == null && onHand != null) {
                 almacen = blankToNull(onHand.inventorySiteId());
             }
+            String ubicacion = firstNonBlank(qualityLocation, firstInventWms);
 
             DynamicsLookupDto dto = new DynamicsLookupDto(
                     itemNumber,
@@ -107,6 +131,9 @@ public class DynamicsLookupService {
                     onHand != null ? onHand.availableOnHandQuantity() : null,
                     unidadInventario,
                     fechaEntrada,
+                    op.status(),
+                    op.ruleApplied(),
+                    op.statusSource(),
                     statusDynamics,
                     qualityOrderStatus,
                     passedBatchDispositionCode,
@@ -115,12 +142,13 @@ public class DynamicsLookupService {
                     ubicacion,
                     resolveFuente()
             );
-            // Log temporal diagnóstico estado QR vs Dynamics (estado QR se completa en QrQueryService).
-            log.info("[EstadoDiag] lote={} QualityOrderStatus={} PassedBatchDispositionCode={} BatchDispositionCode={}",
+            log.info("[EstadoOperativo] lote={} status={} rule={} warehouse={} BatchDispositionCode={} inventLocations={}",
                     dto.lote(),
-                    nullToDash(qualityOrderStatus),
-                    nullToDash(passedBatchDispositionCode),
-                    nullToDash(batchDispositionCode));
+                    dto.operationalStatus(),
+                    dto.operationalStatusRule(),
+                    nullToDash(op.warehouseApplied()),
+                    nullToDash(batchDispositionCode),
+                    inventLocationIds);
             log.debug("DynamicsLookup OK lote={} fuente={}", dto.lote(), dto.fuente());
             return Optional.of(dto);
         } catch (DynamicsException ex) {
@@ -132,10 +160,6 @@ public class DynamicsLookupService {
         }
     }
 
-    /**
-     * Consulta ReleasedProductsV2 por ItemNumber.
-     * Ante fallo o sin unidad: null (no interrumpe el lookup).
-     */
     private String resolveInventoryUnit(String itemNumber, String accessToken) {
         try {
             return dynamicsClient.findReleasedProduct(itemNumber, accessToken)
@@ -153,10 +177,21 @@ public class DynamicsLookupService {
         }
     }
 
-    /**
-     * Fecha de entrada vía InventDimBiEntities + InventTransCDSEntities.
-     * Ante fallo o sin movimientos Received: null (no interrumpe el lookup).
-     */
+    private List<DynamicsClient.InventDimRecord> resolveInventDims(String batchNumber, String accessToken) {
+        try {
+            List<DynamicsClient.InventDimRecord> dims = dynamicsClient.findInventDimsByBatch(batchNumber, accessToken);
+            return dims != null ? dims : List.of();
+        } catch (DynamicsException ex) {
+            log.warn("DynamicsLookup: InventDim omitido lote={} reason={}",
+                    batchNumber, ex.getClass().getSimpleName());
+            return List.of();
+        } catch (Exception ex) {
+            log.warn("DynamicsLookup: InventDim error lote={} tipo={}",
+                    batchNumber, ex.getClass().getSimpleName());
+            return List.of();
+        }
+    }
+
     private String resolveFechaEntrada(String batchNumber, String accessToken) {
         try {
             return dynamicsClient.findBatchEntryDate(batchNumber, accessToken)
@@ -190,12 +225,14 @@ public class DynamicsLookupService {
         return FUENTE_REAL;
     }
 
-    private static String firstNonBlank(String a, String b) {
-        if (a != null && !a.isBlank()) {
-            return a.trim();
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
         }
-        if (b != null && !b.isBlank()) {
-            return b.trim();
+        for (String v : values) {
+            if (v != null && !v.isBlank()) {
+                return v.trim();
+            }
         }
         return null;
     }

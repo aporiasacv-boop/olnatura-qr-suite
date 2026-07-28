@@ -16,14 +16,13 @@ import type { AccessRequestItem } from "../api/types";
 import { useToasts } from "../components/ui/toasts";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
-import { resolveUserDisplay, translateRole } from "../utils/auditActionTranslator";
-
-const truncateCell: React.CSSProperties = {
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  maxWidth: 0,
-};
+import { displayUserIdentity, translateRole } from "../utils/auditActionTranslator";
+import {
+  TABLE_FIXED_STYLE,
+  TABLE_SCROLL_WRAP,
+  TRUNCATE_CELL,
+  cellTitle,
+} from "../utils/tablePresentation";
 
 const useStyles = makeStyles({
   wrap: { display: "grid", gap: "16px" },
@@ -54,11 +53,6 @@ const useStyles = makeStyles({
     placeItems: "center",
     rowGap: "16px",
     ...shorthands.padding("24px"),
-  },
-  table: {
-    width: "100%",
-    tableLayout: "fixed",
-    minWidth: "640px",
   },
   userCell: {
     display: "flex",
@@ -91,12 +85,7 @@ function formatRefreshTime(d: Date | null): string {
 }
 
 function requestUserLabel(r: AccessRequestItem): string {
-  return resolveUserDisplay(
-    undefined,
-    r.username,
-    r.email,
-    undefined
-  );
+  return displayUserIdentity(undefined, r.username);
 }
 
 export default function AdminApprovalPage() {
@@ -216,8 +205,8 @@ export default function AdminApprovalPage() {
             </Button>
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <Table aria-label="Solicitudes de acceso" className={s.table}>
+          <div style={TABLE_SCROLL_WRAP}>
+            <Table aria-label="Solicitudes de acceso" style={{ ...TABLE_FIXED_STYLE, minWidth: 680 }}>
               <TableHeader>
                 <TableRow>
                   <TableHeaderCell style={{ width: "28%" }}>Usuario</TableHeaderCell>
@@ -238,7 +227,7 @@ export default function AdminApprovalPage() {
                     displayName !== r.username.trim();
                   return (
                     <TableRow key={String(r.id)} className="table-hover-row">
-                      <TableCell title={r.username || displayName}>
+                      <TableCell title={cellTitle(r.username || displayName)}>
                         <div className={s.userCell}>
                           <span className={s.userPrimary}>{displayName}</span>
                           {showUsernameHint ? (
@@ -246,13 +235,13 @@ export default function AdminApprovalPage() {
                           ) : null}
                         </div>
                       </TableCell>
-                      <TableCell style={truncateCell} title={r.email}>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(r.email)}>
                         {r.email}
                       </TableCell>
-                      <TableCell style={truncateCell} title={translateRole(r.role)}>
+                      <TableCell style={TRUNCATE_CELL} title={cellTitle(translateRole(r.role))}>
                         {translateRole(r.role)}
                       </TableCell>
-                      <TableCell style={truncateCell}>
+                      <TableCell style={TRUNCATE_CELL}>
                         {r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}
                       </TableCell>
                       <TableCell>

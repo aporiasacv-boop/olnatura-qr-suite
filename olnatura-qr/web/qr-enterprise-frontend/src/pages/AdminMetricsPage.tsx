@@ -17,6 +17,13 @@ import AppCard from "../components/ui/AppCard";
 import AuditDetailCell from "../components/ui/AuditDetailCell";
 import { brand } from "../styles/brand";
 import { LABELS, formatDateTime, actionTypeDisplay } from "../utils/displayLabels";
+import { displayUserIdentity } from "../utils/auditActionTranslator";
+import {
+  TABLE_FIXED_STYLE,
+  TABLE_SCROLL_WRAP,
+  TRUNCATE_CELL,
+  cellTitle,
+} from "../utils/tablePresentation";
 
 type DailyPoint = { date: string; labelsCreated: number; scans: number };
 
@@ -320,11 +327,14 @@ export default function AdminMetricsPage() {
                     return `${dt.date} ${dt.time}`;
                   })()}
                 </div>
-                {lastExport.actorEmail ? (
-                  <Text className={s.muted} size={200}>
-                    Por {lastExport.actorEmail}
-                  </Text>
-                ) : null}
+                {(() => {
+                  const who = displayUserIdentity(lastExport.actorEmail);
+                  return who !== "—" ? (
+                    <Text className={s.muted} size={200}>
+                      Por {who}
+                    </Text>
+                  ) : null;
+                })()}
                 <div className={s.powerBiStats}>
                   <div>
                     <div className={s.powerBiStatLabel}>Etiquetas exportadas</div>
@@ -401,16 +411,16 @@ export default function AdminMetricsPage() {
       <section>
         <h2 className={s.sectionTitle}>Actividad reciente</h2>
         <AppCard>
-          <div style={{ overflowX: "auto" }}>
-            <Table>
+          <div style={TABLE_SCROLL_WRAP}>
+            <Table style={{ ...TABLE_FIXED_STYLE, minWidth: 900 }}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell>{LABELS.fecha}</TableHeaderCell>
-                  <TableHeaderCell>{LABELS.accion}</TableHeaderCell>
-                  <TableHeaderCell>{LABELS.usuario}</TableHeaderCell>
-                  <TableHeaderCell>{LABELS.rol}</TableHeaderCell>
-                  <TableHeaderCell>Lote</TableHeaderCell>
-                  <TableHeaderCell>{LABELS.detalle}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>{LABELS.fecha}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "18%" }}>{LABELS.accion}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>{LABELS.usuario}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>{LABELS.rol}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "14%" }}>Lote</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "28%" }}>{LABELS.detalle}</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -423,6 +433,9 @@ export default function AdminMetricsPage() {
                 ) : (
                   recent.map((ev) => {
                     const { date, time } = formatDateTime(ev.createdAt);
+                    const accion = ev.actionTypeDisplay ?? actionTypeDisplay(ev.actionType);
+                    const usuario = displayUserIdentity(ev.actorDisplay);
+                    const rol = ev.actorRoleDisplay ?? "—";
                     return (
                       <TableRow key={ev.id} className="table-hover-row">
                         <TableCell>
@@ -431,12 +444,18 @@ export default function AdminMetricsPage() {
                             <div style={{ fontSize: 12, color: brand.muted }}>{time}</div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          {ev.actionTypeDisplay ?? actionTypeDisplay(ev.actionType)}
+                        <TableCell style={TRUNCATE_CELL} title={cellTitle(accion)}>
+                          {accion}
                         </TableCell>
-                        <TableCell>{ev.actorDisplay ?? "—"}</TableCell>
-                        <TableCell>{ev.actorRoleDisplay ?? "—"}</TableCell>
-                        <TableCell>{ev.lote || "—"}</TableCell>
+                        <TableCell style={TRUNCATE_CELL} title={cellTitle(usuario)}>
+                          {usuario}
+                        </TableCell>
+                        <TableCell style={TRUNCATE_CELL} title={cellTitle(rol)}>
+                          {rol}
+                        </TableCell>
+                        <TableCell style={TRUNCATE_CELL} title={cellTitle(ev.lote ?? undefined)}>
+                          {ev.lote || "—"}
+                        </TableCell>
                         <TableCell>
                           <AuditDetailCell metadata={ev.metadata} actionType={ev.actionType} />
                         </TableCell>

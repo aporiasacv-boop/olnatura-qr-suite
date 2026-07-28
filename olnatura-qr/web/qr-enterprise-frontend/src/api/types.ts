@@ -64,6 +64,10 @@ export type DynamicsLookupResponse = {
   almacen: string | null;
   ubicacion: string | null;
   fuente: string;
+  /** Estado Operativo interpretado (Dynamics). */
+  operationalStatus?: string | null;
+  operationalStatusRule?: string | null;
+  statusSource?: string | null;
 };
 
 export type ApprovalLeg = {
