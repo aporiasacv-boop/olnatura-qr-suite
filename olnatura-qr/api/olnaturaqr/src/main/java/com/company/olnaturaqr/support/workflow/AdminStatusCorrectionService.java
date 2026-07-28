@@ -15,9 +15,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Corrección administrativa excepcional del estado del lote (solo ADMIN).
- * No sustituye el flujo normal de liberación. Solo cambia el status actual;
+ * Corrección administrativa excepcional del <strong>estado de plataforma</strong>
+ * ({@code qr_labels.status} / platformStatus). Solo ADMIN.
+ * <p>No sustituye el flujo normal de liberación. Solo cambia el status de plataforma;
  * no altera historial de aprobaciones, comentarios ni bitácora.
+ * <p><strong>Nunca modifica el Estado Operativo</strong> (banner Dynamics /
+ * {@code OperationalStatusResolver}): ese valor es solo lectura desde Dynamics.
  */
 @Service
 public class AdminStatusCorrectionService {
@@ -103,13 +106,13 @@ public class AdminStatusCorrectionService {
 
         Map<String, Object> md = new LinkedHashMap<>();
         md.put("labelId", saved.getId().toString());
-        md.put("field", "status");
-        md.put("fieldLabel", "Estado");
+        md.put("field", "platformStatus");
+        md.put("fieldLabel", "Estado de plataforma");
         md.put("from", from);
         md.put("to", to);
         md.put("motivo", motivo);
         md.put("rol", "ADMIN");
-        md.put("correctionType", "ADMIN_STATUS");
+        md.put("correctionType", "ADMIN_PLATFORM_STATUS");
         auditService.log(principal, "ADMIN_CORRECT_STATUS", saved.getLote(), md, null);
 
         return new StatusCorrectionResult(saved, from, to, motivo);

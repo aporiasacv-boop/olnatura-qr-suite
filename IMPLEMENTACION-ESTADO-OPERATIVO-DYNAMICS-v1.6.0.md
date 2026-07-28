@@ -21,6 +21,13 @@ A partir de v1.6.0 el sistema **interpreta** señales de Dynamics (almacén + di
 
 `qr_labels.status` se conserva solo como **estado de plataforma** (aprobaciones / corrección admin / auditoría interna), expuesto como `dynamic.platformStatus` (no controla el banner).
 
+**Consolidación (post v1.6.1):** ninguna acción de la app puede modificar el Estado Operativo.  
+Ver `ARQUITECTURA-ESTADOS-LOTE.md`.
+
+**Trazabilidad operativa (diseño futuro):** `DISENO-TRAZABILIDAD-ESTADO-OPERATIVO.md`.
+
+**Sincronización manual (v1.6.3):** `SYNC-DYNAMICS-MANUAL.md` — solo lectura OData; no escribe en Dynamics.
+
 ---
 
 ## 2. Nueva lógica implementada

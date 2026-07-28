@@ -18,9 +18,11 @@ import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { displayUserIdentity, translateRole } from "../utils/auditActionTranslator";
 import {
+  TABLE_DATA_CLASS,
   TABLE_FIXED_STYLE,
   TABLE_SCROLL_WRAP,
   TRUNCATE_CELL,
+  TRUNCATE_CELL_PRIORITY,
   cellTitle,
 } from "../utils/tablePresentation";
 
@@ -206,11 +208,15 @@ export default function AdminApprovalPage() {
           </div>
         ) : (
           <div style={TABLE_SCROLL_WRAP}>
-            <Table aria-label="Solicitudes de acceso" style={{ ...TABLE_FIXED_STYLE, minWidth: 680 }}>
+            <Table
+              aria-label="Solicitudes de acceso"
+              className={TABLE_DATA_CLASS}
+              style={{ ...TABLE_FIXED_STYLE, minWidth: 720 }}
+            >
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "28%" }}>Usuario</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "28%" }}>Correo</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "30%" }}>Usuario</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "26%" }}>Correo</TableHeaderCell>
                   <TableHeaderCell style={{ width: "16%" }}>Rol</TableHeaderCell>
                   <TableHeaderCell style={{ width: "16%" }}>Creado</TableHeaderCell>
                   <TableHeaderCell style={{ width: "12%" }}>Acciones</TableHeaderCell>
@@ -227,7 +233,10 @@ export default function AdminApprovalPage() {
                     displayName !== r.username.trim();
                   return (
                     <TableRow key={String(r.id)} className="table-hover-row">
-                      <TableCell title={cellTitle(r.username || displayName)}>
+                      <TableCell
+                        style={TRUNCATE_CELL_PRIORITY}
+                        title={cellTitle(r.username || displayName)}
+                      >
                         <div className={s.userCell}>
                           <span className={s.userPrimary}>{displayName}</span>
                           {showUsernameHint ? (

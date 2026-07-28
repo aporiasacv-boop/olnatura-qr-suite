@@ -17,8 +17,9 @@ public record DynamicsLookupDto(
          */
         String fechaEntrada,
         /**
-         * Estado Operativo interpretado (APROBADO|CUARENTENA|RECHAZADO|DESCONOCIDO).
-         * Fuente de verdad del banner; no usa qr_labels.status.
+         * Estado Operativo (APROBADO|CUARENTENA|RECHAZADO|DESCONOCIDO).
+         * Solo lectura: {@link com.company.olnaturaqr.support.workflow.OperationalStatusResolver}.
+         * No usa ni escribe {@code qr_labels.status}.
          */
         String operationalStatus,
         /** Regla aplicada: "Almacén REM" | "Almacén RES" | "Almacén CUARENTENA" | "BatchDispositionCode" | … */

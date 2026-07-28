@@ -1,0 +1,6 @@
+﻿{
+    "message":  "Error en el servidor remoto: (404) No se encontró.",
+    "status":  404,
+    "body":  "",
+    "uri":  "https://olnatura-produccion.operations.dynamics.com/data/$filter=contains(BatchNumber%2C\u0027MPM0003416\u0027)\u0026$top=10\u0026$select=ItemNumber%2CBatchNumber%2CBatchExpirationDate%2CBatchDispositionCode"
+}

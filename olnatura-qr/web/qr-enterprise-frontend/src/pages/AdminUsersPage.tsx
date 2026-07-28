@@ -19,9 +19,11 @@ import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { displayUserIdentity } from "../utils/auditActionTranslator";
 import {
+  TABLE_DATA_CLASS,
   TABLE_FIXED_STYLE,
   TABLE_SCROLL_WRAP,
   TRUNCATE_CELL,
+  TRUNCATE_CELL_PRIORITY,
   cellTitle,
 } from "../utils/tablePresentation";
 
@@ -140,15 +142,19 @@ export default function AdminUsersPage() {
           <Text className={s.muted}>No hay usuarios registrados.</Text>
         ) : (
           <div style={TABLE_SCROLL_WRAP}>
-            <Table aria-label="Usuarios" style={{ ...TABLE_FIXED_STYLE, minWidth: 760 }}>
+            <Table
+              aria-label="Usuarios"
+              className={TABLE_DATA_CLASS}
+              style={{ ...TABLE_FIXED_STYLE, minWidth: 800 }}
+            >
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "20%" }}>Usuario</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "26%" }}>Correo</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "26%" }}>Usuario</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "24%" }}>Correo</TableHeaderCell>
                   <TableHeaderCell style={{ width: "18%" }}>Rol</TableHeaderCell>
                   <TableHeaderCell style={{ width: "12%" }}>Estado</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "10%" }}>Habilitado</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "14%" }}>Acciones</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "8%" }}>Habilitado</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -158,7 +164,7 @@ export default function AdminUsersPage() {
                   const usuario = displayUserIdentity(undefined, u.username);
                   return (
                     <TableRow key={u.id} className="table-hover-row">
-                      <TableCell style={TRUNCATE_CELL} title={cellTitle(usuario)}>
+                      <TableCell style={TRUNCATE_CELL_PRIORITY} title={cellTitle(usuario)}>
                         {usuario}
                       </TableCell>
                       <TableCell style={TRUNCATE_CELL} title={cellTitle(u.email)}>

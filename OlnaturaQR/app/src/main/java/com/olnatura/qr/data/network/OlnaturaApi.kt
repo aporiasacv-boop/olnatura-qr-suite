@@ -21,6 +21,12 @@ interface OlnaturaApi {
     @GET("api/v1/qr/{lote}")
     suspend fun getQr(@Path("lote") lote: String): QrResponse
 
+    /**
+     * Sincronizar con Dynamics: nueva lectura OData. Solo lectura; no modifica el ERP.
+     */
+    @POST("api/v1/qr/{lote}/sync-dynamics")
+    suspend fun syncDynamics(@Path("lote") lote: String): QrResponse
+
     @POST("api/v1/scan/{lote}")
     suspend fun postScan(
         @Path("lote") lote: String,

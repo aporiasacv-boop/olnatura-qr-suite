@@ -71,6 +71,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/v1/audit/**").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/v1/audit", "/api/v1/audit/*/pdf").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/v1/qr/**").authenticated()
+            .requestMatchers(HttpMethod.POST, "/api/v1/qr/*/sync-dynamics").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/v1/dynamics/**").authenticated()
             .requestMatchers(HttpMethod.POST, "/api/v1/scan/**").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/v1/scan/**").authenticated()

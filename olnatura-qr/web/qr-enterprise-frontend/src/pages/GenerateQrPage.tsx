@@ -9,6 +9,7 @@ import { downloadLabelZplFile } from "../utils/downloadLabelZpl";
 import LabelPreview from "../components/label/LabelPreview";
 import LoteAutocomplete from "../components/ui/LoteAutocomplete";
 import ZplPrintHelpDialog from "../components/ui/ZplPrintHelpDialog";
+import { formatNumber } from "../utils/formatNumber";
 
 function logAudit(actionType: string, lote: string | null) {
   api("/audit/log", {
@@ -65,7 +66,7 @@ function validateReprintRange(
   if (!Number.isFinite(from) || !Number.isFinite(to) || String(fromRaw).trim() === "" || String(toRaw).trim() === "") {
     return {
       ok: false,
-      message: `Indica un rango válido. Este lote tiene ${envaseTotal} envase(s) registrado(s) (permitido: 1 a ${envaseTotal}).`,
+      message: `Indica un rango válido. Este lote tiene ${formatNumber(envaseTotal)} envase(s) registrado(s) (permitido: 1 a ${formatNumber(envaseTotal)}).`,
     };
   }
   if (!Number.isInteger(from) || !Number.isInteger(to)) {
@@ -83,7 +84,7 @@ function validateReprintRange(
   if (from > envaseTotal || to > envaseTotal) {
     return {
       ok: false,
-      message: `Rango inválido: solo existen etiquetas del 1 al ${envaseTotal} para este lote. No se puede reimprimir el envase ${Math.max(from, to)}.`,
+      message: `Rango inválido: solo existen etiquetas del 1 al ${formatNumber(envaseTotal)} para este lote. No se puede reimprimir el envase ${formatNumber(Math.max(from, to))}.`,
     };
   }
   if (from > to) {
@@ -248,8 +249,8 @@ export default function GenerateQrPage() {
           <div className={s.printBox}>
             <Text weight="semibold">Rango a reimprimir</Text>
             <Text style={{ fontSize: 12, color: brand.muted }}>
-              Este lote tiene <strong>{envaseTotal}</strong> envase(s) registrado(s). Solo puedes
-              reimprimir del 1 al {envaseTotal}.
+              Este lote tiene <strong>{formatNumber(envaseTotal)}</strong> envase(s) registrado(s). Solo puedes
+              reimprimir del 1 al {formatNumber(envaseTotal)}.
             </Text>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div>

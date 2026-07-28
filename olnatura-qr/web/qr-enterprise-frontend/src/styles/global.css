@@ -169,6 +169,12 @@ img {
   background-color: #e8ebdc;
 }
 
+/* Tipografía de celdas de datos: solo tbody, no encabezados ni resto de UI */
+.app-data-table tbody td {
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
 /* Microanimación tipo pestaña en tarjetas del panel */
 .app-card--interactive {
   cursor: pointer;

@@ -1,0 +1,26 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventTransCDSEntities(inventDimId,StatusIssue,StatusReceipt,DatePhysical,DateFinancial,DateInvent,DateStatus,DateClosed,Qty,ItemId,Voucher,VoucherPhysical,InventTransOrigin,PackingSlipId,InvoiceId,ReceiptId,TransChildType,TransChildRefId,RecordId)",
+    "value":  [
+                  {
+                      "inventDimId":  "#00000001500AC2DD",
+                      "StatusIssue":  "None",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-05-07T12:00:00Z",
+                      "DateFinancial":  "2026-05-07T12:00:00Z",
+                      "DateInvent":  "1900-01-01T12:00:00Z",
+                      "DateStatus":  "2026-05-07T12:00:00Z",
+                      "DateClosed":  "2026-05-31T12:00:00Z",
+                      "Qty":  247675,
+                      "ItemId":  "106623700100",
+                      "Voucher":  "DTI0005865",
+                      "VoucherPhysical":  "DTI0005865",
+                      "InventTransOrigin":  5638059064,
+                      "PackingSlipId":  "",
+                      "InvoiceId":  "",
+                      "ReceiptId":  "",
+                      "TransChildType":  "None",
+                      "TransChildRefId":  "",
+                      "RecordId":  5638561939
+                  }
+              ]
+}

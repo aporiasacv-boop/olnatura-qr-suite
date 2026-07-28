@@ -1,0 +1,12 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#ItemBatches(ItemNumber,BatchNumber,BatchExpirationDate,BatchDispositionCode)",
+    "value":  [
+                  {
+                      "@odata.etag":  "W/\"JzMyNDk0MzczNyw1NjM3NjQxMDgwJw==\"",
+                      "ItemNumber":  "106623700100",
+                      "BatchNumber":  "240923-MPM0003109",
+                      "BatchExpirationDate":  "2026-04-30T12:00:00Z",
+                      "BatchDispositionCode":  ""
+                  }
+              ]
+}

@@ -1,0 +1,108 @@
+﻿{
+    "suffix":  "MPM0003109",
+    "batchNumber":  "240923-MPM0003109",
+    "itemNumber":  "106623700100",
+    "batchDispositionCode":  "",
+    "batchExpirationDate":  "2026-04-30T12:00:00Z",
+    "inventLocations":  [
+                            "MPM",
+                            "REM"
+                        ],
+    "operationalStatus":  "RECHAZADO",
+    "operationalRule":  "Almacén REM",
+    "operationalWarehouse":  "REM",
+    "qualityOrderCount":  0,
+    "qualityOrders":  [
+
+                      ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#0000000150089831",
+                           "InventLocationId":  "MPM",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#0000000150089B4C",
+                           "InventLocationId":  "MPM",
+                           "wMSLocationId":  "",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#00000001500A77FD",
+                           "InventLocationId":  "MPM",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  ""
+                       },
+                       {
+                           "inventDimId":  "#00000001500AC2DD",
+                           "InventLocationId":  "REM",
+                           "wMSLocationId":  "General",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#00000001500AE06A",
+                           "InventLocationId":  "REM",
+                           "wMSLocationId":  "General",
+                           "InventSiteId":  ""
+                       }
+                   ],
+    "remResCuarentenaMovements":  [
+                                      {
+                                          "location":  "REM",
+                                          "inventDimId":  "#00000001500AC2DD",
+                                          "wMSLocationId":  "General",
+                                          "rowCount":  1,
+                                          "firstDatePhysical":  "2026-05-07T12:00:00Z",
+                                          "firstDateFinancial":  "2026-05-07T12:00:00Z",
+                                          "firstDateInvent":  "1900-01-01T12:00:00Z",
+                                          "firstDateStatus":  "2026-05-07T12:00:00Z",
+                                          "firstDateClosed":  "2026-05-31T12:00:00Z",
+                                          "firstStatusIssue":  "None",
+                                          "firstStatusReceipt":  "Purchased",
+                                          "firstQty":  247675,
+                                          "firstVoucher":  "DTI0005865",
+                                          "firstOrigin":  5638059064,
+                                          "qtyRowDatePhysical":  "2026-05-07T12:00:00Z",
+                                          "qtyRowStatusReceipt":  "Purchased",
+                                          "qtyRowStatusIssue":  "None",
+                                          "qtyRowQty":  247675,
+                                          "sampleRows":  [
+                                                             {
+                                                                 "DatePhysical":  "2026-05-07T12:00:00Z",
+                                                                 "DateFinancial":  "2026-05-07T12:00:00Z",
+                                                                 "DateInvent":  "1900-01-01T12:00:00Z",
+                                                                 "StatusIssue":  "None",
+                                                                 "StatusReceipt":  "Purchased",
+                                                                 "Qty":  247675,
+                                                                 "Voucher":  "DTI0005865",
+                                                                 "InventTransOrigin":  5638059064,
+                                                                 "PackingSlipId":  ""
+                                                             }
+                                                         ]
+                                      },
+                                      {
+                                          "location":  "REM",
+                                          "inventDimId":  "#00000001500AE06A",
+                                          "wMSLocationId":  "General",
+                                          "rowCount":  1,
+                                          "firstDatePhysical":  null,
+                                          "firstDateFinancial":  null,
+                                          "firstDateInvent":  null,
+                                          "firstDateStatus":  null,
+                                          "firstDateClosed":  null,
+                                          "firstStatusIssue":  null,
+                                          "firstStatusReceipt":  null,
+                                          "firstQty":  null,
+                                          "firstVoucher":  null,
+                                          "firstOrigin":  null,
+                                          "qtyRowDatePhysical":  null,
+                                          "qtyRowStatusReceipt":  null,
+                                          "qtyRowStatusIssue":  null,
+                                          "qtyRowQty":  null,
+                                          "sampleRows":  [
+
+                                                         ]
+                                      }
+                                  ]
+}

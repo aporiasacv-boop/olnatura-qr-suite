@@ -17,7 +17,9 @@ export const LABELS = {
   label: "Etiqueta",
   labelData: "Información del lote",
   dynamicStatus: "Estado Operativo",
-  dynamicState: "Estado Operativo Dynamics",
+  dynamicState: "Estado Operativo (Dynamics)",
+  platformStatus: "Estado de plataforma",
+  platformWorkflow: "Workflow interno",
   statusSource: "Fuente",
   operationalStatusRule: "Regla aplicada",
   statusDynamics: "BatchDisposition (resumen)",
@@ -25,8 +27,13 @@ export const LABELS = {
   passedBatchDispositionCode: "PassedBatchDispositionCode",
   batchDispositionCode: "BatchDispositionCode",
   technicalDetails: "Información técnica Dynamics",
-  ruleDeterminedBy: "Estado determinado mediante",
+  ruleDeterminedBy: "Estado Operativo determinado mediante",
   fuente: "Fuente Dynamics",
+  lastSyncedAt: "Última sincronización",
+  syncDynamics: "Sincronizar con Dynamics",
+  syncDynamicsBusy: "Sincronizando…",
+  syncDynamicsHint:
+    "Fuerza una nueva lectura del ERP. No modifica Dynamics ni cambia estados.",
   envase: "Envase",
   cantidad: "Inventario disponible",
   ubicacion: "Ubicación",
@@ -180,4 +187,11 @@ export function formatDateTime(iso: string | null | undefined): { date: string; 
   } catch {
     return { date: LABELS.noData, time: LABELS.noData };
   }
+}
+
+/** Formato: 24/07/2026 14:36:18 */
+export function formatLastSyncedAt(iso: string | null | undefined): string {
+  const { date, time } = formatDateTime(iso);
+  if (date === LABELS.noData || time === LABELS.noData) return LABELS.noData;
+  return `${date} ${time}`;
 }

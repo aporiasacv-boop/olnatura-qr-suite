@@ -45,11 +45,17 @@ data class DynamicDto(
     val unidadInventario: String? = null,
     /** MIN(DatePhysical) Received desde InventTrans. */
     val fechaEntrada: String? = null,
-    /** Estado Operativo (Dynamics). */
+    /**
+     * Estado Operativo (banner). Solo lectura: proviene de Dynamics vía OperationalStatusResolver.
+     * La app nunca lo escribe. No confundir con [platformStatus].
+     */
     val status: String? = null,
     val operationalStatusRule: String? = null,
     val statusSource: String? = null,
-    /** Estado interno plataforma (compatibilidad); no es el banner. */
+    /**
+     * Estado de plataforma (`qr_labels.status`): workflow interno / corrección admin.
+     * No controla el banner de Estado Operativo.
+     */
     val platformStatus: String? = null,
     val statusDynamics: String? = null,
     val qualityOrderStatus: String? = null,
@@ -58,6 +64,11 @@ data class DynamicDto(
     val almacen: String? = null,
     val ubicacion: String? = null,
     val fuente: String? = null,
+    /**
+     * Momento de la última lectura OData (ISO-8601). Solo lectura; no se persiste en la app.
+     * Se actualiza en cada consulta y en «Sincronizar con Dynamics».
+     */
+    val lastSyncedAt: String? = null,
     /** Compat legado; preferir cantidadAlmacen. */
     val cantidad: Double? = null,
     val uom: String? = null

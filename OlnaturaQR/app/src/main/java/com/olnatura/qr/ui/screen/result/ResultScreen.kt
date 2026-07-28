@@ -94,6 +94,8 @@ fun ResultScreen(
                                 lote = lote,
                                 qr = state.qr!!,
                                 todayCount = state.todayCount,
+                                syncing = state.syncing,
+                                syncError = state.syncError,
                                 canCorrect = state.canCorrect,
                                 editing = state.editing,
                                 editForm = state.editForm,
@@ -109,6 +111,8 @@ fun ResultScreen(
                                 commentDraft = state.commentDraft,
                                 commentBusy = state.commentBusy,
                                 commentError = state.commentError,
+                                onSyncDynamics = vm::syncWithDynamics,
+                                onDismissSyncError = vm::clearSyncError,
                                 onStartEdit = vm::startEdit,
                                 onCancelEdit = vm::cancelEdit,
                                 onEditForm = vm::onEditForm,
@@ -160,8 +164,8 @@ fun ResultScreen(
             title = { Text("Confirmar corrección administrativa") },
             text = {
                 Text(
-                    "Esto NO es una aprobación. Se corregirá el estado a ${state.statusTarget}. " +
-                        "No altera historial de aprobaciones ni comentarios."
+                    "Esto NO es una aprobación. Se corregirá el estado de plataforma (workflow interno) a ${state.statusTarget}. " +
+                        "El Estado Operativo (Dynamics) no cambia. No altera historial de aprobaciones ni comentarios."
                 )
             },
             confirmButton = {
@@ -239,6 +243,8 @@ private fun SuccessContent(
     lote: String,
     qr: com.olnatura.qr.data.model.QrResponse,
     todayCount: Int,
+    syncing: Boolean,
+    syncError: String?,
     canCorrect: Boolean,
     editing: Boolean,
     editForm: AdminEditForm,
@@ -254,6 +260,8 @@ private fun SuccessContent(
     commentDraft: String,
     commentBusy: Boolean,
     commentError: String?,
+    onSyncDynamics: () -> Unit,
+    onDismissSyncError: () -> Unit,
     onStartEdit: () -> Unit,
     onCancelEdit: () -> Unit,
     onEditForm: ((AdminEditForm) -> AdminEditForm) -> Unit,
@@ -269,10 +277,12 @@ private fun SuccessContent(
     val label = qr.label
     val dynamic = qr.dynamic
     val status = dynamic?.status ?: "DESCONOCIDO"
-    val platformStatus = dynamic?.platformStatus?.takeIf { it.isNotBlank() } ?: status
+    // Nunca mezclar con Estado Operativo (dynamic.status / banner).
+    val platformStatus = dynamic?.platformStatus?.takeIf { it.isNotBlank() } ?: "CUARENTENA"
     val statusRule = dynamic?.operationalStatusRule?.takeIf { it.isNotBlank() }
     val statusSource = dynamic?.statusSource?.takeIf { it.isNotBlank() }
         ?: "Dynamics 365 Finance & Operations"
+    val lastSyncedDisplay = formatLastSyncedAt(dynamic?.lastSyncedAt)
     val (bgColor, textColor) = statusColors(status)
 
     fun str(v: String?) = v?.takeIf { it.isNotBlank() } ?: "—"
@@ -289,7 +299,7 @@ private fun SuccessContent(
         return raw
     }
 
-    val numberFmt = NumberFormat.getNumberInstance(Locale.US)
+    val numberFmt = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-MX"))
     val inventoryUnit = dynamic?.unidadInventario?.takeIf { it.isNotBlank() }
         ?: dynamic?.uom?.takeIf { it.isNotBlank() }
     val cantidadText = when {
@@ -370,7 +380,12 @@ private fun SuccessContent(
                     value = cantidadText,
                     caption = if (cantidadText != "—") "Actualizado al momento del escaneo" else null
                 )
-                LabelValueRow("Cantidad por envase", str(label?.cantidadPorEnvase))
+                LabelValueRow(
+                    "Cantidad por envase",
+                    label?.cantidadPorEnvase?.trim()?.takeIf { it.isNotEmpty() }?.let { raw ->
+                        raw.toDoubleOrNull()?.let { numberFmt.format(it) } ?: raw
+                    } ?: "—"
+                )
                 LabelValueRow("Estado Dynamics", payload.statusDynamics)
                 LabelValueRow("Fecha de entrada", payload.fechaEntrada)
                 LabelValueRow("Fecha de caducidad", payload.caducidad, showDivider = false)
@@ -385,7 +400,25 @@ private fun SuccessContent(
         textColor = textColor,
         modifier = Modifier.fillMaxWidth()
     )
+    Spacer(Modifier.height(8.dp))
+    PillButton(
+        text = if (syncing) "Sincronizando…" else "Sincronizar con Dynamics",
+        onClick = onSyncDynamics,
+        containerColor = OlnGreen,
+        modifier = Modifier.fillMaxWidth(),
+        enabled = !syncing && !editBusy && !statusCorrectBusy
+    )
     Spacer(Modifier.height(6.dp))
+    Text(
+        text = "Última sincronización",
+        fontSize = 12.sp,
+        color = OlnTextMuted
+    )
+    Text(
+        text = lastSyncedDisplay,
+        fontSize = 13.sp,
+        fontWeight = FontWeight.SemiBold
+    )
     Text(
         text = "Fuente: $statusSource",
         fontSize = 12.sp,
@@ -397,6 +430,17 @@ private fun SuccessContent(
             fontSize = 12.sp,
             color = OlnTextMuted
         )
+    }
+    if (syncError != null) {
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = syncError,
+            fontSize = 13.sp,
+            color = androidx.compose.ui.graphics.Color(0xFFB00020)
+        )
+        TextButton(onClick = onDismissSyncError) {
+            Text("Cerrar")
+        }
     }
 
     if (canCorrect && statusTargets.isNotEmpty()) {
@@ -464,11 +508,8 @@ private fun AdminStatusCorrectionCard(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text("Corrección Administrativa", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-            Text(
-                "Corrección excepcional del estado. No es una aprobación. No altera historial ni comentarios.",
-                fontSize = 13.sp
-            )
-            Text("Estado actual: $currentStatus", fontWeight = FontWeight.Medium)
+            Text("Estado de plataforma actual: $currentStatus", fontWeight = FontWeight.Medium)
+            Text("Estado de plataforma destino", fontWeight = FontWeight.Medium, fontSize = 13.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 statusTargets.forEach { t ->
                     PillButton(
@@ -494,7 +535,7 @@ private fun AdminStatusCorrectionCard(
                 Text(statusCorrectError, color = androidx.compose.ui.graphics.Color(0xFFB00020), fontSize = 13.sp)
             }
             PillButton(
-                text = if (statusCorrectBusy) "Guardando…" else "Aplicar corrección de estado",
+                text = if (statusCorrectBusy) "Guardando…" else "Aplicar corrección de plataforma",
                 onClick = onAskStatusConfirm,
                 containerColor = OlnGreen,
                 modifier = Modifier.fillMaxWidth(),
@@ -641,5 +682,23 @@ private fun formatCommentDateTime(raw: String?): String {
         odt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale("es", "MX")))
     } catch (_: Exception) {
         raw.take(16).replace('T', ' ')
+    }
+}
+
+/** Formato: 24/07/2026 14:36:18 */
+private fun formatLastSyncedAt(raw: String?): String {
+    if (raw.isNullOrBlank()) return "—"
+    return try {
+        val odt = OffsetDateTime.parse(raw)
+        odt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss", Locale("es", "MX")))
+    } catch (_: Exception) {
+        try {
+            val instant = java.time.Instant.parse(raw)
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss", Locale("es", "MX"))
+                .withZone(java.time.ZoneId.systemDefault())
+                .format(instant)
+        } catch (_: Exception) {
+            raw.take(19).replace('T', ' ')
+        }
     }
 }

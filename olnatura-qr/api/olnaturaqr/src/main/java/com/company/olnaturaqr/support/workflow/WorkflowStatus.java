@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Estados de calidad del material (independientes de Dynamics).
- * CUARENTENA = inicial; APROBADO / RECHAZADO = finales operativos.
+ * Estados del <strong>workflow de plataforma</strong> ({@code qr_labels.status} / platformStatus).
+ * Independientes del Estado Operativo Dynamics (banner).
+ * CUARENTENA = inicial; APROBADO / RECHAZADO = terminales del workflow interno.
+ * <p>La app puede mutar estos valores (aprobación / corrección admin); nunca el Estado Operativo.
  */
 public final class WorkflowStatus {
 
@@ -29,7 +31,7 @@ public final class WorkflowStatus {
         if (APROBADO.equals(s)) return APROBADO;
         if (RECHAZADO.equals(s)) return RECHAZADO;
         if (CUARENTENA.equals(s)) return CUARENTENA;
-        // PENDING / LIBERADO / DESCONOCIDO / Open / otros → cuarentena operativa
+        // PENDING / LIBERADO / DESCONOCIDO / Open / otros → cuarentena de plataforma
         return CUARENTENA;
     }
 

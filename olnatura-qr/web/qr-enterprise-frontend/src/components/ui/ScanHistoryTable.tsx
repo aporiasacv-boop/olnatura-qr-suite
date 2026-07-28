@@ -9,9 +9,11 @@ import {
 import { LABELS, formatDateTime } from "../../utils/displayLabels";
 import { displayUserIdentity, translateAuditAction } from "../../utils/auditActionTranslator";
 import {
+  TABLE_DATA_CLASS,
   TABLE_FIXED_STYLE,
   TABLE_SCROLL_WRAP,
   TRUNCATE_CELL,
+  TRUNCATE_CELL_PRIORITY,
   cellTitle,
 } from "../../utils/tablePresentation";
 
@@ -27,15 +29,19 @@ function pick(ev: Record<string, unknown>, keys: string[], fallback = "—") {
 export default function ScanHistoryTable({ events }: { events: Record<string, unknown>[] }) {
   return (
     <div style={TABLE_SCROLL_WRAP}>
-      <Table aria-label={LABELS.scanHistory} style={{ ...TABLE_FIXED_STYLE, minWidth: 680 }}>
+      <Table
+        aria-label={LABELS.scanHistory}
+        className={TABLE_DATA_CLASS}
+        style={{ ...TABLE_FIXED_STYLE, minWidth: 720 }}
+      >
         <TableHeader>
           <TableRow>
-            <TableHeaderCell style={{ width: "11%" }}>{LABELS.fecha}</TableHeaderCell>
-            <TableHeaderCell style={{ width: "9%" }}>{LABELS.hora}</TableHeaderCell>
-            <TableHeaderCell style={{ width: "24%" }}>{LABELS.usuario}</TableHeaderCell>
-            <TableHeaderCell style={{ width: "14%" }}>{LABELS.rol}</TableHeaderCell>
-            <TableHeaderCell style={{ width: "22%" }}>{LABELS.accion}</TableHeaderCell>
-            <TableHeaderCell style={{ width: "20%" }}>Lote</TableHeaderCell>
+            <TableHeaderCell style={{ width: "10%" }}>{LABELS.fecha}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "8%" }}>{LABELS.hora}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "26%" }}>{LABELS.usuario}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "12%" }}>{LABELS.rol}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "18%" }}>{LABELS.accion}</TableHeaderCell>
+            <TableHeaderCell style={{ width: "26%" }}>Lote</TableHeaderCell>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -55,7 +61,7 @@ export default function ScanHistoryTable({ events }: { events: Record<string, un
               <TableRow key={String(ev?.id ?? idx)} className="table-hover-row">
                 <TableCell style={{ whiteSpace: "nowrap" }}>{date}</TableCell>
                 <TableCell style={{ whiteSpace: "nowrap" }}>{time}</TableCell>
-                <TableCell style={TRUNCATE_CELL} title={cellTitle(usuario)}>
+                <TableCell style={TRUNCATE_CELL_PRIORITY} title={cellTitle(usuario)}>
                   {usuario !== "—" ? usuario : LABELS.noData}
                 </TableCell>
                 <TableCell style={TRUNCATE_CELL} title={cellTitle(rol !== "—" ? rol : undefined)}>
@@ -64,7 +70,7 @@ export default function ScanHistoryTable({ events }: { events: Record<string, un
                 <TableCell style={TRUNCATE_CELL} title={cellTitle(accion)}>
                   {accion}
                 </TableCell>
-                <TableCell style={TRUNCATE_CELL} title={cellTitle(lote !== "—" ? lote : undefined)}>
+                <TableCell style={TRUNCATE_CELL_PRIORITY} title={cellTitle(lote !== "—" ? lote : undefined)}>
                   {lote !== "—" ? lote : ""}
                 </TableCell>
               </TableRow>

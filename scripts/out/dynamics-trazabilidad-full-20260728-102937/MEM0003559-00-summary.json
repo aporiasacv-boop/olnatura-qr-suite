@@ -1,0 +1,54 @@
+﻿{
+    "suffix":  "MEM0003559",
+    "batchNumber":  "260406-MEM0003559",
+    "itemNumber":  "400615401502",
+    "batchDispositionCode":  "Aprobado",
+    "batchExpirationDate":  "2028-04-06T12:00:00Z",
+    "inventLocations":  [
+                            "MEM"
+                        ],
+    "operationalStatus":  "APROBADO",
+    "operationalRule":  "BatchDispositionCode",
+    "operationalWarehouse":  "MEM",
+    "qualityOrderCount":  1,
+    "qualityOrders":  [
+                          {
+                              "QualityOrderNumber":  "OCL0015068",
+                              "ItemBatchNumber":  "260406-MEM0003559",
+                              "ItemNumber":  "400615401502",
+                              "QualityOrderStatus":  "Pass",
+                              "ValidationStatus":  null,
+                              "InventoryBatchId":  null,
+                              "ValidatedDateTime":  "2026-04-08T00:09:32Z",
+                              "ValidatingPersonnelNumber":  "3726",
+                              "QMSAssignedToPersonnelNumber":  "",
+                              "PassedBatchDispositionCode":  "Aprobado",
+                              "FailedBatchDispositionCode":  "Rechazado",
+                              "WarehouseId":  "MEM",
+                              "WarehouseLocationId":  "Disponible"
+                          }
+                      ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#00000001500AB10E",
+                           "InventLocationId":  "MEM",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#00000001500AB110",
+                           "InventLocationId":  "MEM",
+                           "wMSLocationId":  "",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#00000001500AE8CA",
+                           "InventLocationId":  "",
+                           "wMSLocationId":  "",
+                           "InventSiteId":  "OLNATURA"
+                       }
+                   ],
+    "remResCuarentenaMovements":  [
+
+                                  ]
+}

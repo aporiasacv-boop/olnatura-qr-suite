@@ -123,8 +123,10 @@ public class AdminLotsController {
     }
 
     /**
-     * Corrección administrativa excepcional del estado del lote (no es aprobación).
-     * Solo cambia status; no altera historial de aprobaciones ni comentarios.
+     * Corrección administrativa excepcional del <strong>estado de plataforma</strong>
+     * ({@code qr_labels.status}). No es una aprobación.
+     * Solo cambia platformStatus; no altera historial de aprobaciones ni comentarios
+     * ni el Estado Operativo Dynamics.
      */
     @PatchMapping("/by-lote/{lote}/correct-status")
     public ResponseEntity<StatusCorrectionResponse> correctStatusByLote(
@@ -216,6 +218,7 @@ public class AdminLotsController {
             String nombre,
             String adminStatus,
             String adminStatusDisplay,
+            /** Workflow de plataforma ({@code qr_labels.status}); no es Estado Operativo Dynamics. */
             String workflowStatus,
             String createdAt
     ) {}
@@ -232,6 +235,7 @@ public class AdminLotsController {
     public record StatusCorrectionResponse(
             String id,
             String lote,
+            /** platformStatus resultante ({@code qr_labels.status}). */
             String status,
             String from,
             String to,

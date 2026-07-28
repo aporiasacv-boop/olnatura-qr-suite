@@ -1,0 +1,6 @@
+﻿{
+    "message":  "Error en el servidor remoto: (400) Solicitud incorrecta.",
+    "status":  400,
+    "body":  "",
+    "uri":  "https://olnatura-produccion.operations.dynamics.com/data/ItemBatches?$filter=contains(BatchNumber%2C\u0027MPM0003109\u0027)\u0026$top=10\u0026$select=ItemNumber%2CBatchNumber%2CBatchExpirationDate%2CBatchDispositionCode"
+}

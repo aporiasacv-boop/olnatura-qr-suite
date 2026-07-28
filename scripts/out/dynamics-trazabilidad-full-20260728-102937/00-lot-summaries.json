@@ -1,0 +1,551 @@
+﻿[
+    {
+        "suffix":  "MEM0003675",
+        "batchNumber":  "260724-MEM0003675",
+        "itemNumber":  "400626402000",
+        "batchDispositionCode":  "",
+        "batchExpirationDate":  "2028-07-22T12:00:00Z",
+        "inventLocations":  [
+                                "MEM"
+                            ],
+        "operationalStatus":  "APROBADO",
+        "operationalRule":  "BatchDispositionCode",
+        "operationalWarehouse":  "MEM",
+        "qualityOrderCount":  1,
+        "qualityOrders":  [
+                              {
+                                  "QualityOrderNumber":  "OCL0015656",
+                                  "ItemBatchNumber":  "260724-MEM0003675",
+                                  "ItemNumber":  "400626402000",
+                                  "QualityOrderStatus":  "Open",
+                                  "ValidationStatus":  null,
+                                  "InventoryBatchId":  null,
+                                  "ValidatedDateTime":  "1900-01-01T00:00:00Z",
+                                  "ValidatingPersonnelNumber":  "",
+                                  "QMSAssignedToPersonnelNumber":  "",
+                                  "PassedBatchDispositionCode":  "",
+                                  "FailedBatchDispositionCode":  "",
+                                  "WarehouseId":  "MEM",
+                                  "WarehouseLocationId":  "Disponible"
+                              }
+                          ],
+        "inventDims":  [
+                           {
+                               "inventDimId":  "#00000001500B1213",
+                               "InventLocationId":  "MEM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500B1216",
+                               "InventLocationId":  "MEM",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           }
+                       ],
+        "remResCuarentenaMovements":  [
+
+                                      ]
+    },
+    {
+        "suffix":  "MEM0003559",
+        "batchNumber":  "260406-MEM0003559",
+        "itemNumber":  "400615401502",
+        "batchDispositionCode":  "Aprobado",
+        "batchExpirationDate":  "2028-04-06T12:00:00Z",
+        "inventLocations":  [
+                                "MEM"
+                            ],
+        "operationalStatus":  "APROBADO",
+        "operationalRule":  "BatchDispositionCode",
+        "operationalWarehouse":  "MEM",
+        "qualityOrderCount":  1,
+        "qualityOrders":  [
+                              {
+                                  "QualityOrderNumber":  "OCL0015068",
+                                  "ItemBatchNumber":  "260406-MEM0003559",
+                                  "ItemNumber":  "400615401502",
+                                  "QualityOrderStatus":  "Pass",
+                                  "ValidationStatus":  null,
+                                  "InventoryBatchId":  null,
+                                  "ValidatedDateTime":  "2026-04-08T00:09:32Z",
+                                  "ValidatingPersonnelNumber":  "3726",
+                                  "QMSAssignedToPersonnelNumber":  "",
+                                  "PassedBatchDispositionCode":  "Aprobado",
+                                  "FailedBatchDispositionCode":  "Rechazado",
+                                  "WarehouseId":  "MEM",
+                                  "WarehouseLocationId":  "Disponible"
+                              }
+                          ],
+        "inventDims":  [
+                           {
+                               "inventDimId":  "#00000001500AB10E",
+                               "InventLocationId":  "MEM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500AB110",
+                               "InventLocationId":  "MEM",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500AE8CA",
+                               "InventLocationId":  "",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           }
+                       ],
+        "remResCuarentenaMovements":  [
+
+                                      ]
+    },
+    {
+        "suffix":  "MEM0003666",
+        "batchNumber":  "260716-MEM0003666",
+        "itemNumber":  "400631402300",
+        "batchDispositionCode":  "Aprobado",
+        "batchExpirationDate":  "2028-07-16T12:00:00Z",
+        "inventLocations":  [
+                                "MEM"
+                            ],
+        "operationalStatus":  "APROBADO",
+        "operationalRule":  "BatchDispositionCode",
+        "operationalWarehouse":  "MEM",
+        "qualityOrderCount":  1,
+        "qualityOrders":  [
+                              {
+                                  "QualityOrderNumber":  "OCL0015616",
+                                  "ItemBatchNumber":  "260716-MEM0003666",
+                                  "ItemNumber":  "400631402300",
+                                  "QualityOrderStatus":  "Pass",
+                                  "ValidationStatus":  null,
+                                  "InventoryBatchId":  null,
+                                  "ValidatedDateTime":  "2026-07-20T16:47:13Z",
+                                  "ValidatingPersonnelNumber":  "3726",
+                                  "QMSAssignedToPersonnelNumber":  "",
+                                  "PassedBatchDispositionCode":  "Aprobado",
+                                  "FailedBatchDispositionCode":  "Rechazado",
+                                  "WarehouseId":  "MEM",
+                                  "WarehouseLocationId":  "Disponible"
+                              }
+                          ],
+        "inventDims":  [
+                           {
+                               "inventDimId":  "#00000001500B0A60",
+                               "InventLocationId":  "MEM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500B0A64",
+                               "InventLocationId":  "MEM",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           }
+                       ],
+        "remResCuarentenaMovements":  [
+
+                                      ]
+    },
+    {
+        "suffix":  "MEM0003625",
+        "batchNumber":  "260619-MEM0003625",
+        "itemNumber":  "400610160202",
+        "batchDispositionCode":  "",
+        "batchExpirationDate":  "2028-06-18T12:00:00Z",
+        "inventLocations":  [
+                                "MEM",
+                                "REM"
+                            ],
+        "operationalStatus":  "RECHAZADO",
+        "operationalRule":  "Almacén REM",
+        "operationalWarehouse":  "REM",
+        "qualityOrderCount":  1,
+        "qualityOrders":  [
+                              {
+                                  "QualityOrderNumber":  "OCL0015476",
+                                  "ItemBatchNumber":  "260619-MEM0003625",
+                                  "ItemNumber":  "400610160202",
+                                  "QualityOrderStatus":  "Pass",
+                                  "ValidationStatus":  null,
+                                  "InventoryBatchId":  null,
+                                  "ValidatedDateTime":  "2026-06-26T20:25:24Z",
+                                  "ValidatingPersonnelNumber":  "3726",
+                                  "QMSAssignedToPersonnelNumber":  "",
+                                  "PassedBatchDispositionCode":  "",
+                                  "FailedBatchDispositionCode":  "",
+                                  "WarehouseId":  "MEM",
+                                  "WarehouseLocationId":  "Disponible"
+                              }
+                          ],
+        "inventDims":  [
+                           {
+                               "inventDimId":  "#00000001500AE9FF",
+                               "InventLocationId":  "MEM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500AEA0C",
+                               "InventLocationId":  "MEM",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500B0CC9",
+                               "InventLocationId":  "REM",
+                               "wMSLocationId":  "General",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500B121E",
+                               "InventLocationId":  "REM",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           }
+                       ],
+        "remResCuarentenaMovements":  [
+                                          {
+                                              "location":  "REM",
+                                              "inventDimId":  "#00000001500B0CC9",
+                                              "wMSLocationId":  "General",
+                                              "rowCount":  1,
+                                              "firstDatePhysical":  "2026-07-27T12:00:00Z",
+                                              "firstDateFinancial":  "2026-07-27T12:00:00Z",
+                                              "firstDateInvent":  "1900-01-01T12:00:00Z",
+                                              "firstDateStatus":  "2026-07-27T12:00:00Z",
+                                              "firstDateClosed":  "1900-01-01T12:00:00Z",
+                                              "firstStatusIssue":  "None",
+                                              "firstStatusReceipt":  "Purchased",
+                                              "firstQty":  2146,
+                                              "firstVoucher":  "DTI0006266",
+                                              "firstOrigin":  5638090582,
+                                              "qtyRowDatePhysical":  "2026-07-27T12:00:00Z",
+                                              "qtyRowStatusReceipt":  "Purchased",
+                                              "qtyRowStatusIssue":  "None",
+                                              "qtyRowQty":  2146,
+                                              "sampleRows":  [
+                                                                 {
+                                                                     "DatePhysical":  "2026-07-27T12:00:00Z",
+                                                                     "DateFinancial":  "2026-07-27T12:00:00Z",
+                                                                     "DateInvent":  "1900-01-01T12:00:00Z",
+                                                                     "StatusIssue":  "None",
+                                                                     "StatusReceipt":  "Purchased",
+                                                                     "Qty":  2146,
+                                                                     "Voucher":  "DTI0006266",
+                                                                     "InventTransOrigin":  5638090582,
+                                                                     "PackingSlipId":  ""
+                                                                 }
+                                                             ]
+                                          },
+                                          {
+                                              "location":  "REM",
+                                              "inventDimId":  "#00000001500B121E",
+                                              "wMSLocationId":  "",
+                                              "rowCount":  1,
+                                              "firstDatePhysical":  null,
+                                              "firstDateFinancial":  null,
+                                              "firstDateInvent":  null,
+                                              "firstDateStatus":  null,
+                                              "firstDateClosed":  null,
+                                              "firstStatusIssue":  null,
+                                              "firstStatusReceipt":  null,
+                                              "firstQty":  null,
+                                              "firstVoucher":  null,
+                                              "firstOrigin":  null,
+                                              "qtyRowDatePhysical":  null,
+                                              "qtyRowStatusReceipt":  null,
+                                              "qtyRowStatusIssue":  null,
+                                              "qtyRowQty":  null,
+                                              "sampleRows":  [
+
+                                                             ]
+                                          }
+                                      ]
+    },
+    {
+        "suffix":  "MPM0003416",
+        "batchNumber":  "260525-MPM0003416",
+        "itemNumber":  "101023130400",
+        "batchDispositionCode":  "Aprobado",
+        "batchExpirationDate":  "2031-02-23T12:00:00Z",
+        "inventLocations":  [
+                                "MPM"
+                            ],
+        "operationalStatus":  "APROBADO",
+        "operationalRule":  "BatchDispositionCode",
+        "operationalWarehouse":  "MPM",
+        "qualityOrderCount":  1,
+        "qualityOrders":  [
+                              {
+                                  "QualityOrderNumber":  "OCL0015337",
+                                  "ItemBatchNumber":  "260525-MPM0003416",
+                                  "ItemNumber":  "101023130400",
+                                  "QualityOrderStatus":  "Pass",
+                                  "ValidationStatus":  null,
+                                  "InventoryBatchId":  null,
+                                  "ValidatedDateTime":  "2026-06-02T20:03:39Z",
+                                  "ValidatingPersonnelNumber":  "3960",
+                                  "QMSAssignedToPersonnelNumber":  "",
+                                  "PassedBatchDispositionCode":  "Aprobado",
+                                  "FailedBatchDispositionCode":  "Rechazado",
+                                  "WarehouseId":  "MPM",
+                                  "WarehouseLocationId":  "Disponible"
+                              }
+                          ],
+        "inventDims":  [
+                           {
+                               "inventDimId":  "#00000001500AD74E",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500B11DD",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           }
+                       ],
+        "remResCuarentenaMovements":  [
+
+                                      ]
+    },
+    {
+        "suffix":  "MPM0003395",
+        "batchNumber":  "260410-MPM0003395",
+        "itemNumber":  "106623850000",
+        "batchDispositionCode":  "",
+        "batchExpirationDate":  "2027-06-24T12:00:00Z",
+        "inventLocations":  [
+                                "MPM"
+                            ],
+        "operationalStatus":  "APROBADO",
+        "operationalRule":  "BatchDispositionCode",
+        "operationalWarehouse":  "MPM",
+        "qualityOrderCount":  0,
+        "qualityOrders":  [
+
+                          ],
+        "inventDims":  [
+                           {
+                               "inventDimId":  "#00000001500AB453",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500AB6F5",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500AB70A",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  ""
+                           }
+                       ],
+        "remResCuarentenaMovements":  [
+
+                                      ]
+    },
+    {
+        "suffix":  "MPM0003109",
+        "batchNumber":  "240923-MPM0003109",
+        "itemNumber":  "106623700100",
+        "batchDispositionCode":  "",
+        "batchExpirationDate":  "2026-04-30T12:00:00Z",
+        "inventLocations":  [
+                                "MPM",
+                                "REM"
+                            ],
+        "operationalStatus":  "RECHAZADO",
+        "operationalRule":  "Almacén REM",
+        "operationalWarehouse":  "REM",
+        "qualityOrderCount":  0,
+        "qualityOrders":  [
+
+                          ],
+        "inventDims":  [
+                           {
+                               "inventDimId":  "#0000000150089831",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#0000000150089B4C",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500A77FD",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  ""
+                           },
+                           {
+                               "inventDimId":  "#00000001500AC2DD",
+                               "InventLocationId":  "REM",
+                               "wMSLocationId":  "General",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500AE06A",
+                               "InventLocationId":  "REM",
+                               "wMSLocationId":  "General",
+                               "InventSiteId":  ""
+                           }
+                       ],
+        "remResCuarentenaMovements":  [
+                                          {
+                                              "location":  "REM",
+                                              "inventDimId":  "#00000001500AC2DD",
+                                              "wMSLocationId":  "General",
+                                              "rowCount":  1,
+                                              "firstDatePhysical":  "2026-05-07T12:00:00Z",
+                                              "firstDateFinancial":  "2026-05-07T12:00:00Z",
+                                              "firstDateInvent":  "1900-01-01T12:00:00Z",
+                                              "firstDateStatus":  "2026-05-07T12:00:00Z",
+                                              "firstDateClosed":  "2026-05-31T12:00:00Z",
+                                              "firstStatusIssue":  "None",
+                                              "firstStatusReceipt":  "Purchased",
+                                              "firstQty":  247675,
+                                              "firstVoucher":  "DTI0005865",
+                                              "firstOrigin":  5638059064,
+                                              "qtyRowDatePhysical":  "2026-05-07T12:00:00Z",
+                                              "qtyRowStatusReceipt":  "Purchased",
+                                              "qtyRowStatusIssue":  "None",
+                                              "qtyRowQty":  247675,
+                                              "sampleRows":  [
+                                                                 {
+                                                                     "DatePhysical":  "2026-05-07T12:00:00Z",
+                                                                     "DateFinancial":  "2026-05-07T12:00:00Z",
+                                                                     "DateInvent":  "1900-01-01T12:00:00Z",
+                                                                     "StatusIssue":  "None",
+                                                                     "StatusReceipt":  "Purchased",
+                                                                     "Qty":  247675,
+                                                                     "Voucher":  "DTI0005865",
+                                                                     "InventTransOrigin":  5638059064,
+                                                                     "PackingSlipId":  ""
+                                                                 }
+                                                             ]
+                                          },
+                                          {
+                                              "location":  "REM",
+                                              "inventDimId":  "#00000001500AE06A",
+                                              "wMSLocationId":  "General",
+                                              "rowCount":  1,
+                                              "firstDatePhysical":  null,
+                                              "firstDateFinancial":  null,
+                                              "firstDateInvent":  null,
+                                              "firstDateStatus":  null,
+                                              "firstDateClosed":  null,
+                                              "firstStatusIssue":  null,
+                                              "firstStatusReceipt":  null,
+                                              "firstQty":  null,
+                                              "firstVoucher":  null,
+                                              "firstOrigin":  null,
+                                              "qtyRowDatePhysical":  null,
+                                              "qtyRowStatusReceipt":  null,
+                                              "qtyRowStatusIssue":  null,
+                                              "qtyRowQty":  null,
+                                              "sampleRows":  [
+
+                                                             ]
+                                          }
+                                      ]
+    },
+    {
+        "suffix":  "MPM0003363",
+        "batchNumber":  "260206-MPM0003363",
+        "itemNumber":  "100623401100",
+        "batchDispositionCode":  "Aprobado",
+        "batchExpirationDate":  "2026-04-03T12:00:00Z",
+        "inventLocations":  [
+                                "MPM",
+                                "REM"
+                            ],
+        "operationalStatus":  "RECHAZADO",
+        "operationalRule":  "Almacén REM",
+        "operationalWarehouse":  "REM",
+        "qualityOrderCount":  1,
+        "qualityOrders":  [
+                              {
+                                  "QualityOrderNumber":  "OCL0014762",
+                                  "ItemBatchNumber":  "260206-MPM0003363",
+                                  "ItemNumber":  "100623401100",
+                                  "QualityOrderStatus":  "Pass",
+                                  "ValidationStatus":  null,
+                                  "InventoryBatchId":  null,
+                                  "ValidatedDateTime":  "2026-02-17T00:07:56Z",
+                                  "ValidatingPersonnelNumber":  "3960",
+                                  "QMSAssignedToPersonnelNumber":  "",
+                                  "PassedBatchDispositionCode":  "Aprobado",
+                                  "FailedBatchDispositionCode":  "Rechazado",
+                                  "WarehouseId":  "MPM",
+                                  "WarehouseLocationId":  "Disponible"
+                              }
+                          ],
+        "inventDims":  [
+                           {
+                               "inventDimId":  "#00000001500A7790",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "Disponible",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500AA008",
+                               "InventLocationId":  "MPM",
+                               "wMSLocationId":  "",
+                               "InventSiteId":  "OLNATURA"
+                           },
+                           {
+                               "inventDimId":  "#00000001500ABFD2",
+                               "InventLocationId":  "REM",
+                               "wMSLocationId":  "General",
+                               "InventSiteId":  "OLNATURA"
+                           }
+                       ],
+        "remResCuarentenaMovements":  [
+                                          {
+                                              "location":  "REM",
+                                              "inventDimId":  "#00000001500ABFD2",
+                                              "wMSLocationId":  "General",
+                                              "rowCount":  1,
+                                              "firstDatePhysical":  "2026-04-22T12:00:00Z",
+                                              "firstDateFinancial":  "2026-04-22T12:00:00Z",
+                                              "firstDateInvent":  "1900-01-01T12:00:00Z",
+                                              "firstDateStatus":  "2026-04-22T12:00:00Z",
+                                              "firstDateClosed":  "2026-04-30T12:00:00Z",
+                                              "firstStatusIssue":  "None",
+                                              "firstStatusReceipt":  "Purchased",
+                                              "firstQty":  41115,
+                                              "firstVoucher":  "DTI0005793",
+                                              "firstOrigin":  5638054574,
+                                              "qtyRowDatePhysical":  "2026-04-22T12:00:00Z",
+                                              "qtyRowStatusReceipt":  "Purchased",
+                                              "qtyRowStatusIssue":  "None",
+                                              "qtyRowQty":  41115,
+                                              "sampleRows":  [
+                                                                 {
+                                                                     "DatePhysical":  "2026-04-22T12:00:00Z",
+                                                                     "DateFinancial":  "2026-04-22T12:00:00Z",
+                                                                     "DateInvent":  "1900-01-01T12:00:00Z",
+                                                                     "StatusIssue":  "None",
+                                                                     "StatusReceipt":  "Purchased",
+                                                                     "Qty":  41115,
+                                                                     "Voucher":  "DTI0005793",
+                                                                     "InventTransOrigin":  5638054574,
+                                                                     "PackingSlipId":  ""
+                                                                 }
+                                                             ]
+                                          }
+                                      ]
+    }
+]

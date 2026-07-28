@@ -1,0 +1,32 @@
+﻿[
+    {
+        "lot":  "MEM0003625",
+        "inventDimId":  "#00000001500B0CC9",
+        "InventLocationId":  "REM",
+        "wMSLocationId":  "General",
+        "DatePhysical_InventTrans":  "2026-07-27",
+        "SysCreatedDateTime":  "2026-07-27T15:48:47Z",
+        "SysModifiedDateTime":  "2026-07-27T15:48:47Z",
+        "SysModifiedBy":  "marco.anguiano"
+    },
+    {
+        "lot":  "MPM0003109",
+        "inventDimId":  "#00000001500AC2DD",
+        "InventLocationId":  "REM",
+        "wMSLocationId":  "General",
+        "DatePhysical_InventTrans":  "2026-05-07",
+        "SysCreatedDateTime":  "2026-05-07T15:16:04Z",
+        "SysModifiedDateTime":  "2026-05-07T15:16:04Z",
+        "SysModifiedBy":  "marco.anguiano"
+    },
+    {
+        "lot":  "MPM0003363",
+        "inventDimId":  "#00000001500ABFD2",
+        "InventLocationId":  "REM",
+        "wMSLocationId":  "General",
+        "DatePhysical_InventTrans":  "2026-04-22",
+        "SysCreatedDateTime":  "2026-04-22T18:09:05Z",
+        "SysModifiedDateTime":  "2026-04-22T18:09:05Z",
+        "SysModifiedBy":  "marisol.ruiz"
+    }
+]

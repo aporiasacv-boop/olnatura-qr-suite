@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -45,8 +46,27 @@ public class QrQueryService {
         this.approvalService = approvalService;
     }
 
+    /**
+     * Consulta por lote: lee etiqueta en BD y vuelve a consultar Dynamics en vivo.
+     * No escribe en Dynamics ni muta Estado Operativo / platformStatus.
+     */
     @Transactional(readOnly = true)
     public QrDto.Response getByLote(String loteRaw, AuthPrincipal principal) {
+        return buildResponse(loteRaw, principal, false);
+    }
+
+    /**
+     * Sincronización manual: fuerza una nueva lectura OData del ERP para el lote.
+     * <p><strong>Solo lectura.</strong> No modifica Dynamics, no cambia estados,
+     * no ejecuta aprobaciones ni correcciones administrativas, no persiste
+     * información operacional. Reutiliza el mismo ensamblaje que {@link #getByLote}.
+     */
+    @Transactional(readOnly = true)
+    public QrDto.Response syncWithDynamics(String loteRaw, AuthPrincipal principal) {
+        return buildResponse(loteRaw, principal, true);
+    }
+
+    private QrDto.Response buildResponse(String loteRaw, AuthPrincipal principal, boolean manualSync) {
         String identifier = LoteExtractor.extract(loteRaw)
                 .orElse(loteRaw != null ? loteRaw.trim() : "");
 
@@ -64,6 +84,10 @@ public class QrQueryService {
         LotOperationalGate.requireActive(label);
 
         String lote = label.getLote();
+        if (manualSync) {
+            log.info("[SyncDynamics] Lectura manual solicitada lote={} (solo consulta OData; sin escritura en ERP)", lote);
+        }
+
         var dtoLabel = new QrDto.Label(
                 label.getTipoMaterial(),
                 label.getNombre(),
@@ -78,13 +102,14 @@ public class QrQueryService {
                 label.getCantidadPorEnvase()
         );
 
-        // Plataforma (qr_labels.status): solo workflow interno (aprobaciones / corrección admin).
+        // platformStatus = qr_labels.status (workflow interno). Independiente del Estado Operativo.
         String platformStatus = WorkflowStatus.normalize(label.getStatus());
+        Instant syncedAt = Instant.now();
 
         QrDto.Dynamic dyn = lookupDynamicsOrFail(lote)
                 .map(d -> {
                     logEstadoDiag(lote, platformStatus, d);
-                    return toDynamicDto(d, platformStatus);
+                    return toDynamicDto(d, platformStatus, syncedAt);
                 })
                 .orElseGet(() -> {
                     log.info("[EstadoOperativo] lote={} status=DESCONOCIDO rule=Información insuficiente (sin Dynamics) platformStatus={}",
@@ -107,7 +132,8 @@ public class QrQueryService {
                         null,
                         null,
                         null,
-                        "DB_ONLY"
+                        "DB_ONLY",
+                        syncedAt
                     );
                 });
 
@@ -125,7 +151,11 @@ public class QrQueryService {
         return dynamicsLookupService.lookupByBatchNumber(lote);
     }
 
-    private static QrDto.Dynamic toDynamicDto(DynamicsLookupDto d, String platformStatus) {
+    private static QrDto.Dynamic toDynamicDto(
+            DynamicsLookupDto d,
+            String platformStatus,
+            Instant lastSyncedAt
+    ) {
         return new QrDto.Dynamic(
                 d.codigo(),
                 d.nombre(),
@@ -144,7 +174,8 @@ public class QrQueryService {
                 d.batchDispositionCode(),
                 d.almacen(),
                 d.ubicacion(),
-                d.fuente()
+                d.fuente(),
+                lastSyncedAt
         );
     }
 

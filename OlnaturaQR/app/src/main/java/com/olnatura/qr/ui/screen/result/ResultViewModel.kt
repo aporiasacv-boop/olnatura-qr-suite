@@ -45,6 +45,9 @@ data class ResultState(
     val gate: GateState = GateState.Checking,
     val loading: Boolean = false,
     val notFound: Boolean = false,
+    /** Sync manual en curso; no vacía [qr] si falla. */
+    val syncing: Boolean = false,
+    val syncError: String? = null,
 
     val me: MeResponse? = null,
     val roles: Set<String> = emptySet(),
@@ -88,6 +91,8 @@ class ResultViewModel(
                 gate = GateState.Checking,
                 loading = true,
                 error = null,
+                syncError = null,
+                syncing = false,
                 notFound = false,
                 qr = null,
                 events = emptyList(),
@@ -166,7 +171,8 @@ class ResultViewModel(
         } else {
             emptyList()
         }
-        val platformStatus = (qr.dynamic?.status ?: "CUARENTENA").trim().uppercase()
+        // Solo platformStatus (qr_labels.status). Nunca usar dynamic.status (Estado Operativo Dynamics).
+        val platformStatus = (qr.dynamic?.platformStatus ?: "CUARENTENA").trim().uppercase()
         val statusTargets = if (canCorrect) statusTargetsFor(platformStatus) else emptyList()
 
         _state.update {
@@ -180,6 +186,56 @@ class ResultViewModel(
                 statusMotivo = ""
             )
         }
+    }
+
+    /**
+     * Sincronizar con Dynamics: nueva lectura OData.
+     * Conserva la información anterior si Dynamics no responde.
+     * No modifica estados ni escribe en el ERP.
+     */
+    fun syncWithDynamics() = viewModelScope.launch {
+        val s = _state.value
+        val lote = s.lote
+        if (lote.isBlank() || s.syncing || s.loading) return@launch
+        _state.update { it.copy(syncing = true, syncError = null) }
+        try {
+            val qr = qrRepo.syncDynamics(lote)
+            val platformStatus = (qr.dynamic?.platformStatus ?: "CUARENTENA").trim().uppercase()
+            val statusTargets = if (s.canCorrect) statusTargetsFor(platformStatus) else emptyList()
+            _state.update {
+                it.copy(
+                    qr = qr,
+                    syncing = false,
+                    syncError = null,
+                    error = null,
+                    statusTargets = statusTargets,
+                    statusTarget = "",
+                    statusMotivo = ""
+                )
+            }
+        } catch (e: Exception) {
+            val http = e as? HttpException
+            when (http?.code()) {
+                401, 403 -> {
+                    _state.update { it.copy(syncing = false, gate = GateState.Unauthorized) }
+                    return@launch
+                }
+                else -> {
+                    val msg = when {
+                        http?.code() == 502 || http?.code() == 504 ->
+                            "No fue posible sincronizar con Dynamics. Se conservó la información anterior."
+                        else ->
+                            "No fue posible sincronizar. Se conservó la información anterior."
+                    }
+                    // Conservar qr previo.
+                    _state.update { it.copy(syncing = false, syncError = msg) }
+                }
+            }
+        }
+    }
+
+    fun clearSyncError() {
+        _state.update { it.copy(syncError = null) }
     }
 
     fun onCommentDraft(value: String) {
@@ -319,9 +375,9 @@ class ResultViewModel(
         } catch (e: Exception) {
             val http = e as? HttpException
             val msg = when (http?.code()) {
-                403 -> "Solo el Administrador puede corregir el estado."
+                403 -> "Solo el Administrador puede corregir el estado de plataforma."
                 401 -> "Sesión expirada. Vuelve a iniciar sesión."
-                else -> (e.message ?: "No se pudo corregir el estado").take(180)
+                else -> (e.message ?: "No se pudo corregir el estado de plataforma").take(180)
             }
             _state.update { it.copy(statusCorrectBusy = false, statusCorrectError = msg) }
         }

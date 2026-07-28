@@ -1,0 +1,26 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventDimBiEntities(inventDimId,inventBatchId,InventLocationId,wMSLocationId,InventSiteId)",
+    "value":  [
+                  {
+                      "inventDimId":  "#00000001500AB10E",
+                      "inventBatchId":  "260406-MEM0003559",
+                      "InventLocationId":  "MEM",
+                      "wMSLocationId":  "Disponible",
+                      "InventSiteId":  "OLNATURA"
+                  },
+                  {
+                      "inventDimId":  "#00000001500AB110",
+                      "inventBatchId":  "260406-MEM0003559",
+                      "InventLocationId":  "MEM",
+                      "wMSLocationId":  "",
+                      "InventSiteId":  "OLNATURA"
+                  },
+                  {
+                      "inventDimId":  "#00000001500AE8CA",
+                      "inventBatchId":  "260406-MEM0003559",
+                      "InventLocationId":  "",
+                      "wMSLocationId":  "",
+                      "InventSiteId":  "OLNATURA"
+                  }
+              ]
+}

@@ -525,4 +525,6 @@ La investigación live de los 4 lotes **está completa**. Antes de implementar c
 3. Decidir si se corrige el proceso en FO (actualizar disposición al mover a REM) o se adopta InventDim como fuente operativa en QR.  
 4. Solo entonces autorizar implementación en Backend/Web/Android.
 
+**Diseño de trazabilidad (sin implementar):** `DISENO-TRAZABILIDAD-ESTADO-OPERATIVO.md`
+
 **Seguridad:** el Client Secret usado en esta sesión quedó expuesto en el chat. **Rotarlo en Azure AD** y no guardarlo en el repositorio.

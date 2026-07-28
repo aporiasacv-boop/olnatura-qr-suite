@@ -26,9 +26,10 @@ import ErrorState from "../components/ui/ErrorState";
 import StatusTag, {
   normalizeOperationalStatus,
 } from "../components/ui/StatusTag";
-import { LABELS, fuenteDisplay, formatDateTime } from "../utils/displayLabels";
+import { LABELS, fuenteDisplay, formatDateTime, formatLastSyncedAt } from "../utils/displayLabels";
 import { displayUserIdentity } from "../utils/auditActionTranslator";
 import { formatDateDDMMYYYY } from "../utils/dateFormat";
+import { formatNumber, formatQuantity } from "../utils/formatNumber";
 import ScanHistoryTable from "../components/ui/ScanHistoryTable";
 import LoteAutocomplete from "../components/ui/LoteAutocomplete";
 
@@ -143,7 +144,7 @@ const STATUS_OPTIONS = [
   { value: "RECHAZADO", label: "RECHAZADO" },
 ] as const;
 
-/** Etiqueta del estado de plataforma (workflow interno / corrección admin). */
+/** Etiqueta del estado de plataforma (workflow interno / corrección admin). No es Estado Operativo. */
 function platformStatusLabel(backendValue: string): string {
   const v = (backendValue ?? "").trim().toUpperCase();
   if (!v || v === "—" || v === "PENDING" || v === "PENDIENTE" || v === "LIBERADO" || v === "OPEN") {
@@ -249,6 +250,7 @@ export default function BatchLookupPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "ok">("idle");
   const [err, setErr] = useState<{ title: string; detail?: string } | null>(null);
   const [statusBusy, setStatusBusy] = useState(false);
+  const [syncBusy, setSyncBusy] = useState(false);
 
   const loteTrim = useMemo(() => lote.trim(), [lote]);
   const commentsAllowed = canUseComments(hasRole);
@@ -318,6 +320,48 @@ export default function BatchLookupPage() {
       });
 
       setStatus("error");
+    }
+  };
+
+  /**
+   * Sincronizar con Dynamics: reconsulta OData sin vaciar la UI.
+   * Si Dynamics falla, conserva la información anterior.
+   */
+  const syncWithDynamics = async () => {
+    const key = loteTrim;
+    if (!key || syncBusy) return;
+
+    setSyncBusy(true);
+    try {
+      const qr = await api<QrResponse>(`/qr/${encodeURIComponent(key)}/sync-dynamics`, {
+        method: "POST",
+        toast: false,
+      });
+      setData(qr);
+      setStatus("ok");
+      setErr(null);
+      toasts.push({
+        intent: "success",
+        title: "Sincronización completada",
+        message: "Se actualizó la información desde Dynamics 365. No se modificó el ERP.",
+      });
+    } catch (e) {
+      const ae = e as ApiError;
+      const isDynamics =
+        ae.status === 502 ||
+        ae.status === 504 ||
+        (typeof ae.body?.error === "string" && String(ae.body.error).startsWith("DYNAMICS_"));
+      toasts.push({
+        intent: "error",
+        title: isDynamics ? "No fue posible sincronizar" : "Error al sincronizar",
+        message: isDynamics
+          ? ae.message ||
+            "Dynamics 365 no respondió. Se conservó la información anterior."
+          : ae.message || "No se pudo sincronizar. Se conservó la información anterior.",
+      });
+      // Conservar data/status previos — no limpiar.
+    } finally {
+      setSyncBusy(false);
     }
   };
 
@@ -428,7 +472,7 @@ export default function BatchLookupPage() {
       toasts.push({
         intent: "error",
         title: "Motivo obligatorio",
-        message: "Indica el motivo de la corrección de estado.",
+        message: "Indica el motivo de la corrección del estado de plataforma.",
       });
       return;
     }
@@ -444,8 +488,8 @@ export default function BatchLookupPage() {
       setStatusTarget("");
       toasts.push({
         intent: "success",
-        title: "Corrección administrativa aplicada",
-        message: `Estado actualizado a ${statusTarget}. Quedó registrado en auditoría.`,
+        title: "Corrección de plataforma aplicada",
+        message: `Estado de plataforma actualizado a ${statusTarget}. El Estado Operativo (Dynamics) no cambia.`,
       });
       await load(loteTrim);
     } catch (e) {
@@ -473,14 +517,17 @@ export default function BatchLookupPage() {
       toasts.push({
         intent: "success",
         title: action === "approve" ? "Aprobación registrada" : "Material rechazado",
-        message: action === "approve" ? "Se actualizó el estado del lote." : "El lote quedó en RECHAZADO.",
+        message:
+          action === "approve"
+            ? "Se actualizó el workflow interno (estado de plataforma). El Estado Operativo (Dynamics) no cambia."
+            : "El workflow interno quedó en RECHAZADO. El Estado Operativo (Dynamics) no cambia.",
       });
       await load(loteTrim);
     } catch (e) {
       const ae = e as ApiError;
       toasts.push({
         intent: "error",
-        title: "No se pudo cambiar el estado",
+        title: "No se pudo actualizar el workflow interno",
         message: ae.message || "Intenta de nuevo.",
       });
     } finally {
@@ -492,7 +539,7 @@ export default function BatchLookupPage() {
     const num = readLabel(data, "envaseNum");
     const total = readLabel(data, "envaseTotal");
     if (num === "—" && total === "—") return "—";
-    return `${num} / ${total}`;
+    return `${formatNumber(num)} / ${formatNumber(total)}`;
   }, [data]);
 
   const fechaEntradaDisplay = useMemo(() => {
@@ -516,8 +563,7 @@ export default function BatchLookupPage() {
   const dynamicCantidad = useMemo(() => {
     const qty = (data as any)?.dynamic?.cantidadAlmacen ?? (data as any)?.dynamic?.cantidad;
     const uom = (data as any)?.dynamic?.unidadInventario ?? (data as any)?.dynamic?.uom;
-    if (qty == null || qty === "") return "—";
-    return uom ? `${qty} ${uom}` : String(qty);
+    return formatQuantity(qty, uom);
   }, [data]);
 
   const canChangeStatus = data?.permissions?.canChangeStatus ?? false;
@@ -548,6 +594,11 @@ export default function BatchLookupPage() {
 
   const dynamicFuenteRaw = (data as any)?.dynamic?.fuente ?? "";
   const fuenteDisplayLabel = fuenteDisplay(dynamicFuenteRaw);
+  const lastSyncedAtRaw = String((data as any)?.dynamic?.lastSyncedAt ?? "").trim();
+  const lastSyncedDisplay = lastSyncedAtRaw ? formatLastSyncedAt(lastSyncedAtRaw) : LABELS.noData;
+  const statusSourceDisplay =
+    String((data as any)?.dynamic?.statusSource ?? "").trim() ||
+    "Dynamics 365 Finance & Operations";
 
   const sortedComments = useMemo(() => {
     if (!comments) return null;
@@ -761,7 +812,7 @@ export default function BatchLookupPage() {
                     <Field label={LABELS.envase} value={labelEnvase} />
                     <Field
                       label="Cantidad por envase"
-                      value={readLabel(data, "cantidadPorEnvase")}
+                      value={formatNumber(readLabel(data, "cantidadPorEnvase"))}
                     />
                   </div>
                 )}
@@ -847,16 +898,42 @@ export default function BatchLookupPage() {
             {/* Right: status + summary + technical (order 1 on mobile) */}
             <div className={`${s.rightStack} ${s.columnOrderRight}`}>
               <AppCard>
-                <Text weight="semibold">{LABELS.dynamicState}</Text>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <Text weight="semibold">{LABELS.dynamicState}</Text>
+                  <Tooltip content={LABELS.syncDynamicsHint} relationship="description">
+                    <Button
+                      appearance="secondary"
+                      size="small"
+                      disabled={syncBusy || statusBusy}
+                      onClick={() => void syncWithDynamics()}
+                    >
+                      {syncBusy ? LABELS.syncDynamicsBusy : LABELS.syncDynamics}
+                    </Button>
+                  </Tooltip>
+                </div>
 
                 <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                     <StatusTag status={operationalStatus} />
                   </div>
 
-                  <Text style={{ fontSize: 12, color: brand.muted }}>
-                    {LABELS.statusOrigin}: Dynamics 365 Finance & Operations
-                  </Text>
+                  <div style={{ display: "grid", gap: 2 }}>
+                    <Text style={{ fontSize: 12, color: brand.muted }}>
+                      {LABELS.lastSyncedAt}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: 600 }}>{lastSyncedDisplay}</Text>
+                    <Text style={{ fontSize: 12, color: brand.muted }}>
+                      {LABELS.statusSource}: {statusSourceDisplay}
+                    </Text>
+                  </div>
 
                   <Field label="Tipo de material" value={tipoMaterialDisplay} />
 
@@ -891,7 +968,7 @@ export default function BatchLookupPage() {
                           onClick={() => void changeStatus("approve")}
                           disabled={statusBusy}
                         >
-                          {statusBusy ? "…" : "Aprobar"}
+                          {statusBusy ? "…" : "Aprobar (workflow interno)"}
                         </Button>
                       ) : null}
                       {canReject ? (
@@ -901,7 +978,7 @@ export default function BatchLookupPage() {
                           onClick={() => void changeStatus("reject")}
                           disabled={statusBusy}
                         >
-                          Rechazar
+                          Rechazar (workflow interno)
                         </Button>
                       ) : null}
                     </div>
@@ -909,13 +986,14 @@ export default function BatchLookupPage() {
 
                   {!canChangeStatus && platformStatus === "CUARENTENA" && !canCorrectStatus ? (
                     <Text style={{ color: brand.muted, fontSize: 12 }}>
-                      No tienes permiso para aprobar o rechazar este material.
+                      No tienes permiso para aprobar o rechazar el workflow interno de este material.
                     </Text>
                   ) : null}
 
                   {(platformStatus === "APROBADO" || platformStatus === "RECHAZADO") && !canCorrectStatus ? (
                     <Text style={{ color: brand.muted, fontSize: 12 }}>
-                      El workflow interno del lote es definitivo y no puede modificarse aquí.
+                      El workflow interno del lote es definitivo y no puede modificarse aquí. El Estado
+                      Operativo sigue determinado solo por Dynamics.
                     </Text>
                   ) : null}
 
@@ -931,25 +1009,25 @@ export default function BatchLookupPage() {
                       }}
                     >
                       <Text weight="semibold">Corrección Administrativa</Text>
-                      <Text style={{ color: brand.muted, fontSize: 12 }}>
-                        Corrección excepcional del estado interno de plataforma. No altera el Estado Operativo
-                        (Dynamics) ni el historial de aprobaciones/comentarios.
-                      </Text>
                       <Text style={{ fontSize: 13 }}>
-                        Estado plataforma: <strong>{platformStatusLabel(platformStatus)}</strong>
+                        Estado de plataforma actual:{" "}
+                        <strong>{platformStatusLabel(platformStatus)}</strong>
                       </Text>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {allowedStatusCorrections.map((t) => (
-                          <Button
-                            key={t}
-                            size="small"
-                            appearance={statusTarget === t ? "primary" : "secondary"}
-                            onClick={() => setStatusTarget(t)}
-                            disabled={statusCorrectBusy}
-                          >
-                            → {t}
-                          </Button>
-                        ))}
+                      <div>
+                        <Text className={s.fieldLabel}>Estado de plataforma destino</Text>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                          {allowedStatusCorrections.map((t) => (
+                            <Button
+                              key={t}
+                              size="small"
+                              appearance={statusTarget === t ? "primary" : "secondary"}
+                              onClick={() => setStatusTarget(t)}
+                              disabled={statusCorrectBusy}
+                            >
+                              → {t}
+                            </Button>
+                          ))}
+                        </div>
                       </div>
                       <div>
                         <Text className={s.fieldLabel}>Motivo *</Text>
@@ -968,7 +1046,7 @@ export default function BatchLookupPage() {
                         disabled={!statusTarget || !statusMotivo.trim() || statusCorrectBusy}
                         onClick={() => setStatusConfirmOpen(true)}
                       >
-                        Aplicar corrección de estado
+                        Aplicar corrección de plataforma
                       </Button>
                     </div>
                   ) : null}
@@ -984,6 +1062,7 @@ export default function BatchLookupPage() {
                   <Field label="Fecha de entrada" value={fechaEntradaDisplay} />
                   <Field label="Caducidad" value={caducidadResumen} />
                   <Field label={LABELS.fuente} value={fuenteDisplayLabel} />
+                  <Field label={LABELS.lastSyncedAt} value={lastSyncedDisplay} />
                 </div>
               </AppCard>
 

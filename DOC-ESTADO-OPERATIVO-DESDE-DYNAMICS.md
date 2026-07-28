@@ -1,12 +1,25 @@
 # Fuente de verdad del estado operativo del lote → Dynamics 365
 
-**Fecha:** 27 de julio de 2026  
-**Tipo:** Documento de análisis y decisión de diseño  
-**Estado:** **Sin implementación de código** — se espera aprobación del mapeo (especialmente REM/RES) antes de modificar Backend/Web/Android.
+**Fecha original:** 27 de julio de 2026  
+**Actualización:** 28 de julio de 2026 — arquitectura **implementada y consolidada**.  
+**Estado:** El Estado Operativo ya proviene solo de Dynamics (`OperationalStatusResolver`).  
+Ver también: `ARQUITECTURA-ESTADOS-LOTE.md`, `IMPLEMENTACION-ESTADO-OPERATIVO-DYNAMICS-v1.6.0.md`.
 
 ---
 
-## 1. Situación actual (as-is)
+## 0. Situación vigente (to-be implementado)
+
+| Concepto | Origen | ¿Mutable desde la app? |
+|----------|--------|-------------------------|
+| **Estado Operativo** (banner) | Dynamics → `OperationalStatusResolver` → `dynamic.status` | **No** |
+| **Estado de plataforma** | `qr_labels.status` → `platformStatus` | Sí (approve/reject / corrección admin) |
+| **Admin lifecycle** | `admin_status` | Sí (ACTIVE/INACTIVE/BAJA) |
+
+Las secciones siguientes conservan el análisis histórico (as-is previo a v1.6.0).
+
+---
+
+## 1. Situación histórica (as-is previo)
 
 Hoy el sistema mantiene **dos mundos de estado**:
 
@@ -150,51 +163,41 @@ si Dynamics no disponible → fallback qr_labels.status + fuente DB_ONLY
 
 ---
 
-## 5. Lógica que debe eliminarse o dejar de ser fuente de verdad
+## 5. Lógica histórica: qué dejó de ser fuente de verdad
 
-> Nada de esto se ha eliminado aún en código. Lista de lo que **dejaría de gobernar el estado mostrado** una vez implementado.
+> **Implementado en v1.6.0+.** El banner ya no usa `qr_labels.status`.  
+> Approve/reject y corrección admin **siguen** mutando solo el estado de plataforma.
 
-### Eliminar como fuente de verdad (paralela)
+### Dejó de ser fuente del Estado Operativo (banner)
 
-| Lógica actual | Qué cambia |
-|---------------|------------|
-| `qr_labels.status` como origen del banner “Estado” | Deja de ser fuente oficial; puede quedar como caché/auditoría histórica o deprecado |
-| `ApprovalService` → `label.setStatus(APROBADO/RECHAZADO)` | **Deja de mutar el estado operativo** (o se depreca el efecto sobre status). La aprobación en app, si se mantiene, solo sería registro operativo/auditoría, no verdad del estado |
-| `AdminStatusCorrectionService` (corrección de estado) | **Eliminar o restringir** — ya no tiene sentido “corregir” un estado que viene de Dynamics |
-| Botones UI `→ APROBADO` / `→ CUARENTENA` / Aprobar / Rechazar como cambio de estado | Dejan de alterar el estado visible; o se retiran de Web/Android |
-| Comentario/regla en `QrQueryService`: “nunca Dynamics” | Se invierte: **Dynamics es la fuente** |
+| Lógica | Qué cambió |
+|--------|------------|
+| `qr_labels.status` como origen del banner | Solo `platformStatus`; banner = Dynamics |
+| `ApprovalService` → `label.setStatus` | Sigue escribiendo plataforma; **no** afecta Estado Operativo |
+| `AdminStatusCorrectionService` | Conservado para **plataforma**; UI/auditoría dejan claro que Dynamics no cambia |
+| `QrQueryService` | `dynamic.status` = `OperationalStatusResolver` |
 
-### Conservar (requisito del usuario)
+### Conservar
 
 | Elemento | Motivo |
 |----------|--------|
-| **Auditoría** (`APPROVE_MATERIAL`, `REJECT_MATERIAL`, `ADMIN_CORRECT_*`, etc.) | No eliminar eventos; historial intacto |
-| **Historial de escaneos** | Sin cambios |
-| **Comentarios de lote** | Sin cambios |
-| **`admin_status` ACTIVE/INACTIVE/BAJA** | Distinto del operativo; se mantiene |
-| Lectura/diagnóstico de campos Dynamics | Se refuerza (ya no solo “informativo”) |
-
-### Qué NO tocar en la misma entrega
-
-- Escritura hacia Dynamics (el sistema **lee**; no crea disposiciones en FO)
-- Migraciones de BD obligatorias (salvo decisión explícita de dejar de usar `qr_labels.status`)
-- Enums internos de presentación `CUARENTENA|APROBADO|RECHAZADO` (siguen siendo el vocabulario UI)
+| **Auditoría** | Historial intacto |
+| **Historial de escaneos / comentarios** | Sin cambios |
+| **`admin_status`** | Distinto del operativo |
+| Corrección admin de plataforma | Solo `qr_labels.status` |
 
 ---
 
-## 6. Impacto por capa
+## 6. Impacto por capa (histórico / plan)
 
 ### Backend
 
 | Área | Impacto |
 |------|---------|
-| `DynamicsLookupService` / mapper nuevo | Mapear `BatchDispositionCode` (+ fallbacks) → status canónico |
-| `QrQueryService` | `dynamic.status` = estado derivado de Dynamics (no `label.getStatus()`) |
-| `ApprovalService` | Dejar de escribir `qr_labels.status`, o marcar endpoints como legacy |
-| `AdminStatusCorrectionService` | Deprecar / deshabilitar endpoint de corrección de estado |
-| Permisos (`canApprove*`, `canCorrectStatus`) | Recalcular o retirar flags ligados a mutar status |
-| Métricas / export Excel | Hoy cuentan por `qr_labels.status`; pasarían a requerir sync o dejar de usar esa columna como KPI de “realidad” |
-| Fallback sin Dynamics | Definir política: ¿mostrar último status cacheado o “No disponible”? |
+| `DynamicsLookupService` / resolver | Estado Operativo desde Dynamics |
+| `QrQueryService` | `dynamic.status` = operativo; `platformStatus` = BD |
+| `ApprovalService` / `AdminStatusCorrectionService` | Solo plataforma |
+| Métricas / export | Siguen contando `qr_labels.status` como workflow de plataforma |
 
 ### Web
 

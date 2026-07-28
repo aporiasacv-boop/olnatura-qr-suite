@@ -64,10 +64,22 @@ export type DynamicsLookupResponse = {
   almacen: string | null;
   ubicacion: string | null;
   fuente: string;
-  /** Estado Operativo interpretado (Dynamics). */
+  /**
+   * Estado Operativo (Dynamics vía OperationalStatusResolver). Solo lectura.
+   * En GET /qr/{lote} el campo JSON es `status` (mismo significado).
+   */
+  status?: string | null;
+  /** Alias tipado; preferir `status` del payload QR. */
   operationalStatus?: string | null;
   operationalStatusRule?: string | null;
   statusSource?: string | null;
+  /** Estado de plataforma (`qr_labels.status`); no es el banner. */
+  platformStatus?: string | null;
+  /**
+   * Momento de la última lectura OData exitosa (ISO-8601). No se persiste en BD.
+   * Se actualiza en cada GET /qr/{lote} y POST /qr/{lote}/sync-dynamics.
+   */
+  lastSyncedAt?: string | null;
 };
 
 export type ApprovalLeg = {
@@ -78,6 +90,7 @@ export type ApprovalLeg = {
 };
 
 export type QrPermissions = {
+  /** Workflow interno (aprobar/rechazar plataforma). No modifica Estado Operativo Dynamics. */
   canChangeStatus: boolean;
   canRegisterScan: boolean;
   canCreateLabel: boolean;
@@ -86,6 +99,7 @@ export type QrPermissions = {
   canReject?: boolean;
   canDownloadAuditPdf?: boolean;
   canCorrectLabel?: boolean;
+  /** Corrección admin de platformStatus (`qr_labels.status`). Nunca Estado Operativo. */
   canCorrectStatus?: boolean;
   allowedStatusCorrections?: string[];
   calidadApproved?: boolean;

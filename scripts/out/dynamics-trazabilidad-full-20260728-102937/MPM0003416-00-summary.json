@@ -1,0 +1,48 @@
+﻿{
+    "suffix":  "MPM0003416",
+    "batchNumber":  "260525-MPM0003416",
+    "itemNumber":  "101023130400",
+    "batchDispositionCode":  "Aprobado",
+    "batchExpirationDate":  "2031-02-23T12:00:00Z",
+    "inventLocations":  [
+                            "MPM"
+                        ],
+    "operationalStatus":  "APROBADO",
+    "operationalRule":  "BatchDispositionCode",
+    "operationalWarehouse":  "MPM",
+    "qualityOrderCount":  1,
+    "qualityOrders":  [
+                          {
+                              "QualityOrderNumber":  "OCL0015337",
+                              "ItemBatchNumber":  "260525-MPM0003416",
+                              "ItemNumber":  "101023130400",
+                              "QualityOrderStatus":  "Pass",
+                              "ValidationStatus":  null,
+                              "InventoryBatchId":  null,
+                              "ValidatedDateTime":  "2026-06-02T20:03:39Z",
+                              "ValidatingPersonnelNumber":  "3960",
+                              "QMSAssignedToPersonnelNumber":  "",
+                              "PassedBatchDispositionCode":  "Aprobado",
+                              "FailedBatchDispositionCode":  "Rechazado",
+                              "WarehouseId":  "MPM",
+                              "WarehouseLocationId":  "Disponible"
+                          }
+                      ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#00000001500AD74E",
+                           "InventLocationId":  "MPM",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#00000001500B11DD",
+                           "InventLocationId":  "MPM",
+                           "wMSLocationId":  "",
+                           "InventSiteId":  "OLNATURA"
+                       }
+                   ],
+    "remResCuarentenaMovements":  [
+
+                                  ]
+}

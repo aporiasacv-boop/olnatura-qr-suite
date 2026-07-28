@@ -114,6 +114,10 @@ public class LabelController {
                 LabelDto.LabelView.from(saved)));
     }
 
+    /**
+     * Aprueba el workflow interno (platformStatus / {@code qr_labels.status}).
+     * No modifica el Estado Operativo Dynamics.
+     */
     @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
     @PostMapping("/by-lote/{lote}/approve")
     public ResponseEntity<LabelDto.StatusResponse> approveByLote(
@@ -127,6 +131,9 @@ public class LabelController {
         return ResponseEntity.ok(new LabelDto.StatusResponse(saved.getId(), saved.getStatus()));
     }
 
+    /**
+     * Rechaza el workflow interno (platformStatus). No modifica el Estado Operativo Dynamics.
+     */
     @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
     @PostMapping("/by-lote/{lote}/reject")
     public ResponseEntity<LabelDto.StatusResponse> rejectByLote(

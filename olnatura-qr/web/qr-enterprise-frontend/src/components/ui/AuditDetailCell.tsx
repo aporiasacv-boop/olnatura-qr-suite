@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link, Text } from "@fluentui/react-components";
 import { brand } from "../../styles/brand";
 import { formatAuditDetail } from "../../utils/displayLabels";
+import { formatNumber } from "../../utils/formatNumber";
 
 const TECHNICAL_LABELS = new Set(["ID de etiqueta", "ID de usuario", "ID de usuario destino"]);
 
@@ -36,15 +37,15 @@ function detailSummary(
 
   if (at === "EXPORT_EXECUTIVE_DASHBOARD") {
     const parts: string[] = [];
-    if (meta.labelsExported != null) parts.push(`${meta.labelsExported} etiquetas`);
-    if (meta.scansExported != null) parts.push(`${meta.scansExported} escaneos`);
-    if (meta.auditsExported != null) parts.push(`${meta.auditsExported} auditorías`);
-    if (meta.usersExported != null) parts.push(`${meta.usersExported} usuarios`);
+    if (meta.labelsExported != null) parts.push(`${formatNumber(meta.labelsExported as number)} etiquetas`);
+    if (meta.scansExported != null) parts.push(`${formatNumber(meta.scansExported as number)} escaneos`);
+    if (meta.auditsExported != null) parts.push(`${formatNumber(meta.auditsExported as number)} auditorías`);
+    if (meta.usersExported != null) parts.push(`${formatNumber(meta.usersExported as number)} usuarios`);
     return parts.length > 0 ? parts.join(" · ") : "Excel Power BI";
   }
 
   if (at === "EXPORT_AUDIT_CSV" || at === "EXPORT_AUDIT_PDF") {
-    if (meta.countEvents != null) return `${meta.countEvents} eventos`;
+    if (meta.countEvents != null) return `${formatNumber(meta.countEvents as number)} eventos`;
     if (meta.filename != null) return String(meta.filename);
   }
 
@@ -54,11 +55,11 @@ function detailSummary(
     if (mode === "ZPL_DOWNLOAD") parts.push("Descarga ZPL");
     else if (meta.mode != null) parts.push(String(meta.mode));
 
-    if (meta.count != null) parts.push(`${meta.count} etiquetas`);
+    if (meta.count != null) parts.push(`${formatNumber(meta.count as number)} etiquetas`);
     else if (meta.from != null && meta.to != null) {
-      parts.push(`${meta.from}–${meta.to}`);
+      parts.push(`${formatNumber(meta.from as number)}–${formatNumber(meta.to as number)}`);
     } else if (meta.from != null) {
-      parts.push(`desde ${meta.from}`);
+      parts.push(`desde ${formatNumber(meta.from as number)}`);
     }
 
     if (meta.lote != null && String(meta.lote).trim()) {

@@ -17,9 +17,11 @@ import { useToasts } from "../components/ui/toasts";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import {
+  TABLE_DATA_CLASS,
   TABLE_FIXED_STYLE,
   TABLE_SCROLL_WRAP,
   TRUNCATE_CELL,
+  TRUNCATE_CELL_PRIORITY,
   cellTitle,
 } from "../utils/tablePresentation";
 
@@ -179,15 +181,19 @@ export default function AdminLotsPage() {
           <Text className={s.muted}>No hay lotes para este filtro.</Text>
         ) : (
           <div style={TABLE_SCROLL_WRAP}>
-            <Table aria-label="Lotes" style={{ ...TABLE_FIXED_STYLE, minWidth: 820 }}>
+            <Table
+              aria-label="Lotes"
+              className={TABLE_DATA_CLASS}
+              style={{ ...TABLE_FIXED_STYLE, minWidth: 880 }}
+            >
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "16%" }}>Lote</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "22%" }}>Lote</TableHeaderCell>
                   <TableHeaderCell style={{ width: "12%" }}>Código</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "24%" }}>Nombre</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "12%" }}>Estado</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "18%" }}>Alta en sistema</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "18%" }}>Acciones</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "22%" }}>Nombre</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>Estado administrativo</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>Alta en sistema</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -198,7 +204,7 @@ export default function AdminLotsPage() {
                     : "—";
                   return (
                     <TableRow key={row.id} className="table-hover-row">
-                      <TableCell style={TRUNCATE_CELL} title={cellTitle(row.lote)}>
+                      <TableCell style={TRUNCATE_CELL_PRIORITY} title={cellTitle(row.lote)}>
                         {row.lote}
                       </TableCell>
                       <TableCell style={TRUNCATE_CELL} title={cellTitle(row.codigo)}>

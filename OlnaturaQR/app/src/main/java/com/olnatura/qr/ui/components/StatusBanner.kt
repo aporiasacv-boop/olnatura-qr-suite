@@ -68,6 +68,7 @@ fun statusColors(status: String?): Pair<Color, Color> {
 }
 
 fun operationalStatusLabel(status: String?): String {
+    // Etiquetas del banner Estado Operativo (Dynamics). No usar para platformStatus.
     val s = (status ?: "").trim().uppercase()
     return when (s) {
         "APROBADO" -> "🟢 Aprobado"

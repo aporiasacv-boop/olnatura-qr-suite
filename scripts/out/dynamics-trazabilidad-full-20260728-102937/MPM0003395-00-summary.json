@@ -1,0 +1,40 @@
+﻿{
+    "suffix":  "MPM0003395",
+    "batchNumber":  "260410-MPM0003395",
+    "itemNumber":  "106623850000",
+    "batchDispositionCode":  "",
+    "batchExpirationDate":  "2027-06-24T12:00:00Z",
+    "inventLocations":  [
+                            "MPM"
+                        ],
+    "operationalStatus":  "APROBADO",
+    "operationalRule":  "BatchDispositionCode",
+    "operationalWarehouse":  "MPM",
+    "qualityOrderCount":  0,
+    "qualityOrders":  [
+
+                      ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#00000001500AB453",
+                           "InventLocationId":  "MPM",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#00000001500AB6F5",
+                           "InventLocationId":  "MPM",
+                           "wMSLocationId":  "",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#00000001500AB70A",
+                           "InventLocationId":  "MPM",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  ""
+                       }
+                   ],
+    "remResCuarentenaMovements":  [
+
+                                  ]
+}

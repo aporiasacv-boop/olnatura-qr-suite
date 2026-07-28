@@ -5,4 +5,7 @@ import com.olnatura.qr.data.network.OlnaturaApi
 
 class QrRepository(private val api: OlnaturaApi) {
     suspend fun getQr(lote: String): QrResponse = api.getQr(lote)
+
+    /** Nueva lectura OData; no escribe en Dynamics. */
+    suspend fun syncDynamics(lote: String): QrResponse = api.syncDynamics(lote)
 }

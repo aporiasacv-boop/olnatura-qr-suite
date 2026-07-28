@@ -1,0 +1,24 @@
+﻿[
+    {
+        "queryPersonnelNumber":  "3726",
+        "found":  true,
+        "entity":  "BaseWorkers",
+        "PersonnelNumber":  "3726",
+        "Name":  "GIOVANA AVILES ZAGAL",
+        "FirstName":  "GIOVANA",
+        "LastName":  "AVILES ZAGAL",
+        "MiddleName":  "",
+        "PartyNumber":  "000033401"
+    },
+    {
+        "queryPersonnelNumber":  "3960",
+        "found":  true,
+        "entity":  "BaseWorkers",
+        "PersonnelNumber":  "3960",
+        "Name":  "VIRGINIA AMARO VILLEGAS",
+        "FirstName":  "VIRGINIA",
+        "LastName":  "AMARO VILLEGAS",
+        "MiddleName":  "",
+        "PartyNumber":  "000057306"
+    }
+]

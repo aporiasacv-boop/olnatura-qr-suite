@@ -19,11 +19,14 @@ import { brand } from "../styles/brand";
 import { LABELS, formatDateTime, actionTypeDisplay } from "../utils/displayLabels";
 import { displayUserIdentity } from "../utils/auditActionTranslator";
 import {
+  TABLE_DATA_CLASS,
   TABLE_FIXED_STYLE,
   TABLE_SCROLL_WRAP,
   TRUNCATE_CELL,
+  TRUNCATE_CELL_PRIORITY,
   cellTitle,
 } from "../utils/tablePresentation";
+import { formatNumber } from "../utils/formatNumber";
 
 type DailyPoint = { date: string; labelsCreated: number; scans: number };
 
@@ -113,10 +116,6 @@ const useStyles = makeStyles({
   powerBiStatValue: { fontSize: "16px", fontWeight: 600, color: brand.text, marginTop: "2px" },
 });
 
-function formatCount(n?: number | null): string {
-  if (n == null || Number.isNaN(Number(n))) return "—";
-  return Number(n).toLocaleString("es-MX");
-}
 
 function formatDayLabel(isoDate: string): string {
   const parts = isoDate.split("-");
@@ -159,7 +158,7 @@ function SimpleBarChart({
               }}
             >
               <div
-                title={`${formatDayLabel(p.date)}: ${value}`}
+                title={`${formatDayLabel(p.date)}: ${formatNumber(value)}`}
                 style={{
                   width: "70%",
                   maxWidth: 36,
@@ -183,7 +182,7 @@ function SimpleBarChart({
                       color: brand.text2,
                     }}
                   >
-                    {value}
+                    {formatNumber(value)}
                   </span>
                 ) : null}
               </div>
@@ -338,19 +337,19 @@ export default function AdminMetricsPage() {
                 <div className={s.powerBiStats}>
                   <div>
                     <div className={s.powerBiStatLabel}>Etiquetas exportadas</div>
-                    <div className={s.powerBiStatValue}>{formatCount(lastExport.labelsExported)}</div>
+                    <div className={s.powerBiStatValue}>{formatNumber(lastExport.labelsExported)}</div>
                   </div>
                   <div>
                     <div className={s.powerBiStatLabel}>Escaneos exportados</div>
-                    <div className={s.powerBiStatValue}>{formatCount(lastExport.scansExported)}</div>
+                    <div className={s.powerBiStatValue}>{formatNumber(lastExport.scansExported)}</div>
                   </div>
                   <div>
                     <div className={s.powerBiStatLabel}>Auditorías exportadas</div>
-                    <div className={s.powerBiStatValue}>{formatCount(lastExport.auditsExported)}</div>
+                    <div className={s.powerBiStatValue}>{formatNumber(lastExport.auditsExported)}</div>
                   </div>
                   <div>
                     <div className={s.powerBiStatLabel}>Usuarios</div>
-                    <div className={s.powerBiStatValue}>{formatCount(lastExport.usersExported)}</div>
+                    <div className={s.powerBiStatValue}>{formatNumber(lastExport.usersExported)}</div>
                   </div>
                 </div>
               </>
@@ -369,19 +368,19 @@ export default function AdminMetricsPage() {
         <div className={s.kpiGrid}>
           <AppCard>
             <Text weight="semibold">Etiquetas registradas hoy</Text>
-            <div className={s.kpiValue}>{summary?.labelsCreatedToday ?? "—"}</div>
+            <div className={s.kpiValue}>{formatNumber(summary?.labelsCreatedToday)}</div>
           </AppCard>
           <AppCard>
             <Text weight="semibold">Escaneos hoy</Text>
-            <div className={s.kpiValue}>{summary?.scansToday ?? "—"}</div>
+            <div className={s.kpiValue}>{formatNumber(summary?.scansToday)}</div>
           </AppCard>
           <AppCard>
             <Text weight="semibold">Lotes activos</Text>
-            <div className={s.kpiValue}>{summary?.activeLots ?? "—"}</div>
+            <div className={s.kpiValue}>{formatNumber(summary?.activeLots)}</div>
           </AppCard>
           <AppCard>
             <Text weight="semibold">Auditoría (7 días)</Text>
-            <div className={s.kpiValue}>{summary?.auditEventsInRange ?? "—"}</div>
+            <div className={s.kpiValue}>{formatNumber(summary?.auditEventsInRange)}</div>
           </AppCard>
         </div>
       </section>
@@ -412,15 +411,18 @@ export default function AdminMetricsPage() {
         <h2 className={s.sectionTitle}>Actividad reciente</h2>
         <AppCard>
           <div style={TABLE_SCROLL_WRAP}>
-            <Table style={{ ...TABLE_FIXED_STYLE, minWidth: 900 }}>
+            <Table
+              className={TABLE_DATA_CLASS}
+              style={{ ...TABLE_FIXED_STYLE, minWidth: 960 }}
+            >
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "12%" }}>{LABELS.fecha}</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "18%" }}>{LABELS.accion}</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "16%" }}>{LABELS.usuario}</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "12%" }}>{LABELS.rol}</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "14%" }}>Lote</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "28%" }}>{LABELS.detalle}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "11%" }}>{LABELS.fecha}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>{LABELS.accion}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "20%" }}>{LABELS.usuario}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "11%" }}>{LABELS.rol}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "20%" }}>Lote</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "22%" }}>{LABELS.detalle}</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -440,20 +442,19 @@ export default function AdminMetricsPage() {
                       <TableRow key={ev.id} className="table-hover-row">
                         <TableCell>
                           <div style={{ whiteSpace: "nowrap" }}>
-                            <div>{date}</div>
-                            <div style={{ fontSize: 12, color: brand.muted }}>{time}</div>
+                            {date} {time}
                           </div>
                         </TableCell>
                         <TableCell style={TRUNCATE_CELL} title={cellTitle(accion)}>
                           {accion}
                         </TableCell>
-                        <TableCell style={TRUNCATE_CELL} title={cellTitle(usuario)}>
+                        <TableCell style={TRUNCATE_CELL_PRIORITY} title={cellTitle(usuario)}>
                           {usuario}
                         </TableCell>
                         <TableCell style={TRUNCATE_CELL} title={cellTitle(rol)}>
                           {rol}
                         </TableCell>
-                        <TableCell style={TRUNCATE_CELL} title={cellTitle(ev.lote ?? undefined)}>
+                        <TableCell style={TRUNCATE_CELL_PRIORITY} title={cellTitle(ev.lote ?? undefined)}>
                           {ev.lote || "—"}
                         </TableCell>
                         <TableCell>

@@ -1,0 +1,48 @@
+﻿{
+    "suffix":  "MEM0003675",
+    "batchNumber":  "260724-MEM0003675",
+    "itemNumber":  "400626402000",
+    "batchDispositionCode":  "",
+    "batchExpirationDate":  "2028-07-22T12:00:00Z",
+    "inventLocations":  [
+                            "MEM"
+                        ],
+    "operationalStatus":  "APROBADO",
+    "operationalRule":  "BatchDispositionCode",
+    "operationalWarehouse":  "MEM",
+    "qualityOrderCount":  1,
+    "qualityOrders":  [
+                          {
+                              "QualityOrderNumber":  "OCL0015656",
+                              "ItemBatchNumber":  "260724-MEM0003675",
+                              "ItemNumber":  "400626402000",
+                              "QualityOrderStatus":  "Open",
+                              "ValidationStatus":  null,
+                              "InventoryBatchId":  null,
+                              "ValidatedDateTime":  "1900-01-01T00:00:00Z",
+                              "ValidatingPersonnelNumber":  "",
+                              "QMSAssignedToPersonnelNumber":  "",
+                              "PassedBatchDispositionCode":  "",
+                              "FailedBatchDispositionCode":  "",
+                              "WarehouseId":  "MEM",
+                              "WarehouseLocationId":  "Disponible"
+                          }
+                      ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#00000001500B1213",
+                           "InventLocationId":  "MEM",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#00000001500B1216",
+                           "InventLocationId":  "MEM",
+                           "wMSLocationId":  "",
+                           "InventSiteId":  "OLNATURA"
+                       }
+                   ],
+    "remResCuarentenaMovements":  [
+
+                                  ]
+}
