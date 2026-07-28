@@ -1,0 +1,17 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventDimBiEntities(inventDimId,inventBatchId)",
+    "value":  [
+                  {
+                      "inventDimId":  "#00000001500AB10C",
+                      "inventBatchId":  "260406-MPM0003390"
+                  },
+                  {
+                      "inventDimId":  "#00000001500AB140",
+                      "inventBatchId":  "260406-MPM0003390"
+                  },
+                  {
+                      "inventDimId":  "#00000001500AB6FC",
+                      "inventBatchId":  "260406-MPM0003390"
+                  }
+              ]
+}

@@ -1,0 +1,11 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventorySitesOnHand(ItemNumber,ProductName,AvailableOnHandQuantity,InventorySiteId)",
+    "value":  [
+                  {
+                      "ItemNumber":  "100623401100",
+                      "ProductName":  "SABOR VAINILLA ARO",
+                      "AvailableOnHandQuantity":  138806,
+                      "InventorySiteId":  "OLNATURA"
+                  }
+              ]
+}

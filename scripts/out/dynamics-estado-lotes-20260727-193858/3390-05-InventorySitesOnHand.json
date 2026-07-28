@@ -1,0 +1,11 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventorySitesOnHand(ItemNumber,ProductName,AvailableOnHandQuantity,InventorySiteId)",
+    "value":  [
+                  {
+                      "ItemNumber":  "106623850300",
+                      "ProductName":  "CROSPOVIDONA XL-10 (TIPO B)",
+                      "AvailableOnHandQuantity":  49082,
+                      "InventorySiteId":  "OLNATURA"
+                  }
+              ]
+}

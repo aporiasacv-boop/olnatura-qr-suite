@@ -1,0 +1,28 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#ItemBatches",
+    "value":  [
+                  {
+                      "@odata.etag":  "W/\"JzE5NDc4NjQxNjMsNTYzNzc2OTMyNyc=\"",
+                      "dataAreaId":  "olna",
+                      "ItemNumber":  "106623850300",
+                      "BatchNumber":  "260406-MPM0003390",
+                      "PrimaryVendorOriginCountryRegionId":  "",
+                      "BestBeforeDate":  "2027-04-01T12:00:00Z",
+                      "BatchDispositionCode":  "",
+                      "VendorBatchNumber":  "R-0002729385",
+                      "VendorBatchDate":  "2025-04-01T12:00:00Z",
+                      "BatchDescription":  "",
+                      "ManufacturingDate":  "2025-04-01T12:00:00Z",
+                      "IsManufacturingDateVendorBatchDate":  "No",
+                      "AreBatchAttributesInherited":  "No",
+                      "VendorExpirationDate":  "2027-04-01T12:00:00Z",
+                      "IsExpirationDateVendorExpirationDate":  "No",
+                      "BatchExpirationDate":  "2027-04-01T12:00:00Z",
+                      "AreShelfLifeDatesInherited":  "No",
+                      "ShelfLifeAdviceDate":  "1900-01-01T12:00:00Z",
+                      "SecondaryVendorOriginCountryRegionId":  "",
+                      "MostRecentTestDate":  "2026-04-06T12:00:00Z",
+                      "IsBatchConsolidated":  "No"
+                  }
+              ]
+}

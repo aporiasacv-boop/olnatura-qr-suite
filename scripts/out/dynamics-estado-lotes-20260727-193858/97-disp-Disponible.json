@@ -1,0 +1,6 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#ItemBatches(BatchNumber,ItemNumber,BatchDispositionCode)",
+    "value":  [
+
+              ]
+}

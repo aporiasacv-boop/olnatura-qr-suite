@@ -1,0 +1,65 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventTransCDSEntities(inventDimId,StatusReceipt,DatePhysical)",
+    "value":  [
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "None",
+                      "DatePhysical":  "2026-07-17T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "None",
+                      "DatePhysical":  "2026-07-17T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "None",
+                      "DatePhysical":  "2026-07-17T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-07-07T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-07-07T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-07-07T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-07-07T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-07-07T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-07-07T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-07-07T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-07-07T12:00:00Z"
+                  },
+                  {
+                      "inventDimId":  "#00000001500B0669",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-07-07T12:00:00Z"
+                  }
+              ]
+}

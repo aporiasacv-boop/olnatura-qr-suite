@@ -1,0 +1,11 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventorySitesOnHand(ItemNumber,ProductName,AvailableOnHandQuantity,InventorySiteId)",
+    "value":  [
+                  {
+                      "ItemNumber":  "100623400601",
+                      "ProductName":  "SORBITOL",
+                      "AvailableOnHandQuantity":  6999157,
+                      "InventorySiteId":  "OLNATURA"
+                  }
+              ]
+}

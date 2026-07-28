@@ -1,0 +1,10 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventTransCDSEntities(inventDimId,StatusReceipt,DatePhysical)",
+    "value":  [
+                  {
+                      "inventDimId":  "#00000001500AC2DD",
+                      "StatusReceipt":  "Purchased",
+                      "DatePhysical":  "2026-05-07T12:00:00Z"
+                  }
+              ]
+}

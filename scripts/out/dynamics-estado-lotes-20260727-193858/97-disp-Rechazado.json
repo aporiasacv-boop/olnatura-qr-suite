@@ -1,0 +1,23 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#ItemBatches(BatchNumber,ItemNumber,BatchDispositionCode)",
+    "value":  [
+                  {
+                      "@odata.etag":  "W/\"JzEyNjAzNjE4NjMsNTYzNzE0Njg0Nic=\"",
+                      "BatchNumber":  "MP-MB20042",
+                      "ItemNumber":  "100523060600",
+                      "BatchDispositionCode":  "Rechazado"
+                  },
+                  {
+                      "@odata.etag":  "W/\"Jzc1NjU4NjcwNSw1NjM3MTQ2OTE2Jw==\"",
+                      "BatchNumber":  "MP-MB20040",
+                      "ItemNumber":  "100623400100",
+                      "BatchDispositionCode":  "Rechazado"
+                  },
+                  {
+                      "@odata.etag":  "W/\"JzE1Njk4OTEyNzYsNTYzNzE0NjkzMSc=\"",
+                      "BatchNumber":  "MP-MB20032",
+                      "ItemNumber":  "100623400600",
+                      "BatchDispositionCode":  "Rechazado"
+                  }
+              ]
+}

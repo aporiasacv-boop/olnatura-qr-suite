@@ -1,0 +1,14 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#QualityOrderHeaders(ItemBatchNumber,ItemNumber,QualityOrderStatus,PassedBatchDispositionCode,WarehouseId,WarehouseLocationId)",
+    "value":  [
+                  {
+                      "@odata.etag":  "W/\"JzIwOTczOTI0MDcsNTYzNzc0MjM2OCc=\"",
+                      "ItemBatchNumber":  "260206-MPM0003363",
+                      "ItemNumber":  "100623401100",
+                      "QualityOrderStatus":  "Pass",
+                      "PassedBatchDispositionCode":  "Aprobado",
+                      "WarehouseId":  "MPM",
+                      "WarehouseLocationId":  "Disponible"
+                  }
+              ]
+}

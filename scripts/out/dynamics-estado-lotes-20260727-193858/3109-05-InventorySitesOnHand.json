@@ -1,0 +1,11 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventorySitesOnHand(ItemNumber,ProductName,AvailableOnHandQuantity,InventorySiteId)",
+    "value":  [
+                  {
+                      "ItemNumber":  "106623700100",
+                      "ProductName":  "TAMSULOSINA HCL PELLETS 0.2%",
+                      "AvailableOnHandQuantity":  267100,
+                      "InventorySiteId":  "OLNATURA"
+                  }
+              ]
+}
