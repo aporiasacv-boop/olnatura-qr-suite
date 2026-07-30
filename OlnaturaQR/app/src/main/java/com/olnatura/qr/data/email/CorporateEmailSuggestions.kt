@@ -1,9 +1,6 @@
 package com.olnatura.qr.data.email
 
-/**
- * Sugerencias de correo corporativo para solicitud de acceso.
- * Agregar nuevos correos aquí; los ya utilizados se filtran en runtime.
- */
+
 object CorporateEmailSuggestions {
     val ALL: List<String> = listOf(
         "Virginia.Amaro@olnatura.com",

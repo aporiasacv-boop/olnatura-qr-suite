@@ -2,7 +2,6 @@ package com.company.olnaturaqr.api;
 
 import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.repository.QrLabelRepository;
-import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,9 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Sugerencias de lote desde PostgreSQL (sin Dynamics).
- */
+
 @RestController
 @RequestMapping("/api/v1/labels")
 public class LabelSuggestController {
@@ -27,6 +24,10 @@ public class LabelSuggestController {
         this.qrLabelRepository = qrLabelRepository;
     }
 
+    /**
+     * Autocompletado rápido (solo BD). El Estado Operativo se enriquece en el cliente
+     * con la misma fuente Dynamics/{@code OperationalStatusResolver} que la ficha del lote.
+     */
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/suggest")
     public List<SuggestItem> suggest(@RequestParam(name = "q", defaultValue = "") String q) {
@@ -50,7 +51,7 @@ public class LabelSuggestController {
                     l.getLote(),
                     l.getCodigo(),
                     l.getNombre(),
-                    WorkflowStatus.normalize(l.getStatus())
+                    null
             );
         }
     }

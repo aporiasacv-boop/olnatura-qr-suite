@@ -23,10 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * Genera una ficha de consulta legible (no es un screenshot de la app).
- * Estilo informe: encabezado de marca, filas etiqueta|valor y estado destacado.
- */
+
 object ConsultationImage {
 
     private const val BG = 0xFFF3F6EF.toInt()
@@ -75,18 +72,18 @@ object ConsultationImage {
 
         val headerBarH = 18f
         val topBlock =
-            36f + // brand
+            36f + 
                 10f +
-                34f + // subtitle
+                34f + 
                 28f +
                 productLayout.height +
                 18f +
-                40f + // lote line
+                40f + 
                 28f
 
         val rowsH = rowLayouts.sumOf { it.third.toDouble() }.toFloat() +
-            (rowLayouts.size - 1) * 28f + // spacing between rows
-            rowLayouts.size * 1f // dividers
+            (rowLayouts.size - 1) * 28f + 
+            rowLayouts.size * 1f 
 
         val statusH = 88f
         val footerH = 40f
@@ -97,17 +94,17 @@ object ConsultationImage {
         val canvas = Canvas(bmp)
         canvas.drawColor(BG)
 
-        // Barra superior de marca
+        
         val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = GREEN }
         canvas.drawRect(0f, 0f, WIDTH.toFloat(), headerBarH, barPaint)
 
-        // Tarjeta
+        
         val cardTop = margin + headerBarH
         val cardRect = RectF(margin, cardTop, WIDTH - margin, cardTop + cardInnerH + cardPad * 2)
         val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = CARD }
         canvas.drawRoundRect(cardRect, 28f, 28f, cardPaint)
 
-        // Sutil borde
+        
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = DIVIDER
             style = Paint.Style.STROKE
@@ -117,13 +114,13 @@ object ConsultationImage {
 
         var y = cardTop + cardPad
 
-        // Encabezado
+        
         canvas.drawText("OLNATURA QR", margin + cardPad, y + 36f, brandPaint)
         y += 36f + 14f
         canvas.drawText("Ficha de consulta de lote", margin + cardPad, y + 28f, titlePaint)
         y += 28f + 26f
 
-        // Producto (hero)
+        
         canvas.save()
         canvas.translate(margin + cardPad, y)
         productLayout.draw(canvas)
@@ -133,11 +130,11 @@ object ConsultationImage {
         canvas.drawText("Lote  ${payload.lote.ifBlank { "—" }}", margin + cardPad, y + 30f, lotePaint)
         y += 30f + 26f
 
-        // Separador
+        
         drawDivider(canvas, margin + cardPad, WIDTH - margin - cardPad, y)
         y += 22f
 
-        // Filas etiqueta | valor
+        
         rowLayouts.forEachIndexed { index, (labelLayout, valueLayout, rowH) ->
             canvas.save()
             canvas.translate(margin + cardPad, y)
@@ -158,7 +155,7 @@ object ConsultationImage {
 
         y += 28f
 
-        // Estado
+        
         val (statusBg, statusFg) = statusColors(payload.status)
         statusPaint.color = statusFg
         val statusRect = RectF(

@@ -40,7 +40,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @RequestMapping("/api/v1/audit")
 public class AuditController {
 
-    /** Acciones que el frontend puede registrar vía POST /log (whitelist). */
+    
     private static final java.util.Set<String> CLIENT_ALLOWED_ACTIONS = java.util.Set.of(
             "GENERATE_LABEL"
     );
@@ -78,7 +78,7 @@ public class AuditController {
         if (req == null || req.actionType() == null || req.actionType().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-        // Solo eventos de UI permitidos desde el cliente; el resto se audita en servidor.
+        
         String actionType = req.actionType().trim().toUpperCase();
         if (!CLIENT_ALLOWED_ACTIONS.contains(actionType)) {
             return ResponseEntity.badRequest().build();
@@ -93,7 +93,7 @@ public class AuditController {
         return ResponseEntity.ok(new AuditLogResponse(e.getId().toString(), "ok"));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION')")
     @GetMapping("/{lote}/pdf")
     public ResponseEntity<byte[]> downloadPdf(
             @AuthenticationPrincipal AuthPrincipal principal,
@@ -126,7 +126,7 @@ public class AuditController {
                 .body(pdf);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION')")
     @GetMapping
     public ResponseEntity<Page<AuditEventView>> list(
             @RequestParam(defaultValue = "0") int page,
@@ -142,7 +142,7 @@ public class AuditController {
         return ResponseEntity.ok(raw.map(e -> AuditEventView.from(e, actorsById.get(e.getActorId()))));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION')")
     @GetMapping(value = "/export", produces = "text/csv")
     public ResponseEntity<byte[]> exportCsv(
             @AuthenticationPrincipal AuthPrincipal principal,

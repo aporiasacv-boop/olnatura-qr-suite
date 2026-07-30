@@ -23,11 +23,7 @@ public class QrController {
         return qrQueryService.getByLote(lote, principal);
     }
 
-    /**
-     * Sincronizar con Dynamics: fuerza una nueva lectura OData del lote.
-     * Solo lectura — no escribe en Dynamics, no cambia estados ni workflow.
-     * Disponible para cualquier usuario autenticado (sin rol admin).
-     */
+    
     @PostMapping("/{lote}/sync-dynamics")
     public QrDto.Response syncWithDynamics(
             @PathVariable String lote,

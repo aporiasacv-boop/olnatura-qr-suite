@@ -1,10 +1,7 @@
-/** Formato numérico de la aplicación (separadores de miles). */
+
 export const APP_NUMBER_LOCALE = "es-MX";
 
-/**
- * Formatea un número para visualización con separadores de miles.
- * Si el valor no es numérico, lo devuelve como texto (salvo vacío → "—").
- */
+
 export function formatNumber(
   value: number | string | null | undefined,
   options?: Intl.NumberFormatOptions
@@ -16,15 +13,4 @@ export function formatNumber(
     return raw.length > 0 ? raw : "—";
   }
   return n.toLocaleString(APP_NUMBER_LOCALE, options);
-}
-
-/** Cantidad + unidad opcional (p. ej. inventario disponible). */
-export function formatQuantity(
-  value: number | string | null | undefined,
-  unit?: string | null
-): string {
-  const qty = formatNumber(value);
-  if (qty === "—") return "—";
-  const u = unit != null ? String(unit).trim() : "";
-  return u ? `${qty} ${u}` : qty;
 }

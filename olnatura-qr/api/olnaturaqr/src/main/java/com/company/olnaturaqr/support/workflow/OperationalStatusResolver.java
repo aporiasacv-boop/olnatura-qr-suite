@@ -7,18 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Interpreta el Estado Operativo del lote desde Dynamics (única fuente de verdad para el banner).
- * No usa {@code qr_labels.status}.
- *
- * <pre>
- * 1) Warehouse REM  → RECHAZADO
- * 2) Warehouse RES  → RECHAZADO
- * 3) Warehouse CUARENTENA → CUARENTENA
- * 4) Otro almacén   → evaluar BatchDispositionCode (aprobado → APROBADO)
- * 5) Inconsistente / insuficiente → DESCONOCIDO
- * </pre>
- */
 public final class OperationalStatusResolver {
 
     public static final String STATUS_APROBADO = "APROBADO";
@@ -30,6 +18,9 @@ public final class OperationalStatusResolver {
     public static final String RULE_WAREHOUSE_REM = "Almacén REM";
     public static final String RULE_WAREHOUSE_RES = "Almacén RES";
     public static final String RULE_WAREHOUSE_CUARENTENA = "Almacén CUARENTENA";
+    public static final String RULE_QUALITY_ORDER_OPEN = "QualityOrderStatus Open";
+    public static final String RULE_QUALITY_PASS_APPROVED = "QualityOrder Pass + BatchDispositionCode";
+    public static final String RULE_QUALITY_PASS_VALIDATED = "QualityOrder Pass + ValidatedDateTime";
     public static final String RULE_BATCH_DISPOSITION = "BatchDispositionCode";
     public static final String RULE_INSUFFICIENT = "Información insuficiente";
 
@@ -43,10 +34,7 @@ public final class OperationalStatusResolver {
     ) {}
 
     /**
-     * @param inventLocationIds almacenes desde InventDim ({@code InventLocationId}); pueden ser varios
-     * @param qualityWarehouseId almacén de QualityOrderHeaders ({@code WarehouseId})
-     * @param batchDispositionCode ItemBatches.BatchDispositionCode
-     * @param dynamicsPresent true si hubo respuesta Dynamics usable (ItemBatches encontrado)
+     * Compatibilidad: sin QualityOrderStatus ni ValidatedDateTime.
      */
     public static Result resolve(
             Collection<String> inventLocationIds,
@@ -54,14 +42,52 @@ public final class OperationalStatusResolver {
             String batchDispositionCode,
             boolean dynamicsPresent
     ) {
+        return resolve(inventLocationIds, qualityWarehouseId, batchDispositionCode, null, null, dynamicsPresent);
+    }
+
+    /**
+     * Compatibilidad: sin ValidatedDateTime (equivalente a pasar {@code null}).
+     * {@code batchDispositionCode} se ignora en la decisión (solo diagnóstico externo).
+     */
+    public static Result resolve(
+            Collection<String> inventLocationIds,
+            String qualityWarehouseId,
+            String batchDispositionCode,
+            String qualityOrderStatus,
+            boolean dynamicsPresent
+    ) {
+        return resolve(
+                inventLocationIds,
+                qualityWarehouseId,
+                batchDispositionCode,
+                qualityOrderStatus,
+                null,
+                dynamicsPresent
+        );
+    }
+
+    /**
+     * Prioridad oficial (validación Calidad):
+     * 1 REM / RES → RECHAZADO
+     * 2 QualityOrderStatus Open (pendiente) → CUARENTENA
+     * 3 Pass + ValidatedDateTime válido + no REM/RES → APROBADO
+     * else → DESCONOCIDO
+     * <p>
+     * {@code batchDispositionCode} no participa en la decisión.
+     */
+    public static Result resolve(
+            Collection<String> inventLocationIds,
+            String qualityWarehouseId,
+            String batchDispositionCode,
+            String qualityOrderStatus,
+            String validatedDateTime,
+            boolean dynamicsPresent
+    ) {
         if (!dynamicsPresent) {
             return new Result(STATUS_DESCONOCIDO, RULE_INSUFFICIENT, null, SOURCE_DYNAMICS);
         }
 
         List<String> warehouses = collectWarehouses(inventLocationIds, qualityWarehouseId);
-        if (warehouses.isEmpty() && isBlank(batchDispositionCode)) {
-            return new Result(STATUS_DESCONOCIDO, RULE_INSUFFICIENT, null, SOURCE_DYNAMICS);
-        }
 
         for (String wh : warehouses) {
             String norm = normalizeWarehouse(wh);
@@ -75,40 +101,19 @@ public final class OperationalStatusResolver {
                 return new Result(STATUS_RECHAZADO, RULE_WAREHOUSE_RES, wh.trim(), SOURCE_DYNAMICS);
             }
         }
-        for (String wh : warehouses) {
-            String norm = normalizeWarehouse(wh);
-            if ("CUARENTENA".equals(norm)) {
-                return new Result(STATUS_CUARENTENA, RULE_WAREHOUSE_CUARENTENA, wh.trim(), SOURCE_DYNAMICS);
-            }
-        }
 
-        // Regla 4–5: otro almacén → BatchDispositionCode
-        String disp = blankToNull(batchDispositionCode);
-        if (disp != null) {
-            String d = disp.trim().toUpperCase(Locale.ROOT);
-            if (isApprovedDisposition(d)) {
-                return new Result(STATUS_APROBADO, RULE_BATCH_DISPOSITION,
-                        firstWarehouseOrNull(warehouses), SOURCE_DYNAMICS);
-            }
-            if (isRejectedDisposition(d)) {
-                return new Result(STATUS_RECHAZADO, RULE_BATCH_DISPOSITION,
-                        firstWarehouseOrNull(warehouses), SOURCE_DYNAMICS);
-            }
-            if (isQuarantineDisposition(d)) {
-                return new Result(STATUS_CUARENTENA, RULE_BATCH_DISPOSITION,
-                        firstWarehouseOrNull(warehouses), SOURCE_DYNAMICS);
-            }
-            return new Result(STATUS_DESCONOCIDO, RULE_INSUFFICIENT,
+        if (isPendingQualityStatus(qualityOrderStatus)) {
+            return new Result(STATUS_CUARENTENA, RULE_QUALITY_ORDER_OPEN,
                     firstWarehouseOrNull(warehouses), SOURCE_DYNAMICS);
         }
 
-        // Disposición vacía + almacén operativo conocido (p.ej. MPM) → liberado implícito (caso 3390).
-        if (!warehouses.isEmpty()) {
-            return new Result(STATUS_APROBADO, RULE_BATCH_DISPOSITION,
+        if (isPassedQualityStatus(qualityOrderStatus) && isValidValidatedDateTime(validatedDateTime)) {
+            return new Result(STATUS_APROBADO, RULE_QUALITY_PASS_VALIDATED,
                     firstWarehouseOrNull(warehouses), SOURCE_DYNAMICS);
         }
 
-        return new Result(STATUS_DESCONOCIDO, RULE_INSUFFICIENT, null, SOURCE_DYNAMICS);
+        return new Result(STATUS_DESCONOCIDO, RULE_INSUFFICIENT,
+                firstWarehouseOrNull(warehouses), SOURCE_DYNAMICS);
     }
 
     private static List<String> collectWarehouses(Collection<String> inventLocationIds, String qualityWarehouseId) {
@@ -126,12 +131,51 @@ public final class OperationalStatusResolver {
         return new ArrayList<>(set);
     }
 
-    /** Normaliza almacén: REM, RES, CUARENTENA (exacto, case-insensitive). */
     static String normalizeWarehouse(String warehouse) {
         if (isBlank(warehouse)) {
             return "";
         }
         return warehouse.trim().toUpperCase(Locale.ROOT);
+    }
+
+    static boolean isPendingQualityStatus(String qualityOrderStatus) {
+        if (isBlank(qualityOrderStatus)) {
+            return false;
+        }
+        String s = qualityOrderStatus.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
+        return "OPEN".equals(s)
+                || "OPENED".equals(s)
+                || "PENDING".equals(s)
+                || "INPROGRESS".equals(s)
+                || "IN_PROGRESS".equals(s)
+                || "STARTED".equals(s)
+                || "DRAFT".equals(s);
+    }
+
+    static boolean isPassedQualityStatus(String qualityOrderStatus) {
+        if (isBlank(qualityOrderStatus)) {
+            return false;
+        }
+        String s = qualityOrderStatus.trim().toUpperCase(Locale.ROOT);
+        return "PASS".equals(s) || "PASSED".equals(s);
+    }
+
+    /**
+     * ValidatedDateTime usable para liberación: no vacío y distinto de sentinel 1900-01-01.
+     */
+    static boolean isValidValidatedDateTime(String validatedDateTime) {
+        if (isBlank(validatedDateTime)) {
+            return false;
+        }
+        String trimmed = validatedDateTime.trim();
+        return !trimmed.startsWith("1900-01-01");
+    }
+
+    static boolean isApprovedDispositionValue(String disposition) {
+        if (isBlank(disposition)) {
+            return false;
+        }
+        return isApprovedDisposition(disposition.trim().toUpperCase(Locale.ROOT));
     }
 
     static boolean isApprovedDisposition(String upper) {
@@ -161,9 +205,5 @@ public final class OperationalStatusResolver {
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
-    }
-
-    private static String blankToNull(String value) {
-        return isBlank(value) ? null : value.trim();
     }
 }

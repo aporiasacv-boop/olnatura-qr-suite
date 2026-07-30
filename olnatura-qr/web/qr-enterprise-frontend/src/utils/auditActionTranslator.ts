@@ -1,7 +1,4 @@
-/**
- * Traductor centralizado de acciones de auditoría y roles para presentación en la UI web.
- * Debe mantenerse alineado con AuditActionTranslator.java del backend.
- */
+
 
 const ACTION_LABELS: Record<string, string> = {
   PRINT_LABEL: "Impresión de etiquetas",
@@ -46,10 +43,7 @@ function looksLikeEmail(value: string): boolean {
   return value.includes("@");
 }
 
-/**
- * Identidad visible del usuario: nombre legible o username.
- * Nunca UUID. Nunca correo como identificador principal.
- */
+
 export function displayUserIdentity(
   actorDisplay?: string | null,
   username?: string | null
@@ -93,7 +87,7 @@ export function formatUsernameForDisplay(username: string | null | undefined): s
   return trimmed;
 }
 
-/** @deprecated Preferir displayUserIdentity para columnas de usuario. */
+
 export function resolveUserDisplay(
   actorDisplay?: string | null,
   username?: string | null,

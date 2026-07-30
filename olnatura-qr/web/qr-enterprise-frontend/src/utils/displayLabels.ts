@@ -1,22 +1,17 @@
 import { translateAuditAction, translateRole } from "./auditActionTranslator";
 
 export const LABELS = {
-  lookup: "Centro de información del lote",
-  lookupNav: "Consulta por lote",
+  consultaLote: "Consulta de lote",
   scanHistory: "Historial de escaneos",
-  comments: "Comentarios del lote",
+  comments: "Comentario",
   commentsEmpty: "Sin comentarios en este lote",
-  commentsPlaceholder: "Escribe un comentario operativo…",
+  commentsPlaceholder: "Escribe un comentario…",
   commentsAdd: "Agregar comentario",
   commentsSave: "Guardar",
   commentsCancel: "Cancelar",
-  operationalSummary: "Resumen operativo",
-  statusOrigin: "Origen",
   auditLog: "Historial de auditoría",
   metrics: "Métricas operativas",
-  label: "Etiqueta",
   labelData: "Información del lote",
-  dynamicStatus: "Estado Operativo",
   dynamicState: "Estado Operativo (Dynamics)",
   platformStatus: "Estado de plataforma",
   platformWorkflow: "Workflow interno",
@@ -26,10 +21,10 @@ export const LABELS = {
   qualityOrderStatus: "QualityOrderStatus",
   passedBatchDispositionCode: "PassedBatchDispositionCode",
   batchDispositionCode: "BatchDispositionCode",
-  technicalDetails: "Información técnica Dynamics",
-  ruleDeterminedBy: "Estado Operativo determinado mediante",
   fuente: "Fuente Dynamics",
   lastSyncedAt: "Última sincronización",
+  fechaLiberacion: "Fecha y hora de liberación",
+  liberadoPor: "Liberado por (núm. personal Dynamics)",
   syncDynamics: "Sincronizar con Dynamics",
   syncDynamicsBusy: "Sincronizando…",
   syncDynamicsHint:
@@ -38,8 +33,6 @@ export const LABELS = {
   cantidad: "Inventario disponible",
   ubicacion: "Ubicación",
   almacen: "Almacén",
-  cantidadAlmacen: "Inventario disponible",
-  unidadInventario: "Unidad de inventario",
   downloadZpl: "Descargar etiqueta Zebra",
   downloadAuditPdf: "Descargar historial (PDF)",
   noData: "Sin dato",
@@ -47,7 +40,6 @@ export const LABELS = {
   noScans: "Sin escaneos",
   noEvents: "Sin eventos",
   readyToLookup: "Listo para consultar",
-  readyToFilter: "Listo para consultar",
   fecha: "Fecha",
   hora: "Hora",
   usuario: "Usuario",
@@ -189,7 +181,7 @@ export function formatDateTime(iso: string | null | undefined): { date: string; 
   }
 }
 
-/** Formato: 24/07/2026 14:36:18 */
+
 export function formatLastSyncedAt(iso: string | null | undefined): string {
   const { date, time } = formatDateTime(iso);
   if (date === LABELS.noData || time === LABELS.noData) return LABELS.noData;

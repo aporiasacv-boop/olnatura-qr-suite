@@ -4,9 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Ciclo de vida administrativo del lote (independiente del workflow de calidad {@link WorkflowStatus}).
- */
+
 public final class AdminLotStatus {
 
     public static final String ACTIVE = "ACTIVE";

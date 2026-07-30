@@ -1,4 +1,4 @@
-/** Reglas de correo corporativo y contraseña (alta de usuario). */
+
 
 export const ALLOWED_EMAIL_DOMAIN = "@olnatura.com";
 

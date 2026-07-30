@@ -11,10 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/**
- * Centra el contenido y limita el ancho en tablets / landscape
- * para que formularios no queden estirados de borde a borde.
- */
+
 @Composable
 fun TabletContent(
     maxWidth: Dp = 560.dp,

@@ -11,10 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Orquesta token OAuth + consultas OData y construye {@link DynamicsLookupDto}.
- * {@link DynamicsClient} permanece como cliente HTTP únicamente.
- */
+
 @Service
 public class DynamicsLookupService {
 
@@ -36,14 +33,7 @@ public class DynamicsLookupService {
         this.oauthTokenClient = oauthTokenClient;
     }
 
-    /**
-     * Busca por BatchNumber: token → ItemBatches → InventorySitesOnHand → ReleasedProductsV2
-     * → InventDim/InventTrans (fecha entrada + almacenes) → QualityOrderHeaders → Estado Operativo → DTO.
-     *
-     * @return empty si el lote no existe en ItemBatches
-     * @throws DynamicsException si falla OAuth, OData crítico, timeout o error interno
-     *         (ReleasedProductsV2 y fecha de entrada se omiten ante fallo; no abortan el lookup)
-     */
+    
     public Optional<DynamicsLookupDto> lookupByBatchNumber(String rawBatchNumber) {
         Optional<String> loteOpt = LoteExtractor.extract(rawBatchNumber);
         if (loteOpt.isEmpty()) {
@@ -109,19 +99,34 @@ public class DynamicsLookupService {
                 }
             }
 
+            // batchDispositionCode se sigue leyendo para diagnóstico/DTO; la decisión EO usa ValidatedDateTime.
             OperationalStatusResolver.Result op = OperationalStatusResolver.resolve(
                     inventLocationIds,
                     qualityWarehouse,
                     batchDispositionCode,
+                    qualityOrderStatus,
+                    quality != null ? quality.validatedDateTime() : null,
                     true
             );
 
-            // Almacén/ubicación mostrados: el decisivo del Estado Operativo si aplica; si no, Quality / InventDim.
+            
             String almacen = firstNonBlank(op.warehouseApplied(), qualityWarehouse, firstInventLocation);
             if (almacen == null && onHand != null) {
                 almacen = blankToNull(onHand.inventorySiteId());
             }
             String ubicacion = firstNonBlank(qualityLocation, firstInventWms);
+
+            String fechaLiberacion = null;
+            String liberadoPor = null;
+            if ("APROBADO".equalsIgnoreCase(op.status()) && quality != null) {
+                fechaLiberacion = sanitizeValidatedDateTime(quality.validatedDateTime());
+                liberadoPor = blankToNull(quality.validatingPersonnelNumber());
+            }
+
+            List<String> warehouses = new ArrayList<>(inventLocationIds);
+            if (qualityWarehouse != null && warehouses.stream().noneMatch(qualityWarehouse::equalsIgnoreCase)) {
+                warehouses.add(qualityWarehouse);
+            }
 
             DynamicsLookupDto dto = new DynamicsLookupDto(
                     itemNumber,
@@ -140,7 +145,10 @@ public class DynamicsLookupService {
                     batchDispositionCode,
                     almacen,
                     ubicacion,
-                    resolveFuente()
+                    resolveFuente(),
+                    fechaLiberacion,
+                    liberadoPor,
+                    List.copyOf(warehouses)
             );
             log.info("[EstadoOperativo] lote={} status={} rule={} warehouse={} BatchDispositionCode={} inventLocations={}",
                     dto.lote(),
@@ -242,6 +250,18 @@ public class DynamicsLookupService {
             return null;
         }
         return value.trim();
+    }
+
+    
+    private static String sanitizeValidatedDateTime(String value) {
+        String trimmed = blankToNull(value);
+        if (trimmed == null) {
+            return null;
+        }
+        if (trimmed.startsWith("1900-01-01")) {
+            return null;
+        }
+        return trimmed;
     }
 
     private static String nullToDash(String value) {

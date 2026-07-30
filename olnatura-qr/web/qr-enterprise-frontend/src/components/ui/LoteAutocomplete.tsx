@@ -2,7 +2,12 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Input, makeStyles, shorthands, Text } from "@fluentui/react-components";
 import { api } from "../../api/client";
+import type { DynamicsLookupResponse } from "../../api/types";
 import { brand } from "../../styles/brand";
+import {
+  operationalStatusDisplayLabel,
+  operationalStatusEmoji,
+} from "./StatusTag";
 
 export type LoteSuggestion = {
   lote: string;
@@ -23,12 +28,9 @@ type Props = {
   appearance?: "outline" | "underline" | "filled-darker" | "filled-lighter";
   size?: "small" | "medium" | "large";
   className?: string;
-  /** Estilos del contenedor (flex, width). No uses border aquí: crea doble caja. */
   style?: React.CSSProperties;
-  /** Estilos del Input (borde de atención, fondo Dynamics, etc.). */
   inputStyle?: React.CSSProperties;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  /** Debounce en ms (default 250). */
   debounceMs?: number;
 };
 
@@ -91,10 +93,6 @@ function clsx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-/**
- * Autocompletado de lotes desde PostgreSQL (sin Dynamics).
- * Cierra el desplegable al seleccionar, blur o Enter de formulario (sin fantasmas).
- */
 export default function LoteAutocomplete({
   value,
   onChange,
@@ -121,7 +119,6 @@ export default function LoteAutocomplete({
   const [loading, setLoading] = useState(false);
   const [listBox, setListBox] = useState<{ top: number; left: number; width: number } | null>(null);
   const skipFetchRef = useRef(false);
-  /** Tras elegir/auto-seleccionar, no reabrir hasta que el usuario escriba. */
   const suppressOpenRef = useRef(false);
   const autoSelectedRef = useRef<string | null>(null);
   const blurTimerRef = useRef<number | null>(null);
@@ -197,6 +194,28 @@ export default function LoteAutocomplete({
           if (list.length > 0) {
             updateListPosition();
             setOpen(true);
+            // Enriquecer Estado Operativo con la misma fuente Dynamics que la ficha del lote.
+            list.forEach((item) => {
+              const loteKey = (item.lote ?? "").trim();
+              if (!loteKey) return;
+              api<DynamicsLookupResponse>(`/dynamics/lookup/${encodeURIComponent(loteKey)}`, {
+                toast: false,
+              })
+                .then((dyn) => {
+                  if (cancelled || suppressOpenRef.current) return;
+                  const st =
+                    (dyn.operationalStatus ?? dyn.status ?? "").trim() || null;
+                  if (!st) return;
+                  setItems((prev) =>
+                    prev.map((row) =>
+                      row.lote === item.lote ? { ...row, status: st } : row
+                    )
+                  );
+                })
+                .catch(() => {
+                  /* sin estado si Dynamics no responde; la lista ya es usable */
+                });
+            });
           } else {
             setOpen(false);
             setListBox(null);
@@ -270,7 +289,7 @@ export default function LoteAutocomplete({
         return;
       }
     }
-    // Enter del formulario: cerrar sugerencias para no dejar fantasma
+
     if (e.key === "Enter") {
       suppressOpenRef.current = true;
       closeList();
@@ -312,7 +331,11 @@ export default function LoteAutocomplete({
                   <Text className={s.meta}>
                     {item.codigo || "—"} · {item.nombre || "—"}
                   </Text>
-                  {item.status ? <Text className={s.status}>{item.status}</Text> : null}
+                  {item.status ? (
+                    <Text className={s.status}>
+                      {`${operationalStatusEmoji(item.status)} ${operationalStatusDisplayLabel(item.status)}`}
+                    </Text>
+                  ) : null}
                 </div>
               ))
             )}

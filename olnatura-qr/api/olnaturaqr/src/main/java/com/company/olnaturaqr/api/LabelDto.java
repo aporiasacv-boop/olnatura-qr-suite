@@ -72,7 +72,7 @@ public class LabelDto {
 
     public record StatusResponse(UUID id, String status) {}
 
-    /** Body opcional para approve/reject con motivo. */
+    
     public record DecisionRequest(String motivo) {}
 
  

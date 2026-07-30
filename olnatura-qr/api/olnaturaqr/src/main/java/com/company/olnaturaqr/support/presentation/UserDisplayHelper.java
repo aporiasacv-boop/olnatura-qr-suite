@@ -6,9 +6,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-/**
- * Resuelve identificadores de usuario a texto legible para presentación.
- */
+
 public final class UserDisplayHelper {
 
     private static final Pattern UUID_PATTERN = Pattern.compile(
@@ -22,10 +20,7 @@ public final class UserDisplayHelper {
         return value != null && UUID_PATTERN.matcher(value.trim()).matches();
     }
 
-    /**
-     * Formato de presentación a partir del username (sin campo nombre completo en BD).
-     * Usernames con punto (ej. Virginia.Amaro) se muestran como nombre legible (Virginia Amaro).
-     */
+    
     public static String formatUsernameForDisplay(String username) {
         if (username == null || username.isBlank()) {
             return "—";

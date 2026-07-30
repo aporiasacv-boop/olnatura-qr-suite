@@ -23,6 +23,7 @@ import { brand } from "../styles/brand";
 import { LABELS, formatDateTime, actionTypeDisplay, roleDisplay } from "../utils/displayLabels";
 import { AUDIT_ACTION_FILTER_OPTIONS, displayUserIdentity } from "../utils/auditActionTranslator";
 import {
+  DATE_CELL,
   TABLE_DATA_CLASS,
   TABLE_FIXED_STYLE,
   TABLE_SCROLL_WRAP,
@@ -290,16 +291,16 @@ export default function AdminAuditPage() {
             <Table
               aria-label={LABELS.auditLog}
               className={TABLE_DATA_CLASS}
-              style={{ ...TABLE_FIXED_STYLE, minWidth: 960 }}
+              style={{ ...TABLE_FIXED_STYLE, minWidth: 1180 }}
             >
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "11%" }}>{LABELS.fecha}</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "16%" }}>{LABELS.accion}</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "20%" }}>{LABELS.usuario}</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "11%" }}>{LABELS.rol}</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "20%" }}>Lote</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "22%" }}>{LABELS.detalle}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>{LABELS.fecha}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "18%" }}>{LABELS.accion}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>{LABELS.usuario}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>{LABELS.rol}</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "18%" }}>Lote</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "24%" }}>{LABELS.detalle}</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -310,10 +311,9 @@ export default function AdminAuditPage() {
                   const rol = e.actorRoleDisplay ?? roleDisplay(e.actorRol);
                   return (
                     <TableRow key={e.id} className="table-hover-row">
-                      <TableCell>
-                        <div style={{ whiteSpace: "nowrap" }}>
-                          {date} {time}
-                        </div>
+                      <TableCell style={DATE_CELL} title={cellTitle(`${date} ${time}`)}>
+                        <div>{date}</div>
+                        <div style={{ fontSize: 11, color: brand.muted }}>{time}</div>
                       </TableCell>
                       <TableCell style={TRUNCATE_CELL} title={cellTitle(accion)}>
                         {accion}

@@ -28,9 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-/**
- * Validación de reglas oficiales de liberación (no altera lógica de producción).
- */
+
 @ExtendWith(MockitoExtension.class)
 class ApprovalServiceBusinessRulesTest {
 

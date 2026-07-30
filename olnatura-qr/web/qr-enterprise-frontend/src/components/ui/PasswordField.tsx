@@ -12,7 +12,7 @@ const useStyles = makeStyles({
     height: "32px",
     padding: 0,
     cursor: "pointer",
-    // Evita que el hover global (translateY) desplace el ojo fuera del input
+    
     ":hover": {
       transform: "none",
       opacity: 1,
@@ -37,7 +37,7 @@ type PasswordFieldProps = {
   autoComplete?: string;
 };
 
-/** Campo de contraseña con icono ojo para mostrar/ocultar. */
+
 export default function PasswordField({
   value,
   onChange,

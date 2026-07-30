@@ -1,9 +1,6 @@
 import type { PartialTheme } from "@fluentui/react-components";
 
-/**
- * Paleta operacional: crema + verde oliva pastel un poco más matizado
- * (menos blanco puro, sin saturación agresiva).
- */
+
 export const brand = {
   primary: "#8FA33F",
   hover: "#7E9336",

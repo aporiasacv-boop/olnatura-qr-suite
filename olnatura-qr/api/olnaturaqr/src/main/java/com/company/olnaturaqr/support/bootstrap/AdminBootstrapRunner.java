@@ -5,7 +5,6 @@ import com.company.olnaturaqr.domain.user.User;
 import com.company.olnaturaqr.repository.RoleRepository;
 import com.company.olnaturaqr.repository.UserRepository;
 import com.company.olnaturaqr.support.config.BootstrapAdminProperties;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -13,13 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Admin inicial idempotente:
- * - Si no existe: lo crea.
- * - Si existe, enabled=true y password coincide: no modifica nada.
- * - Si existe y (enabled=false o password no coincide con bootstrap): recuperación.
- * No toca otros usuarios ni crea duplicados.
- */
+
 @Component
 public class AdminBootstrapRunner implements CommandLineRunner {
 
@@ -44,39 +37,22 @@ public class AdminBootstrapRunner implements CommandLineRunner {
         this.roleRepository = roleRepository;
     }
 
-    @PostConstruct
-    void diagnoseBeanCreated() {
-        System.out.println("=== ADMIN BOOTSTRAP BEAN CREATED ===");
-    }
 
     @Override
     @Transactional
     public void run(String... args) {
-        System.out.println("=== ADMIN BOOTSTRAP RUN EXECUTED ===");
-
-        String cfgUsername = props.username();
-        String cfgEmail = props.email();
         String effectivePassword = resolveBootstrapPassword();
-        int passwordLength = effectivePassword == null ? 0 : effectivePassword.length();
-
-        System.out.println("=== ADMIN BOOTSTRAP CONFIG ===");
-        System.out.println("enabled=" + props.enabled());
-        System.out.println("username=" + cfgUsername);
-        System.out.println("email=" + cfgEmail);
-        System.out.println("passwordLength=" + passwordLength);
 
         log.info("Bootstrap admin: inicio (enabled={})", props.enabled());
 
         if (!props.enabled()) {
-            System.out.println("BOOTSTRAP DECISION = OMITIDO");
-            log.info("Bootstrap admin: decisión=OMITIDO (app.bootstrap.admin.enabled=false)");
+            log.info("Bootstrap admin: decision=OMITIDO (app.bootstrap.admin.enabled=false)");
             return;
         }
 
         String username = props.username();
         if (username == null || username.isBlank()) {
-            System.out.println("BOOTSTRAP DECISION = OMITIDO");
-            log.warn("Bootstrap admin: decisión=OMITIDO (username vacío)");
+            log.warn("Bootstrap admin: decision=OMITIDO (username vacio)");
             return;
         }
 
@@ -84,8 +60,7 @@ public class AdminBootstrapRunner implements CommandLineRunner {
         String password = effectivePassword;
         String email = resolveBootstrapEmail();
         if (email == null) {
-            System.out.println("BOOTSTRAP DECISION = OMITIDO");
-            log.warn("Bootstrap admin: decisión=OMITIDO (email vacío)");
+            log.warn("Bootstrap admin: decision=OMITIDO (email vacio)");
             return;
         }
 
@@ -95,16 +70,9 @@ public class AdminBootstrapRunner implements CommandLineRunner {
             boolean passwordOk = passwordEncoder.matches(password, existing.getPasswordHash());
             String roleName = existing.getRole() != null ? existing.getRole().getName() : "null";
 
-            System.out.println("=== ADMIN BOOTSTRAP EXISTING USER ===");
-            System.out.println("username=" + existing.getUsername());
-            System.out.println("enabled=" + existing.isEnabled());
-            System.out.println("roles=" + roleName);
-            System.out.println("passwordMatchesBootstrap=" + passwordOk);
-
             if (existing.isEnabled() && passwordOk) {
-                System.out.println("BOOTSTRAP DECISION = REUTILIZAR");
                 log.info(
-                        "Bootstrap admin: decisión=REUTILIZAR sin cambios (usuario='{}' enabled=true password=ok)",
+                        "Bootstrap admin: decision=REUTILIZAR sin cambios (usuario='{}' enabled=true password=ok)",
                         existing.getUsername()
                 );
                 return;
@@ -113,29 +81,23 @@ public class AdminBootstrapRunner implements CommandLineRunner {
             String reason = !existing.isEnabled()
                     ? "enabled=false"
                     : "password mismatch vs bootstrap";
-            System.out.println("BOOTSTRAP DECISION = RECUPERAR");
             log.info(
-                    "Bootstrap admin: decisión=RECUPERAR (usuario='{}' motivo={})",
+                    "Bootstrap admin: decision=RECUPERAR (usuario='{}' motivo={})",
                     existing.getUsername(),
                     reason
             );
             recoverAdmin(existing, password, email, reason);
             return;
         }
-
-        System.out.println("BOOTSTRAP DECISION = CREAR");
         createAdmin(username, password, email);
     }
 
-    /**
-     * Azure a menudo define APP_BOOTSTRAP_ADMIN_PASSWORD="" y eso anula el default
-     * del YAML. Tratar blank como "usar default seguro de arranque".
-     */
+    
     private String resolveBootstrapPassword() {
         String password = props.password();
         if (password == null || password.isBlank()) {
             log.warn(
-                    "Bootstrap admin: password vacío en config/env; usando default de arranque (no se imprime el valor)"
+                    "Bootstrap admin: password vacio en config/env; usando default de arranque (no se imprime el valor)"
             );
             return DEFAULT_BOOTSTRAP_PASSWORD;
         }
@@ -161,13 +123,13 @@ public class AdminBootstrapRunner implements CommandLineRunner {
             var emailOwner = userRepository.findByEmailIgnoreCase(email);
             if (emailOwner.isPresent() && !emailOwner.get().getId().equals(existing.getId())) {
                 log.warn(
-                        "Bootstrap admin: email '{}' ya está en uso por otro usuario; se mantiene email actual '{}'",
+                        "Bootstrap admin: email '{}' ya estÃ¡ en uso por otro usuario; se mantiene email actual '{}'",
                         email,
                         existing.getEmail()
                 );
             } else {
                 log.info(
-                        "Bootstrap admin: actualización de email '{}' -> '{}'",
+                        "Bootstrap admin: actualizaciÃ³n de email '{}' -> '{}'",
                         existing.getEmail(),
                         email
                 );
@@ -180,7 +142,7 @@ public class AdminBootstrapRunner implements CommandLineRunner {
         userRepository.save(existing);
 
         log.info(
-                "Bootstrap admin: recuperación aplicada (usuario='{}' enabled={} rol={} motivo={} password=actualizado-BCrypt)",
+                "Bootstrap admin: recuperaciÃ³n aplicada (usuario='{}' enabled={} rol={} motivo={} password=actualizado-BCrypt)",
                 existing.getUsername(),
                 existing.isEnabled(),
                 ADMIN_ROLE_NAME,
@@ -189,7 +151,7 @@ public class AdminBootstrapRunner implements CommandLineRunner {
     }
 
     private void createAdmin(String username, String password, String email) {
-        log.info("Bootstrap admin: decisión=CREAR (usuario '{}' no existe)", username);
+        log.info("Bootstrap admin: decision=CREAR (usuario '{}' no existe)", username);
 
         Role adminRole = resolveAdminRole();
 

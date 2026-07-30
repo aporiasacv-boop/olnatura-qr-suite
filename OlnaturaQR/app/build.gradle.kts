@@ -38,7 +38,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // Firma release con keystore debug para artefactos internos (sin keystore de tienda aún).
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
@@ -77,7 +76,6 @@ dependencies {
 
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
-    // Credential Manager / Password Manager (Android 12+ con Play Services)
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
 

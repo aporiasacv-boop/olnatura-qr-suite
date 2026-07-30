@@ -33,9 +33,9 @@ import com.olnatura.qr.ui.theme.OlnCream
 import com.olnatura.qr.ui.theme.OlnGreen
 
 enum class ReportMode {
-    /** Problemas al escanear / datos del lote. */
+    
     SCAN,
-    /** Problemas de acceso desde la pantalla de login. */
+    
     ACCESS
 }
 

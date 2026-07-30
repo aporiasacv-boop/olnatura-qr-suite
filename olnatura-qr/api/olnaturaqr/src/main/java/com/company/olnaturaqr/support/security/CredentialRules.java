@@ -5,10 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-/**
- * Reglas de correo corporativo y contraseña para altas de usuario.
- * No aplica a OAuth/JWT/Dynamics.
- */
+
 public final class CredentialRules {
 
     public static final String ALLOWED_EMAIL_DOMAIN = "@olnatura.com";

@@ -9,10 +9,7 @@ import org.springframework.core.env.Profiles;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Fail-fast en perfil {@code prod}: no arranca sin secretos y configuración crítica
- * provistos por variables de entorno (sin defaults inseguros).
- */
+
 @Configuration
 public class ProdConfigGuard {
 

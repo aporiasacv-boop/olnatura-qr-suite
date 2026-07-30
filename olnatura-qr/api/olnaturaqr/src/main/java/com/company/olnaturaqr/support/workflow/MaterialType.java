@@ -2,9 +2,7 @@ package com.company.olnaturaqr.support.workflow;
 
 import java.util.Locale;
 
-/**
- * Categorías de material que definen quién puede aprobar.
- */
+
 public final class MaterialType {
 
     public static final String MATERIA_PRIMA = "MATERIA_PRIMA";
@@ -22,17 +20,17 @@ public final class MaterialType {
         if (s.contains("MATERIA") && s.contains("PRIMA")) return MATERIA_PRIMA;
         if (s.contains("EMPAQUE") && s.contains("PRIMARIO")) return EMPAQUE_PRIMARIO;
         if (s.contains("EMPAQUE") && s.contains("SECUNDARIO")) return EMPAQUE_SECUNDARIO;
-        // Códigos de sitio Dynamics (WarehouseId / prefijo de lote)
+        
         if ("MPM".equals(s) || "MPS".equals(s) || MATERIA_PRIMA.equals(s) || "MP".equals(s)) {
             return MATERIA_PRIMA;
         }
         if (EMPAQUE_PRIMARIO.equals(s) || "MEP".equals(s)) return EMPAQUE_PRIMARIO;
         if (EMPAQUE_SECUNDARIO.equals(s)) return EMPAQUE_SECUNDARIO;
-        // MEM / MES = familia empaque; la categoría primaria/secundaria la elige el operador.
+        
         return s;
     }
 
-    /** Familia Dynamics: MPM/MPS → materia prima; MEM/MES → empaque (elige primario/secundario). */
+    
     public static String dynamicsFamily(String warehouseOrCode) {
         if (warehouseOrCode == null || warehouseOrCode.isBlank()) return "DESCONOCIDO";
         String s = warehouseOrCode.trim().toUpperCase(Locale.ROOT);

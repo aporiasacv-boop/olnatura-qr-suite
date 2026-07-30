@@ -1,13 +1,4 @@
-# Prueba funcional Dynamics 365 F&O: BatchNumber como identificador principal del QR.
-# No toca la app ni la base de datos. Solo consulta OData y arma un objeto de prueba.
-#
-# Uso (OAuth client_credentials, mismas vars que la API):
-#   $env:APP_DYNAMICS_TENANT_ID = '...'
-#   $env:APP_DYNAMICS_CLIENT_ID = '...'
-#   $env:APP_DYNAMICS_CLIENT_SECRET = '...'
-#   $env:APP_DYNAMICS_BASE_URL = 'https://olnatura-produccion.operations.dynamics.com'
-#   $env:APP_DYNAMICS_RESOURCE = 'https://olnatura-produccion.operations.dynamics.com'  # opcional
-#   .\dynamics-batch-functional-probe.ps1
+
 
 [CmdletBinding()]
 param(
@@ -159,7 +150,7 @@ Write-Host ("BatchNumber : " + $BatchNumber)
 Write-Host ("OutDir      : " + $OutDir)
 Write-Host ("Token length: " + $AccessToken.Length)
 
-# 1) ItemBatches
+
 $r1 = Invoke-OData -Step "01-ItemBatches" `
   -Path "/data/ItemBatches" `
   -Filter ("BatchNumber eq '" + $BatchNumber + "'") `
@@ -180,7 +171,7 @@ if ($batch) {
   $caducidad = $batch.BatchExpirationDate
 }
 
-# 2) InventorySitesOnHand (preferido) + fallback V2
+
 $r2 = $null
 $onHandEntityUsed = "InventorySitesOnHand"
 $onHand = $null
@@ -221,7 +212,7 @@ if ($onHand) {
   $siteId = [string]$onHand.InventorySiteId
 }
 
-# 3) QualityOrderHeaders - prefer ItemBatchNumber, fallback ItemNumber
+
 $r3 = $null
 $quality = $null
 $qualityFilterUsed = $null

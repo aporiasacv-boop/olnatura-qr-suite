@@ -14,14 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Corrección administrativa excepcional del <strong>estado de plataforma</strong>
- * ({@code qr_labels.status} / platformStatus). Solo ADMIN.
- * <p>No sustituye el flujo normal de liberación. Solo cambia el status de plataforma;
- * no altera historial de aprobaciones, comentarios ni bitácora.
- * <p><strong>Nunca modifica el Estado Operativo</strong> (banner Dynamics /
- * {@code OperationalStatusResolver}): ese valor es solo lectura desde Dynamics.
- */
+
 @Service
 public class AdminStatusCorrectionService {
 
@@ -37,7 +30,7 @@ public class AdminStatusCorrectionService {
 
     public record StatusCorrectionResult(QrLabel label, String from, String to, String motivo) {}
 
-    /** Destinos permitidos desde el estado actual. */
+    
     public static List<String> allowedTargets(String currentStatus) {
         String from = WorkflowStatus.normalize(currentStatus);
         if (WorkflowStatus.CUARENTENA.equals(from)) {
@@ -58,7 +51,7 @@ public class AdminStatusCorrectionService {
         if (!WorkflowStatus.isValid(toRaw == null ? "" : toRaw.trim())) {
             return false;
         }
-        // RECHAZADO → APROBADO nunca.
+        
         if (WorkflowStatus.RECHAZADO.equals(from) && WorkflowStatus.APROBADO.equals(to)) {
             return false;
         }

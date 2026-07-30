@@ -241,7 +241,7 @@ private fun CameraPreview(
         }
     }
 
-    // Remonta la preview al girar la tablet (configChanges en el Manifest).
+    
     key(orientationKey) {
         DisposableEffect(orientationKey) {
             onDispose {

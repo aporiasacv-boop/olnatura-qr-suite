@@ -3,10 +3,7 @@ package com.company.olnaturaqr.support.presentation;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Traducción centralizada de tipos de acción de auditoría para presentación (UI, PDF, CSV, exportaciones).
- * Los valores internos en BD y eventos no se modifican.
- */
+
 public final class AuditActionTranslator {
 
     private static final Map<String, String> LABELS = new LinkedHashMap<>();

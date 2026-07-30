@@ -42,7 +42,7 @@ fun SessionBootstrapScreen(
             }
             onFinished(SessionBootstrapResult.GoLogin)
         } catch (_: Exception) {
-            // Red/timeout: conservar cookie para reintentar en el próximo arranque.
+            
             onFinished(SessionBootstrapResult.GoLogin)
         }
     }

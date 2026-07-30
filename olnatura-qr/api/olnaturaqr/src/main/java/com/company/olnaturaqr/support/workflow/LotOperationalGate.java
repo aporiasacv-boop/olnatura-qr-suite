@@ -4,10 +4,7 @@ import com.company.olnaturaqr.domain.qr.QrLabel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Bloquea operación estándar (consulta, impresión, cambio de status, escaneo)
- * cuando el lote no está ACTIVE administrativamente.
- */
+
 public final class LotOperationalGate {
 
     private LotOperationalGate() {}

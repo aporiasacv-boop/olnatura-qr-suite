@@ -17,9 +17,8 @@ import java.util.Map;
 
 @Service
 public class ApprovalService {
-    // Mutaciones de label.setStatus afectan solo platformStatus (workflow interno).
-    // El Estado Operativo (Dynamics / OperationalStatusResolver) es de solo lectura.
-
+    
+    
     private final QrLabelRepository qrLabelRepository;
     private final AuditService auditService;
     private final AuditEventRepository auditEventRepository;
@@ -159,7 +158,7 @@ public class ApprovalService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tipo de material no soportado");
         }
 
-        // Trazabilidad de quién/cuándo: solo auditoría (no columnas en qr_labels).
+        
         QrLabel saved = qrLabelRepository.save(label);
         String resulting = WorkflowStatus.normalize(saved.getStatus());
         auditService.log(

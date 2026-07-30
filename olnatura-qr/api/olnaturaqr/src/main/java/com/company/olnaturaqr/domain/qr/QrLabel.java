@@ -49,7 +49,7 @@ public class QrLabel {
     @Column(name = "status", nullable = false, length = 40)
     private String status;
 
-    /** Ciclo administrativo: ACTIVE | INACTIVE | BAJA (independiente del workflow de calidad). */
+    
     @Column(name = "admin_status", nullable = false, length = 20)
     private String adminStatus = "ACTIVE";
 

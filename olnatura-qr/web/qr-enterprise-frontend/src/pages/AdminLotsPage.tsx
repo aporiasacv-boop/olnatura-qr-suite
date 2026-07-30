@@ -22,6 +22,7 @@ import {
   TABLE_SCROLL_WRAP,
   TRUNCATE_CELL,
   TRUNCATE_CELL_PRIORITY,
+  WRAP_CELL,
   cellTitle,
 } from "../utils/tablePresentation";
 
@@ -184,15 +185,15 @@ export default function AdminLotsPage() {
             <Table
               aria-label="Lotes"
               className={TABLE_DATA_CLASS}
-              style={{ ...TABLE_FIXED_STYLE, minWidth: 880 }}
+              style={{ ...TABLE_FIXED_STYLE, minWidth: 1120 }}
             >
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "22%" }}>Lote</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "12%" }}>Código</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "22%" }}>Nombre</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "16%" }}>Lote</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "10%" }}>Código</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "32%" }}>Nombre</TableHeaderCell>
                   <TableHeaderCell style={{ width: "12%" }}>Estado administrativo</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "16%" }}>Alta en sistema</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "14%" }}>Alta en sistema</TableHeaderCell>
                   <TableHeaderCell style={{ width: "16%" }}>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>
@@ -210,7 +211,7 @@ export default function AdminLotsPage() {
                       <TableCell style={TRUNCATE_CELL} title={cellTitle(row.codigo)}>
                         {row.codigo}
                       </TableCell>
-                      <TableCell style={TRUNCATE_CELL} title={cellTitle(row.nombre)}>
+                      <TableCell style={WRAP_CELL} title={cellTitle(row.nombre)}>
                         {row.nombre}
                       </TableCell>
                       <TableCell style={TRUNCATE_CELL} title={cellTitle(row.adminStatusDisplay)}>

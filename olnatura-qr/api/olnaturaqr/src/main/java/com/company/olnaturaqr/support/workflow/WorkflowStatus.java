@@ -4,19 +4,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Estados del <strong>workflow de plataforma</strong> ({@code qr_labels.status} / platformStatus).
- * Independientes del Estado Operativo Dynamics (banner).
- * CUARENTENA = inicial; APROBADO / RECHAZADO = terminales del workflow interno.
- * <p>La app puede mutar estos valores (aprobación / corrección admin); nunca el Estado Operativo.
- */
+
 public final class WorkflowStatus {
 
     public static final String CUARENTENA = "CUARENTENA";
     public static final String APROBADO = "APROBADO";
     public static final String RECHAZADO = "RECHAZADO";
 
-    /** Legados — se normalizan a CUARENTENA. */
+    
     public static final String PENDING = "PENDING";
     public static final String LIBERADO = "LIBERADO";
     public static final String DESCONOCIDO = "DESCONOCIDO";
@@ -31,7 +26,7 @@ public final class WorkflowStatus {
         if (APROBADO.equals(s)) return APROBADO;
         if (RECHAZADO.equals(s)) return RECHAZADO;
         if (CUARENTENA.equals(s)) return CUARENTENA;
-        // PENDING / LIBERADO / DESCONOCIDO / Open / otros → cuarentena de plataforma
+        
         return CUARENTENA;
     }
 

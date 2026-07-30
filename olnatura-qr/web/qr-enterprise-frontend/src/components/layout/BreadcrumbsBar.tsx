@@ -14,7 +14,7 @@ import { brand } from "../../styles/brand";
 
 function labelFor(seg: string) {
   if (!seg) return "Inicio";
-  if (seg === "lookup") return LABELS.lookupNav ?? LABELS.lookup;
+  if (seg === "consulta-lote") return LABELS.consultaLote;
   if (seg === "scan-history") return LABELS.scanHistory;
   if (seg === "register-label") return "Registrar etiqueta";
   if (seg === "generate-qr") return "Generar etiqueta";
@@ -30,7 +30,7 @@ function labelFor(seg: string) {
 type Crumb = {
   to: string;
   label: string;
-  /** Category segment without its own route (e.g. /admin). */
+  
   nonNavigable?: boolean;
 };
 

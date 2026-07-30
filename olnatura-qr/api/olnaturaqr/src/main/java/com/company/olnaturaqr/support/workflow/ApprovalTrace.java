@@ -10,10 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Reconstruye el estado de aprobación parcial desde auditoría
- * (APPROVE_MATERIAL), sin depender de columnas en qr_labels.
- */
+
 final class ApprovalTrace {
 
     private ApprovalTrace() {}
@@ -49,7 +46,7 @@ final class ApprovalTrace {
         for (AuditEvent e : events) {
             String action = e.getActionType() == null ? "" : e.getActionType().trim().toUpperCase(Locale.ROOT);
             if ("REJECT_MATERIAL".equals(action)) {
-                // El rechazo no borra el historial de quién aprobó; solo cierra el lote.
+                
                 continue;
             }
             if (!"APPROVE_MATERIAL".equals(action)) {
@@ -67,10 +64,7 @@ final class ApprovalTrace {
         return new Snapshot(calidad, inspeccion);
     }
 
-    /**
-     * Compatibilidad: si aún hay marcas antiguas en la etiqueta y no hay eventos,
-     * úsalas solo como fallback de lectura (sin escribir de nuevo).
-     */
+    
     static Snapshot withLegacyFallback(Snapshot fromAudit, QrLabel label) {
         Leg calidad = fromAudit.calidad();
         Leg inspeccion = fromAudit.inspeccion();

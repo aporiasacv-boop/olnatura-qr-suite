@@ -114,10 +114,7 @@ public class LabelController {
                 LabelDto.LabelView.from(saved)));
     }
 
-    /**
-     * Aprueba el workflow interno (platformStatus / {@code qr_labels.status}).
-     * No modifica el Estado Operativo Dynamics.
-     */
+    
     @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
     @PostMapping("/by-lote/{lote}/approve")
     public ResponseEntity<LabelDto.StatusResponse> approveByLote(
@@ -131,9 +128,7 @@ public class LabelController {
         return ResponseEntity.ok(new LabelDto.StatusResponse(saved.getId(), saved.getStatus()));
     }
 
-    /**
-     * Rechaza el workflow interno (platformStatus). No modifica el Estado Operativo Dynamics.
-     */
+    
     @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
     @PostMapping("/by-lote/{lote}/reject")
     public ResponseEntity<LabelDto.StatusResponse> rejectByLote(
@@ -147,7 +142,7 @@ public class LabelController {
         return ResponseEntity.ok(new LabelDto.StatusResponse(saved.getId(), saved.getStatus()));
     }
 
-    /** Compatibilidad: APROBADO/RECHAZADO delegan al flujo de aprobación. */
+    
     @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<LabelDto.StatusResponse> updateStatus(
@@ -217,7 +212,7 @@ public class LabelController {
         int printFrom = bounds[1];
         int printTo = bounds[2];
 
-        // Una sola resolución de cantidad por solicitud (solo BD; sin Dynamics).
+        
         String cantidadStr = resolveCantidadForZpl(q);
 
         StringBuilder zplAll = new StringBuilder();
@@ -273,7 +268,7 @@ public class LabelController {
         int printFrom = bounds[1];
         int printTo = bounds[2];
 
-        // Una sola resolución de cantidad por solicitud (solo BD; sin Dynamics).
+        
         String cantidadStr = resolveCantidadForZpl(q);
 
         StringBuilder zplAll = new StringBuilder();
@@ -308,12 +303,7 @@ public class LabelController {
                 .body(zplBytes);
     }
 
-    /**
-     * Reimpresión: el total es siempre el registrado en BD.
-     * No se permite aumentar (ni alterar) envases; from/to deben estar en 1..total.
-     *
-     * @return int[]{envaseTotal, printFrom, printTo}
-     */
+    
     private int[] resolveReprintBounds(QrLabel q, Integer totalParam, Integer from, Integer to) {
         int registeredTotal = Math.max(1, q.getEnvaseTotal());
         if (totalParam != null && totalParam >= 1 && totalParam != registeredTotal) {
@@ -344,10 +334,7 @@ public class LabelController {
         return new int[]{registeredTotal, printFrom, printTo};
     }
 
-    /**
-     * Cantidad impresa en etiqueta: solo captura manual en BD.
-     * El inventario Dynamics NO va en ZPL; se muestra al escanear el QR.
-     */
+    
     private String resolveCantidadForZpl(QrLabel q) {
         String manualQty = safe(q.getCantidadPorEnvase());
         return manualQty.isEmpty() ? "N/A" : manualQty;
@@ -358,7 +345,7 @@ public class LabelController {
     }
 
     private String buildSingleZpl(QrLabel q, int envaseNum, int envaseTotal, String qrImageBase64, String cantidadStr) {
-        // Normalizacion unica: todo texto al ZPL es ASCII sin acentos ni glifos raros.
+        
         String lote = ZplTextNormalizer.normalize(q.getLote());
         String qrPayload = "OLNQR:1:" + ZplTextNormalizer.normalize(safe(q.getPublicToken()));
         String nombre = ZplTextNormalizer.normalize(q.getNombre());
@@ -478,10 +465,7 @@ public class LabelController {
         return "^FO455,190^BQN,2,8\n^FDQA," + payload + "^FS";
     }
 
-    /**
-     * Todo texto humano del ZPL pasa por aquí: normaliza ASCII y arma ^FD…^FS.
-     * No hay otro camino para escribir texto en la etiqueta.
-     */
+    
     private String fdField(String s) {
         String content = ZplTextNormalizer.normalize(s);
         StringBuilder out = new StringBuilder(content.length());

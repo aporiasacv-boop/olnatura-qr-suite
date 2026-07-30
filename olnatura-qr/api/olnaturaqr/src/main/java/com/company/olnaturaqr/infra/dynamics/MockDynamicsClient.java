@@ -23,7 +23,7 @@ public class MockDynamicsClient implements DynamicsClient {
             String passedBatchDispositionCode,
             String warehouseId,
             String locationId,
-            /** Almacenes InventDim (InventLocationId), p.ej. MPM + REM. */
+            
             List<String> inventLocationIds
     ) {}
 
@@ -52,7 +52,7 @@ public class MockDynamicsClient implements DynamicsClient {
             Map.entry("260619-MEM0003625", new FakeBatch(
                     "MOCK-MEM-3625", "Diag rechazado", "2027-06-19T12:00:00Z", "2026-06-19T12:00:00Z", "Rechazado",
                     5.0, "OLNATURA", "Fail", "Rechazado", "MEM", "Rechazado", List.of("MEM"))),
-            // Lotes de validación Estado Operativo (espejo de evidencia live)
+            
             Map.entry("260406-MPM0003390", new FakeBatch(
                     "106623850300", "CROSPOVIDONA XL-10 (TIPO B)", "2027-04-01T12:00:00Z", "2026-04-06T12:00:00Z", "",
                     49082.0, "OLNATURA", "Pass", "", "MPM", "Disponible", List.of("MPM"))),
@@ -98,7 +98,9 @@ public class MockDynamicsClient implements DynamicsClient {
                 b.qualityStatus(),
                 b.passedBatchDispositionCode() != null ? b.passedBatchDispositionCode() : "",
                 b.warehouseId(),
-                b.locationId()
+                b.locationId(),
+                null,
+                null
         ));
     }
 

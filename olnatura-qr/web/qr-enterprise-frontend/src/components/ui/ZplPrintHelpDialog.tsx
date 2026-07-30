@@ -18,7 +18,7 @@ export const ZPL_PRINT_STEPS = [
   "Se imprimirán las etiquetas automáticamente.",
 ] as const;
 
-/** Instructivo unificado de impresión ZPL (misma leyenda en toda la app). */
+
 export default function ZplPrintHelpDialog({
   open,
   onOpenChange,

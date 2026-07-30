@@ -1,9 +1,4 @@
-/**
- * Relación almacén/código Dynamics → categoría de aprobación Olnatura.
- *
- * MPM / MPS → Materia Prima (fijo)
- * MEM / MES → Empaque (usuario elige primario o secundario)
- */
+
 export type DynamicsSiteFamily = "MATERIA_PRIMA" | "EMPAQUE" | "DESCONOCIDO";
 
 export type MaterialCategory = "MATERIA_PRIMA" | "EMPAQUE_PRIMARIO" | "EMPAQUE_SECUNDARIO";
@@ -11,7 +6,7 @@ export type MaterialCategory = "MATERIA_PRIMA" | "EMPAQUE_PRIMARIO" | "EMPAQUE_S
 const MATERIA_PRIMA_SITES = new Set(["MPM", "MPS"]);
 const EMPAQUE_SITES = new Set(["MEM", "MES"]);
 
-/** Extrae código de sitio del almacén Dynamics o del lote (ej. 260713-MEM0003662). */
+
 export function extractDynamicsSiteCode(almacen?: string | null, lote?: string | null): string | null {
   const fromAlmacen = (almacen ?? "").trim().toUpperCase();
   if (/^(MPM|MPS|MEM|MES)$/.test(fromAlmacen)) return fromAlmacen;
@@ -20,7 +15,7 @@ export function extractDynamicsSiteCode(almacen?: string | null, lote?: string |
   const m = fromLote.match(/(?:^|[^A-Z])(MPM|MPS|MEM|MES)(?=\d|$)/);
   if (m) return m[1];
 
-  // Prefijo típico tras el guión: 260713-MEM0003662
+  
   const m2 = fromLote.match(/-([A-Z]{3})\d/);
   if (m2 && /^(MPM|MPS|MEM|MES)$/.test(m2[1])) return m2[1];
 

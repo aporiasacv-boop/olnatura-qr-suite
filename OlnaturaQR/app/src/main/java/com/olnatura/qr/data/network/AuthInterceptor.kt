@@ -14,7 +14,7 @@ class AuthInterceptor(
 
         if (response.code == 401) {
             val path = chain.request().url.encodedPath
-            // Un login fallido no debe borrar una cookie de sesión aún válida ni forzar navegación.
+            
             if (!path.endsWith("/auth/login")) {
                 cookieJar.clearAll()
                 sessionManager.onUnauthorized()

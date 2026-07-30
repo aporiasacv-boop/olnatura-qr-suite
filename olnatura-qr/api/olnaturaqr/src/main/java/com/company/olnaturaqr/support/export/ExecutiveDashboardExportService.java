@@ -39,10 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Exportación tabular multi-hoja para Power BI (sin DW ni tablas nuevas).
- * Solo reutiliza datos ya persistidos en PostgreSQL.
- */
+
 @Service
 public class ExecutiveDashboardExportService {
 
@@ -155,7 +152,7 @@ public class ExecutiveDashboardExportService {
             writeString(row, c++, parsed.unidad(), styles.text);
             writeString(row, c++, q.getDocumentCode(), styles.text);
             writeString(row, c++, q.getPublicToken(), styles.text);
-            // Actor de creación no se registra hoy en qr_labels ni audit CREATE.
+            
             writeString(row, c++, null, styles.text);
         }
         autosize(sheet, headers.length);
@@ -190,7 +187,7 @@ public class ExecutiveDashboardExportService {
             writeDate(row, c++, toLocalDate(s.getCreatedAt()), styles.date);
             writeTime(row, c++, toLocalTime(s.getCreatedAt()), styles.time);
             writeString(row, c++, s.getLote(), styles.text);
-            // El sistema solo registra el evento de escaneo exitoso; no hay “resultado” de consulta.
+            
             writeString(row, c++, "SCAN_REGISTERED", styles.text);
             writeString(row, c++,
                     label != null ? WorkflowStatus.normalize(label.getStatus()) : null,
@@ -333,7 +330,7 @@ public class ExecutiveDashboardExportService {
         writeHeader(sheet, headers, styles.header);
 
         List<String[]> dict = new ArrayList<>();
-        // QR_Labels
+        
         dict.add(d("QR_Labels", "Id", "Identificador UUID de la etiqueta", "qr_labels.id", "UUID/Text"));
         dict.add(d("QR_Labels", "FechaCreacion", "Fecha de creación (America/Mexico_City)", "qr_labels.created_at", "Date"));
         dict.add(d("QR_Labels", "HoraCreacion", "Hora de creación (America/Mexico_City)", "qr_labels.created_at", "Time"));
@@ -353,7 +350,7 @@ public class ExecutiveDashboardExportService {
         dict.add(d("QR_Labels", "DocumentCode", "Código de documento", "qr_labels.document_code", "Text"));
         dict.add(d("QR_Labels", "PublicToken", "Token público del QR", "qr_labels.public_token", "Text"));
         dict.add(d("QR_Labels", "UsuarioCreador", "No disponible en modelo actual", "N/A", "Text/Empty"));
-        // Scan
+        
         dict.add(d("Scan_Events", "Id", "UUID del evento de escaneo", "scan_events.id", "UUID/Text"));
         dict.add(d("Scan_Events", "Fecha", "Fecha del escaneo", "scan_events.created_at", "Date"));
         dict.add(d("Scan_Events", "Hora", "Hora del escaneo", "scan_events.created_at", "Time"));
@@ -363,7 +360,7 @@ public class ExecutiveDashboardExportService {
         dict.add(d("Scan_Events", "Usuario", "Nombre legible del escáner", "users.username", "Text"));
         dict.add(d("Scan_Events", "Rol", "Rol del escáner", "roles.name", "Text"));
         dict.add(d("Scan_Events", "UsuarioEmail", "Email del escáner", "users.email", "Text"));
-        // Audit
+        
         dict.add(d("Audit_Events", "Id", "UUID evento auditoría", "audit_events.id", "UUID/Text"));
         dict.add(d("Audit_Events", "Fecha", "Fecha del evento", "audit_events.created_at", "Date"));
         dict.add(d("Audit_Events", "Hora", "Hora del evento", "audit_events.created_at", "Time"));
@@ -372,7 +369,7 @@ public class ExecutiveDashboardExportService {
         dict.add(d("Audit_Events", "Accion", "Acción traducida al español", "audit_events.action_type", "Text"));
         dict.add(d("Audit_Events", "Lote", "Lote relacionado", "audit_events.lote", "Text"));
         dict.add(d("Audit_Events", "MetadataJson", "Metadata JSON", "audit_events.metadata", "Text"));
-        // Users
+        
         dict.add(d("Users", "Id", "UUID usuario", "users.id", "UUID/Text"));
         dict.add(d("Users", "Username", "Nombre de usuario", "users.username", "Text"));
         dict.add(d("Users", "Email", "Correo", "users.email", "Text"));
@@ -380,7 +377,7 @@ public class ExecutiveDashboardExportService {
         dict.add(d("Users", "Role", "Rol", "roles.name", "Text"));
         dict.add(d("Users", "FechaCreacion", "Fecha alta", "users.created_at", "Date"));
         dict.add(d("Users", "HoraCreacion", "Hora alta", "users.created_at", "Time"));
-        // Resumen
+        
         dict.add(d("Resumen", "Indicador", "Nombre del KPI exportado", "agregado", "Text"));
         dict.add(d("Resumen", "Valor", "Valor numérico o texto del KPI", "agregado", "Number/Text"));
         dict.add(d("Resumen", "Descripcion", "Descripción del indicador", "agregado", "Text"));
@@ -451,10 +448,7 @@ public class ExecutiveDashboardExportService {
         }
     }
 
-    /**
-     * Separa textos tipo "5 Kg", "1 Bulto", "20 L", "1.5 kg" en número + unidad.
-     * Si no hay número inicial, cantidad=null y unidad=texto completo (si existe).
-     */
+    
     static QtyUnit parseCantidadPorEnvase(String raw) {
         if (raw == null) {
             return new QtyUnit(null, null);
@@ -463,7 +457,7 @@ public class ExecutiveDashboardExportService {
         if (s.isEmpty() || "N/A".equalsIgnoreCase(s) || "-".equals(s)) {
             return new QtyUnit(null, null);
         }
-        // número con . o , como decimal; el resto es unidad
+        
         java.util.regex.Matcher m = java.util.regex.Pattern
                 .compile("^\\s*([+-]?\\d+(?:[.,]\\d+)?)\\s*(.*)$")
                 .matcher(s);
@@ -498,7 +492,7 @@ public class ExecutiveDashboardExportService {
         if (value == null) {
             cell.setBlank();
         } else {
-            // Excel time as fraction of day
+            
             double fraction = (value.toSecondOfDay() + value.getNano() / 1_000_000_000d) / 86_400d;
             cell.setCellValue(fraction);
         }
@@ -533,7 +527,7 @@ public class ExecutiveDashboardExportService {
             try {
                 sheet.autoSizeColumn(i);
             } catch (Exception ignored) {
-                // autosize puede fallar en headless; no bloquea el export
+                
             }
         }
     }

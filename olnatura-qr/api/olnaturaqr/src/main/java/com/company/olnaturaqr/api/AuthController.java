@@ -60,8 +60,6 @@ public ResponseEntity<UserDto.LoginResponse> login(
     String pwd = request.password() == null ? "" : request.password();
 
     if (raw.isBlank() || pwd.isBlank()) {
-        System.out.println("LOGIN FAILED:");
-        System.out.println("reason=blank_username_or_password");
         log.info("LOGIN FAILED: blank username or password");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
@@ -72,8 +70,6 @@ public ResponseEntity<UserDto.LoginResponse> login(
             : userRepository.findByUsernameIgnoreCase(raw);
 
     if (userOpt.isEmpty()) {
-        System.out.println("LOGIN FAILED:");
-        System.out.println("reason=user_not_found");
         log.info("LOGIN FAILED: user not found (lookup={})", byEmail ? "email" : "username");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
@@ -81,22 +77,16 @@ public ResponseEntity<UserDto.LoginResponse> login(
     User user = userOpt.get();
 
     if (!user.isEnabled()) {
-        System.out.println("LOGIN FAILED:");
-        System.out.println("reason=user_disabled");
         log.info("LOGIN FAILED: user disabled username={}", user.getUsername());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     if (!passwordEncoder.matches(pwd, user.getPasswordHash())) {
-        System.out.println("LOGIN FAILED:");
-        System.out.println("reason=password_mismatch");
         log.info("LOGIN FAILED: password mismatch username={}", user.getUsername());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    // Nota: la regla @olnatura.com aplica en request-access (altas nuevas),
-    // no en login, para no bloquear cuentas operativas ya existentes.
-
+    
     String jwt = jwtTokenProvider.generateToken(user);
 
     CookieWriter.setJwtCookie(
@@ -107,9 +97,6 @@ public ResponseEntity<UserDto.LoginResponse> login(
             cookieProps.sameSite(),
             cookieProps.maxAgeSeconds()
     );
-
-    System.out.println("LOGIN SUCCESS");
-    System.out.println("username=" + user.getUsername());
     log.info("LOGIN SUCCESS username={}", user.getUsername());
     return ResponseEntity.ok(new UserDto.LoginResponse(toResponse(user)));
 }

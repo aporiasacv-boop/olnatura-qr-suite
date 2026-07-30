@@ -19,11 +19,12 @@ import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { displayUserIdentity } from "../utils/auditActionTranslator";
 import {
+  EMAIL_CELL,
   TABLE_DATA_CLASS,
   TABLE_FIXED_STYLE,
   TABLE_SCROLL_WRAP,
   TRUNCATE_CELL,
-  TRUNCATE_CELL_PRIORITY,
+  WRAP_CELL,
   cellTitle,
 } from "../utils/tablePresentation";
 
@@ -145,15 +146,15 @@ export default function AdminUsersPage() {
             <Table
               aria-label="Usuarios"
               className={TABLE_DATA_CLASS}
-              style={{ ...TABLE_FIXED_STYLE, minWidth: 800 }}
+              style={{ ...TABLE_FIXED_STYLE, minWidth: 1100 }}
             >
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "26%" }}>Usuario</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "24%" }}>Correo</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "20%" }}>Usuario</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "28%" }}>Correo</TableHeaderCell>
                   <TableHeaderCell style={{ width: "18%" }}>Rol</TableHeaderCell>
                   <TableHeaderCell style={{ width: "12%" }}>Estado</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "8%" }}>Habilitado</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "10%" }}>Habilitado</TableHeaderCell>
                   <TableHeaderCell style={{ width: "12%" }}>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>
@@ -164,10 +165,10 @@ export default function AdminUsersPage() {
                   const usuario = displayUserIdentity(undefined, u.username);
                   return (
                     <TableRow key={u.id} className="table-hover-row">
-                      <TableCell style={TRUNCATE_CELL_PRIORITY} title={cellTitle(usuario)}>
+                      <TableCell style={WRAP_CELL} title={cellTitle(usuario)}>
                         {usuario}
                       </TableCell>
-                      <TableCell style={TRUNCATE_CELL} title={cellTitle(u.email)}>
+                      <TableCell style={EMAIL_CELL} title={cellTitle(u.email)}>
                         {u.email}
                       </TableCell>
                       <TableCell>

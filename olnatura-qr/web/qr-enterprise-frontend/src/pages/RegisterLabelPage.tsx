@@ -48,7 +48,7 @@ type FormState = {
   cantidadPorEnvase: string;
 };
 
-/** Campos precargados desde Dynamics (UI only). */
+
 type DynamicsLocked = Partial<Record<keyof FormState, boolean>>;
 
 type CreateResponse = {
@@ -85,9 +85,9 @@ export default function RegisterLabelPage() {
   const [lookupBusy, setLookupBusy] = useState(false);
   const [dynamicsInfo, setDynamicsInfo] = useState<DynamicsLookupResponse | null>(null);
   const [dynamicsLocked, setDynamicsLocked] = useState<DynamicsLocked>({});
-  /** Detalle Dynamics colapsado por defecto (útil, no invasivo en operación diaria). */
+  
   const [dynamicsOpen, setDynamicsOpen] = useState(false);
-  /** Familia Dynamics (MPM/MPS vs MEM/MES) que condiciona el selector de tipo. */
+  
   const [siteFamily, setSiteFamily] = useState<DynamicsSiteFamily>("DESCONOCIDO");
   const [siteCode, setSiteCode] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -95,7 +95,7 @@ export default function RegisterLabelPage() {
   const [err, setErr] = useState<string | null>(null);
   const [zplHelpOpen, setZplHelpOpen] = useState(false);
 
-  /** Siempre empezamos en envase 1; el operador solo captura el total. */
+  
   const loteOk = form.lote.trim().length > 0;
   const fechaEntradaOk = isValidDDMMYYYY(form.fechaEntrada);
   const envaseTotal = parseInt(form.envaseTotal, 10) || 0;
@@ -109,7 +109,7 @@ export default function RegisterLabelPage() {
         : tipoMaterial === "MATERIA_PRIMA" ||
           tipoMaterial === "EMPAQUE_PRIMARIO" ||
           tipoMaterial === "EMPAQUE_SECUNDARIO";
-  /** Resalta en rojo cuando falta elegir primario/secundario (u otro tipo válido). */
+  
   const tipoMaterialNeedsAttention = canQr && !tipoMaterialOk;
   const canRegister = canQr && loteOk && fechaEntradaOk && envaseOk && tipoMaterialOk && !busy;
 
@@ -146,7 +146,7 @@ export default function RegisterLabelPage() {
       setSiteCode(code);
       setSiteFamily(family);
 
-      // MPM/MPS → Materia Prima fija. MEM/MES → solo elegir primario/secundario.
+      
       const tipoFromDynamics =
         family === "MATERIA_PRIMA" ? "MATERIA_PRIMA" : family === "EMPAQUE" ? "" : undefined;
 
@@ -156,8 +156,8 @@ export default function RegisterLabelPage() {
         nombre: !!nombre,
         lote: !!loteDyn,
         fechaEntrada: !!fechaEntradaFmt,
-        // Dynamics solo entrega BatchExpirationDate (fecha), sin indicar si es
-        // caducidad o reanálisis → el tipo queda siempre elegible.
+        
+        
         fechaTipo: false,
         fechaValor: !!caducidadFmt,
       });

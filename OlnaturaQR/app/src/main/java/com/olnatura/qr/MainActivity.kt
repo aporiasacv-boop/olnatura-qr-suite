@@ -17,7 +17,6 @@ import com.olnatura.qr.core.session.SessionManager
 import com.olnatura.qr.data.device.DeviceIdProvider
 import com.olnatura.qr.data.network.ApiClient
 import com.olnatura.qr.data.network.PersistentCookieJar
-import com.olnatura.qr.data.repo.AdminLotRepository
 import com.olnatura.qr.data.repo.AuthRepository
 import com.olnatura.qr.data.repo.CommentRepository
 import com.olnatura.qr.data.repo.QrRepository
@@ -52,7 +51,6 @@ class MainActivity : ComponentActivity() {
         val deviceIdProvider = DeviceIdProvider(applicationContext)
         val scanRepo = ScanRepository(api, deviceIdProvider)
         val commentRepo = CommentRepository(api)
-        val adminLotRepo = AdminLotRepository(api)
         val loginVm = LoginViewModel(authRepo)
         val usedEmailStore = com.olnatura.qr.data.email.UsedEmailSuggestionsStore(applicationContext)
         val requestAccessVm = RequestAccessViewModel(authRepo, usedEmailStore)
@@ -61,7 +59,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             OlnaturaTheme {
-                // Evita que la taskbar / barra de navegación de la tablet tape botones.
+                
                 Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
                     var shareOpen by remember { mutableStateOf(false) }
                     var sharePayload by remember { mutableStateOf<SharePayload?>(null) }
@@ -73,7 +71,7 @@ class MainActivity : ComponentActivity() {
                         loginVm = loginVm,
                         requestAccessVm = requestAccessVm,
                         scannerVm = scannerVm,
-                        resultVmFactory = { ResultViewModel(authRepo, qrRepo, scanRepo, commentRepo, adminLotRepo) },
+                        resultVmFactory = { ResultViewModel(authRepo, qrRepo, scanRepo, commentRepo) },
                         reportVm = reportVm,
                         onShare = { payload ->
                             sharePayload = payload

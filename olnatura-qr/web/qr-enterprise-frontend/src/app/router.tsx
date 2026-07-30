@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import AppShell from "../components/layout/AppShell";
 
@@ -13,10 +13,11 @@ import AdminMetricsPage from "../pages/AdminMetricsPage";
 import AdminUsersPage from "../pages/AdminUsersPage";
 import AdminLotsPage from "../pages/AdminLotsPage";
 
-import BatchLookupPage from "../pages/BatchLookupPage";
 import ScanHistoryPage from "../pages/ScanHistoryPage";
 import RegisterLabelPage from "../pages/RegisterLabelPage";
 import GenerateQrPage from "../pages/GenerateQrPage";
+
+import OperationalStatusValidationTempPage from "../pages/temp/OperationalStatusValidationTempPage";
 
 import { RequireAuth, RequireAdmin } from "../auth/guards";
 import { RequireRole } from "../auth/RequireRole";
@@ -47,13 +48,14 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
 
-      { path: "lookup", element: <BatchLookupPage /> },
+      { path: "lookup", element: <Navigate to="/consulta-lote" replace /> },
+
       { path: "scan-history", element: <ScanHistoryPage /> },
 
       {
         path: "generate-qr",
         element: (
-          <RequireRole anyOf={["ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION"]}>
+          <RequireRole anyOf={["ADMIN", "ALMACEN"]}>
             <GenerateQrPage />
           </RequireRole>
         ),
@@ -66,6 +68,19 @@ export const router = createBrowserRouter([
             <RegisterLabelPage />
           </RequireRole>
         ),
+      },
+
+      {
+        path: "consulta-lote",
+        element: (
+          <RequireRole anyOf={["ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION"]}>
+            <OperationalStatusValidationTempPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: "temp/operational-status-validation",
+        element: <Navigate to="/consulta-lote" replace />,
       },
 
       {
@@ -103,7 +118,7 @@ export const router = createBrowserRouter([
       {
         path: "admin/audit",
         element: (
-          <RequireRole anyOf={["ADMIN", "CALIDAD", "INSPECCION"]}>
+          <RequireRole anyOf={["ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION"]}>
             <AdminAuditPage />
           </RequireRole>
         ),

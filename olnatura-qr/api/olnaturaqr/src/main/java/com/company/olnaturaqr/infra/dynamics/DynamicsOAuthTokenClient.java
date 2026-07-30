@@ -13,11 +13,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-/**
- * Encapsula el flujo OAuth2 client_credentials de Azure AD (endpoint v1 con {@code resource})
- * usado contra Dynamics 365 F&amp;O. No almacena ni reutiliza tokens: cada llamada
- * {@link #requestAccessToken()} solicita uno nuevo y lo devuelve solo como valor local.
- */
+
 @Component
 @ConditionalOnProperty(prefix = "app.dynamics", name = "mode", havingValue = "real")
 public class DynamicsOAuthTokenClient {
@@ -32,10 +28,7 @@ public class DynamicsOAuthTokenClient {
         this.tokenRestClient = buildTokenClient(properties);
     }
 
-    /**
-     * Solicita un access_token nuevo. El valor retornado debe usarse solo para la búsqueda
-     * en curso y no debe guardarse en campos de instancia, caché ni estáticos.
-     */
+    
     public String requestAccessToken() {
         validateOAuthConfig();
 
@@ -67,7 +60,7 @@ public class DynamicsOAuthTokenClient {
         } catch (DynamicsException ex) {
             throw ex;
         } catch (RestClientException ex) {
-            // No registrar body ni headers (pueden incluir secretos / tokens).
+            
             log.warn("Dynamics OAuth falló: tipo={}", ex.getClass().getSimpleName());
             throw DynamicsExceptionClassifier.fromOAuth(ex);
         } catch (Exception ex) {

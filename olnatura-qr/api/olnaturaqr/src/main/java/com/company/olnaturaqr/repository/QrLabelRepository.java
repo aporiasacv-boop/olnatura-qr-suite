@@ -23,10 +23,7 @@ public interface QrLabelRepository extends JpaRepository<QrLabel, UUID> {
 
     List<QrLabel> findByAdminStatusIgnoreCaseOrderByCreatedAtDesc(String adminStatus);
 
-    /**
-     * Autocompletado de lotes: prefijo y coincidencia parcial sobre lote/código/nombre.
-     * Orden: coincidencia exacta de lote → prefijo de lote → resto.
-     */
+    
     @Query(value = """
             SELECT * FROM qr_labels q
             WHERE UPPER(COALESCE(q.admin_status, 'ACTIVE')) = 'ACTIVE'

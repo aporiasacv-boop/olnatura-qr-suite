@@ -36,7 +36,7 @@ type BrandLogoProps = {
   showText?: boolean;
 };
 
-/** Logo oficial Olnatura (public/logo-olnatura.png). */
+
 export default function BrandLogo({
   size = 40,
   title = "Sistema Olnatura",

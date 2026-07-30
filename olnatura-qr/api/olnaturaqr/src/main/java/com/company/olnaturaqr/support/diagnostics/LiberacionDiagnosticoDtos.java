@@ -2,10 +2,7 @@ package com.company.olnaturaqr.support.diagnostics;
 
 import java.time.Instant;
 
-/**
- * Evidencia Dynamics para diagnóstico de liberación.
- * Solo captura; sin comparación ni sincronización.
- */
+
 public final class LiberacionDiagnosticoDtos {
 
     private LiberacionDiagnosticoDtos() {}

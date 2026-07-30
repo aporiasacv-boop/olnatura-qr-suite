@@ -2,14 +2,14 @@ package com.olnatura.qr.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val OlnGreen = Color(0xFF6F8B3A)      // barra superior
-val OlnCream = Color(0xFFF3F6EF)      // fondo general
-val OlnCard = Color(0xFFFFFFFF)       // cards
-val OlnBorder = Color(0xFFDDE6D6)     // bordes suaves
-val OlnTextMuted = Color(0xFF6B7568)  // labels
-val OlnSuccessBg = Color(0xFFDDF2D7)  // banner ok
+val OlnGreen = Color(0xFF6F8B3A)      
+val OlnCream = Color(0xFFF3F6EF)      
+val OlnCard = Color(0xFFFFFFFF)       
+val OlnBorder = Color(0xFFDDE6D6)     
+val OlnTextMuted = Color(0xFF6B7568)  
+val OlnSuccessBg = Color(0xFFDDF2D7)  
 val OlnSuccessText = Color(0xFF2E6B2E)
-val OlnPrimaryBlue = Color(0xFF2F5D86) // botón azul del scanner
+val OlnPrimaryBlue = Color(0xFF2F5D86) 
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

@@ -1,6 +1,6 @@
 import { makeStyles, shorthands } from "@fluentui/react-components";
 
-/** Fondos tenues: se distinguen amarillo / verde / rojo / gris sin saturar. */
+
 const useStyles = makeStyles({
   tag: {
     ...shorthands.padding("4px", "10px"),
@@ -40,7 +40,8 @@ export function normalizeOperationalStatus(status: string | null | undefined): O
   if (raw === "APROBADO") return "APROBADO";
   if (raw === "RECHAZADO") return "RECHAZADO";
   if (raw === "CUARENTENA") return "CUARENTENA";
-  return "DESCONOCIDO";
+  // DESCONOCIDO / vacío / otros: en UI de negocio se presenta como CUARENTENA
+  return "CUARENTENA";
 }
 
 export function operationalStatusDisplayLabel(status: string | null | undefined): string {
@@ -48,7 +49,7 @@ export function operationalStatusDisplayLabel(status: string | null | undefined)
   if (n === "APROBADO") return "Aprobado";
   if (n === "CUARENTENA") return "Cuarentena";
   if (n === "RECHAZADO") return "Rechazado";
-  return "No determinado";
+  return "Cuarentena";
 }
 
 export function operationalStatusEmoji(status: string | null | undefined): string {
@@ -56,7 +57,7 @@ export function operationalStatusEmoji(status: string | null | undefined): strin
   if (n === "APROBADO") return "🟢";
   if (n === "CUARENTENA") return "🟡";
   if (n === "RECHAZADO") return "🔴";
-  return "⚪";
+  return "🟡";
 }
 
 export default function StatusTag({ status }: { status: string }) {

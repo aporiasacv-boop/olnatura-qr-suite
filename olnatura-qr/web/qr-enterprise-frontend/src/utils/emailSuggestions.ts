@@ -1,8 +1,4 @@
-/**
- * Sugerencias de correo corporativo para "Crear usuario".
- * Para agregar más correos, incluirlos en SUGGESTED_EMAILS.
- * Los ya utilizados (alta exitosa o conflicto 409) se ocultan vía localStorage.
- */
+
 export const SUGGESTED_EMAILS: readonly string[] = [
   "Virginia.Amaro@olnatura.com",
   "ac.supervision@olnatura.com",

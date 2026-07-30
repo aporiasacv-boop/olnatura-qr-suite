@@ -1,8 +1,6 @@
 package com.company.olnaturaqr.infra.dynamics;
 
-/**
- * Error interno inesperado en la integración Dynamics (no OAuth/OData/timeout clasificable).
- */
+
 public class DynamicsInternalException extends DynamicsException {
 
     public static final String CODE = "DYNAMICS_INTERNAL_ERROR";

@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-/** Vista enriquecida de auditoría para UI y exportaciones legibles. */
+
 public record AuditEventView(
         UUID id,
         Instant createdAt,

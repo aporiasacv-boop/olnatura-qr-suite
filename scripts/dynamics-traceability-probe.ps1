@@ -1,9 +1,4 @@
-# Investigación trazabilidad Estado Operativo — solo lectura OData.
-# Requiere APP_DYNAMICS_TENANT_ID / CLIENT_ID / CLIENT_SECRET (o -TenantId/-ClientId/-ClientSecret).
-#
-# Uso:
-#   .\dynamics-traceability-probe.ps1
-#   .\dynamics-traceability-probe.ps1 -BatchSuffixes @('MEM0003675','MPM0003363')
+
 
 [CmdletBinding()]
 param(
@@ -152,7 +147,7 @@ function Resolve-OperationalStatus($inventLocationIds, $qualityWarehouseId, $bat
   return [pscustomobject]@{ status = "DESCONOCIDO"; rule = "Información insuficiente"; warehouse = $null }
 }
 
-# --- Metadata probes: BaseWorkers + InventTrans full row keys ---
+
 Write-Host "`n=== Metadata probes ==="
 $metaWorkers = @("BaseWorkers", "Workers", "HcmWorkers", "DirPeopleV2", "Employees")
 $workerEntityFound = $null
@@ -185,7 +180,7 @@ if ($qualityProbe.Ok -and $qualityProbe.Body.value -and @($qualityProbe.Body.val
 }
 [void](Save-Json "meta-QualityOrderHeaders-keys.json" $qualityKeys)
 
-# Preferred InventTrans select: only keys that exist
+
 $wantedTrans = @(
   "inventDimId","StatusIssue","StatusReceipt","DatePhysical","DateFinancial",
   "ModifiedDateTime","CreatedDateTime","ModifiedBy","CreatedBy","Worker",
@@ -195,7 +190,7 @@ $wantedTrans = @(
 )
 $transSelect = ($wantedTrans | Where-Object { $_ -in $transKeys -or $transKeys.Count -eq 0 }) -join ","
 if ([string]::IsNullOrWhiteSpace($transSelect)) {
-  # fallback if sample empty: try common set
+  
   $transSelect = "inventDimId,StatusIssue,StatusReceipt,DatePhysical,DateFinancial,ModifiedDateTime,CreatedDateTime,ModifiedBy,CreatedBy,ReferenceId,ReferenceCategory,InventTransType,ItemNumber,Qty"
 }
 
@@ -212,11 +207,11 @@ foreach ($suffix in $BatchSuffixes) {
   Write-Host "`n========== $suffix =========="
   $tag = $suffix
 
-  # Resolve full BatchNumber
+  
   $batchR = Get-Entity "ItemBatches" "endswith(BatchNumber,'$suffix')" "ItemNumber,BatchNumber,BatchExpirationDate,BatchDispositionCode" 10
   [void](Save-Json "$tag-01-ItemBatches.json" $(if ($batchR.Ok) { $batchR.Body } else { $batchR.Error }))
   if (-not $batchR.Ok -or -not $batchR.Body.value -or @($batchR.Body.value).Count -eq 0) {
-    # try contains
+    
     $batchR = Get-Entity "ItemBatches" "contains(BatchNumber,'$suffix')" "ItemNumber,BatchNumber,BatchExpirationDate,BatchDispositionCode" 10
     [void](Save-Json "$tag-01b-ItemBatches-contains.json" $(if ($batchR.Ok) { $batchR.Body } else { $batchR.Error }))
   }
@@ -231,14 +226,14 @@ foreach ($suffix in $BatchSuffixes) {
     continue
   }
 
-  # Prefer exact endswith match; if multiple, take all but primary = first
+  
   $primary = $batches[0]
   $lote = [string]$primary.BatchNumber
   $item = [string]$primary.ItemNumber
   $disp = [string]$primary.BatchDispositionCode
   Write-Host "  BatchNumber=$lote ItemNumber=$item Disposition=$disp (matches=$($batches.Count))"
 
-  # InventDim
+  
   $dimR = Get-Entity "InventDimBiEntities" "inventBatchId eq '$lote'" "inventDimId,inventBatchId,InventLocationId,wMSLocationId,InventSiteId" 50
   [void](Save-Json "$tag-02-InventDim.json" $(if ($dimR.Ok) { $dimR.Body } else { $dimR.Error }))
   $dims = @()
@@ -246,11 +241,11 @@ foreach ($suffix in $BatchSuffixes) {
   $locations = @($dims | ForEach-Object { $_.InventLocationId } | Where-Object { $_ } | Select-Object -Unique)
   Write-Host ("  InventDim locations: " + ($locations -join ", "))
 
-  # Quality orders — by ItemBatchNumber
+  
   $qR = Get-Entity "QualityOrderHeaders" "ItemBatchNumber eq '$lote'" $qualitySelect 20
   [void](Save-Json "$tag-03-QualityOrderHeaders.json" $(if ($qR.Ok) { $qR.Body } else { $qR.Error }))
   if (-not $qR.Ok) {
-    # retry without InventoryBatchId / ValidationStatus if bad select
+    
     $qR2 = Get-Entity "QualityOrderHeaders" "ItemBatchNumber eq '$lote'" $null 20
     [void](Save-Json "$tag-03b-QualityOrderHeaders-full.json" $(if ($qR2.Ok) { $qR2.Body } else { $qR2.Error }))
     if ($qR2.Ok) { $qR = $qR2 }
@@ -267,13 +262,13 @@ foreach ($suffix in $BatchSuffixes) {
   if ($orders.Count -gt 0) { $qualityWh = [string]$orders[0].WarehouseId }
   $op = Resolve-OperationalStatus $locations $qualityWh $disp
 
-  # InventTrans for each dim — especially REM/RES/CUARENTENA
+  
   $targetDims = @($dims | Where-Object {
     $n = Normalize-Wh ([string]$_.InventLocationId)
     $n -in @("REM","RES","CUARENTENA")
   })
   if ($targetDims.Count -eq 0) {
-    # still sample first dim for baseline
+    
     $targetDims = @($dims | Select-Object -First 2)
   }
 
@@ -302,8 +297,7 @@ foreach ($suffix in $BatchSuffixes) {
     }
   }
 
-  # Also try filter by ItemNumber if inventory has batch field — skip if no field
-
+  
   $summary = [pscustomobject]@{
     suffix = $suffix
     found = $true
@@ -347,7 +341,7 @@ foreach ($suffix in $BatchSuffixes) {
   $lotSummaries += $summary
 }
 
-# --- BaseWorkers lookups ---
+
 Write-Host "`n=== BaseWorkers / workers ==="
 $workerResults = @()
 $workerEntity = if ($workerEntityFound) { $workerEntityFound } else { "BaseWorkers" }
@@ -379,7 +373,7 @@ foreach ($pn in ($personnelNumbers | Sort-Object)) {
     }
   }
   if (-not $found) {
-    # try alternate entities
+    
     foreach ($alt in @("BaseWorkers","Workers","HcmWorkers")) {
       if ($alt -eq $workerEntity) { continue }
       $wR = Get-Entity $alt "PersonnelNumber eq '$pn'" $null 5

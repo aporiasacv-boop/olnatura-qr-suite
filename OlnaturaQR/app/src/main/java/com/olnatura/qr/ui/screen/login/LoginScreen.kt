@@ -135,11 +135,11 @@ fun LoginScreen(
                     onClick = {
                         vm.login { username, password ->
                             scope.launch {
-                                // Autofill Framework: marca el login como completado.
+                                
                                 runCatching {
                                     context.getSystemService(AutofillManager::class.java)?.commit()
                                 }
-                                // Credential Manager: Android ofrece guardar (si el usuario acepta).
+                                
                                 AndroidCredentialHelper.offerSavePassword(context, username, password)
                                 onLoggedIn()
                             }

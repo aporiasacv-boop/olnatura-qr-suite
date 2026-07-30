@@ -15,19 +15,16 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
-    # Solo migraciones de esquema. Nunca classpath:db/demo.
     locations: classpath:db/migration
 
 app:
   cors:
-    # Obligatorio en prod. Sin host hard-coded.
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
   auth:
     cookie:
       secure: true
       same-site: "None"
   dynamics:
-    # En producción se espera integración real salvo override explícito.
     mode: ${APP_DYNAMICS_MODE}
     base-url: ${APP_DYNAMICS_BASE_URL}
     resource: ${APP_DYNAMICS_RESOURCE:${APP_DYNAMICS_BASE_URL}}
@@ -35,7 +32,6 @@ app:
     client-id: ${APP_DYNAMICS_CLIENT_ID}
     client-secret: ${APP_DYNAMICS_CLIENT_SECRET}
 
-  # Admin inicial: hereda de application.yml (idempotente; no toca admin existente).
   bootstrap:
     admin:
       enabled: ${APP_BOOTSTRAP_ADMIN_ENABLED:true}

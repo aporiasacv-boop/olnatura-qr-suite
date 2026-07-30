@@ -1,7 +1,5 @@
--- Demo data ONLY (perfil spring:dev → spring.flyway.locations includes classpath:db/demo).
--- Never loaded in production.
 
--- Users demo (sin admin: el admin inicial lo crea AdminBootstrapRunner en arranque).
+
 INSERT INTO users (username, email, password_hash, enabled, role_id, created_at)
 SELECT 'inp', 'inp@demo.local', crypt('Inp123!', gen_salt('bf')), true, r.id, now()
 FROM roles r WHERE r.name = 'INSPECCION'
@@ -12,7 +10,7 @@ SELECT 'alm', 'alm@demo.local', crypt('Alm123!', gen_salt('bf')), true, r.id, no
 FROM roles r WHERE r.name = 'ALMACEN'
 ON CONFLICT (username) DO NOTHING;
 
--- Labels demo (column status after V10; on fresh dev Flyway applies demo after all migrations)
+
 INSERT INTO qr_labels (
   tipo_material, nombre, codigo, lote,
   fecha_entrada, caducidad, reanalisis,

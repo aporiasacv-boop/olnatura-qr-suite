@@ -70,7 +70,7 @@ export default function Sidebar() {
   const userLabel = me?.username ?? "—";
 
   const showHome = can("HOME") || hasRole("ADMIN");
-  const showLookup = can("LOOKUP");
+  const showConsultaLote = can("CONSULTA_LOTE");
   const showScan = can("SCAN");
   const showGenerate = can("GENERATE_LABEL");
   const showRegister = can("REGISTER_LABEL");
@@ -84,7 +84,7 @@ export default function Sidebar() {
       </div>
 
       <nav className={s.nav}>
-        {(showHome || showLookup || showScan) && (
+        {(showHome || showConsultaLote || showScan) && (
           <div className={s.sectionLabel}>Operación</div>
         )}
         {showHome && (
@@ -92,9 +92,12 @@ export default function Sidebar() {
             Panel principal
           </NavLink>
         )}
-        {showLookup && (
-          <NavLink to="/lookup" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-            Consulta por lote
+        {showConsultaLote && (
+          <NavLink
+            to="/consulta-lote"
+            className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}
+          >
+            Consulta de lote
           </NavLink>
         )}
         {showScan && (

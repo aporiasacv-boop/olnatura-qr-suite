@@ -5,15 +5,12 @@ server:
     include-exception: true
     include-binding-errors: always
 
-# Secretos de BD y JWT deben venir del entorno (sin defaults en este archivo):
-#   SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD, JWT_SECRET
 
 spring:
   jpa:
     hibernate:
       ddl-auto: validate
   flyway:
-    # Esquema + seeds demo solo en perfil dev (prod usa únicamente classpath:db/migration).
     locations: classpath:db/migration,classpath:db/demo
 
 app:
@@ -26,4 +23,3 @@ app:
       same-site: "Lax"
   dynamics:
     mode: ${APP_DYNAMICS_MODE:mock}
-  # Hereda bootstrap admin de application.yml (defaults de producción inicial).

@@ -52,7 +52,7 @@ class PersistentCookieJar(private val context: Context) : CookieJar {
         }
     }
 
-    /** True si hay cookie de sesión JWT (`qr_session`) no expirada en memoria/disco. */
+    
     fun hasSessionCookie(cookieName: String = "qr_session"): Boolean {
         val now = System.currentTimeMillis()
         return memory.values.asSequence()

@@ -141,7 +141,7 @@ img {
   height: auto;
 }
 
-/* Tarjetas / superficies con hover suave */
+
 .app-card,
 .fui-Card {
   transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
@@ -169,13 +169,25 @@ img {
   background-color: #e8ebdc;
 }
 
-/* Tipografía de celdas de datos: solo tbody, no encabezados ni resto de UI */
+
+.app-data-table th,
+.app-data-table td {
+  padding: 10px 14px;
+  box-sizing: border-box;
+  vertical-align: top;
+}
+
+.app-data-table thead th {
+  padding-top: 8px;
+  padding-bottom: 12px;
+}
+
 .app-data-table tbody td {
   font-size: 12.5px;
   line-height: 1.35;
 }
 
-/* Microanimación tipo pestaña en tarjetas del panel */
+
 .app-card--interactive {
   cursor: pointer;
   position: relative;

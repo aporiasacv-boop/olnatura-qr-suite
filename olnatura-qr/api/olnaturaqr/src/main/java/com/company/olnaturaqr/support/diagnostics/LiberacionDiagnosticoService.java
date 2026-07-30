@@ -24,10 +24,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
-/**
- * Consulta Dynamics (ItemBatches + QualityOrderHeaders) y guarda evidencia JSON.
- * No modifica estado QR ni sincroniza.
- */
+
 @Service
 public class LiberacionDiagnosticoService {
 
@@ -55,11 +52,7 @@ public class LiberacionDiagnosticoService {
                 .enable(SerializationFeature.INDENT_OUTPUT);
     }
 
-    /**
-     * Captura el estado actual del lote y lo guarda como {@code {lote}_{fase}.json}.
-     *
-     * @param fase p.ej. ANTES o DESPUES
-     */
+    
     public LiberacionDiagnosticoDtos.Captura capturarYGuardar(String rawLote, String fase) {
         String lote = requireLote(rawLote);
         String faseNorm = requireFase(fase);

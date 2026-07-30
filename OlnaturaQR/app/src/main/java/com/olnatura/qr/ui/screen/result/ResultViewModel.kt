@@ -2,12 +2,10 @@ package com.olnatura.qr.ui.screen.result
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.olnatura.qr.data.model.AdminCorrectLabelRequest
 import com.olnatura.qr.data.model.LoteCommentResponse
 import com.olnatura.qr.data.model.MeResponse
 import com.olnatura.qr.data.model.QrResponse
 import com.olnatura.qr.data.model.ScanEventResponse
-import com.olnatura.qr.data.repo.AdminLotRepository
 import com.olnatura.qr.data.repo.AuthRepository
 import com.olnatura.qr.data.repo.CommentRepository
 import com.olnatura.qr.data.repo.QrRepository
@@ -27,49 +25,23 @@ sealed class GateState {
     data object Authorized : GateState()
 }
 
-data class AdminEditForm(
-    val tipoMaterial: String = "",
-    val nombre: String = "",
-    val codigo: String = "",
-    val fechaEntrada: String = "",
-    val caducidad: String = "",
-    val reanalisis: String = "",
-    val envaseNum: String = "",
-    val envaseTotal: String = "",
-    val cantidadPorEnvase: String = "",
-    val motivo: String = ""
-)
-
 data class ResultState(
     val lote: String = "",
     val gate: GateState = GateState.Checking,
     val loading: Boolean = false,
     val notFound: Boolean = false,
-    /** Sync manual en curso; no vacía [qr] si falla. */
     val syncing: Boolean = false,
     val syncError: String? = null,
-
     val me: MeResponse? = null,
     val roles: Set<String> = emptySet(),
     val qr: QrResponse? = null,
     val events: List<ScanEventResponse> = emptyList(),
     val comments: List<LoteCommentResponse> = emptyList(),
     val commentsAllowed: Boolean = false,
-    val canCorrect: Boolean = false,
-    val editing: Boolean = false,
-    val editForm: AdminEditForm = AdminEditForm(),
-    val editBusy: Boolean = false,
-    val editError: String? = null,
-    val statusTargets: List<String> = emptyList(),
-    val statusTarget: String = "",
-    val statusMotivo: String = "",
-    val statusCorrectBusy: Boolean = false,
-    val statusCorrectError: String? = null,
     val commentDraft: String = "",
     val commentBusy: Boolean = false,
     val commentError: String? = null,
     val todayCount: Int = 0,
-
     val error: String? = null
 )
 
@@ -77,8 +49,7 @@ class ResultViewModel(
     private val authRepo: AuthRepository,
     private val qrRepo: QrRepository,
     private val scanRepo: ScanRepository,
-    private val commentRepo: CommentRepository,
-    private val adminLotRepo: AdminLotRepository
+    private val commentRepo: CommentRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ResultState())
@@ -99,11 +70,6 @@ class ResultViewModel(
                 comments = emptyList(),
                 commentDraft = "",
                 commentError = null,
-                editing = false,
-                editError = null,
-                statusTarget = "",
-                statusMotivo = "",
-                statusCorrectError = null,
                 todayCount = 0
             )
         }
@@ -126,13 +92,11 @@ class ResultViewModel(
 
         val roles = me.roles.map { it.uppercase() }.toSet()
         val commentsAllowed = roles.any { it in COMMENT_ROLES }
-        val canCorrect = roles.contains("ADMIN")
         _state.update {
             it.copy(
                 me = me,
                 roles = roles,
                 commentsAllowed = commentsAllowed,
-                canCorrect = canCorrect,
                 gate = GateState.Authorized
             )
         }
@@ -171,28 +135,17 @@ class ResultViewModel(
         } else {
             emptyList()
         }
-        // Solo platformStatus (qr_labels.status). Nunca usar dynamic.status (Estado Operativo Dynamics).
-        val platformStatus = (qr.dynamic?.platformStatus ?: "CUARENTENA").trim().uppercase()
-        val statusTargets = if (canCorrect) statusTargetsFor(platformStatus) else emptyList()
 
         _state.update {
             it.copy(
                 loading = false,
                 events = events,
                 comments = comments,
-                todayCount = todayCount,
-                statusTargets = statusTargets,
-                statusTarget = "",
-                statusMotivo = ""
+                todayCount = todayCount
             )
         }
     }
 
-    /**
-     * Sincronizar con Dynamics: nueva lectura OData.
-     * Conserva la información anterior si Dynamics no responde.
-     * No modifica estados ni escribe en el ERP.
-     */
     fun syncWithDynamics() = viewModelScope.launch {
         val s = _state.value
         val lote = s.lote
@@ -200,17 +153,12 @@ class ResultViewModel(
         _state.update { it.copy(syncing = true, syncError = null) }
         try {
             val qr = qrRepo.syncDynamics(lote)
-            val platformStatus = (qr.dynamic?.platformStatus ?: "CUARENTENA").trim().uppercase()
-            val statusTargets = if (s.canCorrect) statusTargetsFor(platformStatus) else emptyList()
             _state.update {
                 it.copy(
                     qr = qr,
                     syncing = false,
                     syncError = null,
-                    error = null,
-                    statusTargets = statusTargets,
-                    statusTarget = "",
-                    statusMotivo = ""
+                    error = null
                 )
             }
         } catch (e: Exception) {
@@ -227,7 +175,6 @@ class ResultViewModel(
                         else ->
                             "No fue posible sincronizar. Se conservó la información anterior."
                     }
-                    // Conservar qr previo.
                     _state.update { it.copy(syncing = false, syncError = msg) }
                 }
             }
@@ -271,118 +218,6 @@ class ResultViewModel(
         }
     }
 
-    fun startEdit() {
-        val qr = _state.value.qr ?: return
-        if (!_state.value.canCorrect) return
-        val label = qr.label
-        _state.update {
-            it.copy(
-                editing = true,
-                editError = null,
-                editForm = AdminEditForm(
-                    tipoMaterial = label?.tipoMaterial.orEmpty(),
-                    nombre = label?.nombre.orEmpty(),
-                    codigo = label?.codigo.orEmpty(),
-                    fechaEntrada = toDisplayDate(label?.fechaEntrada),
-                    caducidad = toDisplayDate(label?.caducidad),
-                    reanalisis = toDisplayDate(label?.reanalisis),
-                    envaseNum = label?.envaseNum?.toString().orEmpty(),
-                    envaseTotal = label?.envaseTotal?.toString().orEmpty(),
-                    cantidadPorEnvase = label?.cantidadPorEnvase.orEmpty(),
-                    motivo = ""
-                )
-            )
-        }
-    }
-
-    fun cancelEdit() {
-        _state.update { it.copy(editing = false, editError = null) }
-    }
-
-    fun onEditForm(update: (AdminEditForm) -> AdminEditForm) {
-        _state.update { it.copy(editForm = update(it.editForm), editError = null) }
-    }
-
-    fun submitCorrection() = viewModelScope.launch {
-        val s = _state.value
-        if (!s.canCorrect || !s.editing || s.editBusy || s.lote.isBlank()) return@launch
-        val motivo = s.editForm.motivo.trim()
-        if (motivo.isEmpty()) {
-            _state.update { it.copy(editError = "El motivo de la modificación es obligatorio.") }
-            return@launch
-        }
-        _state.update { it.copy(editBusy = true, editError = null) }
-        try {
-            val f = s.editForm
-            adminLotRepo.correct(
-                s.lote,
-                AdminCorrectLabelRequest(
-                    motivo = motivo,
-                    tipoMaterial = f.tipoMaterial.trim(),
-                    nombre = f.nombre.trim(),
-                    codigo = f.codigo.trim(),
-                    fechaEntrada = f.fechaEntrada.trim(),
-                    caducidad = f.caducidad.trim(),
-                    reanalisis = f.reanalisis.trim(),
-                    envaseNum = f.envaseNum.trim().toIntOrNull(),
-                    envaseTotal = f.envaseTotal.trim().toIntOrNull(),
-                    cantidadPorEnvase = f.cantidadPorEnvase
-                )
-            )
-            _state.update { it.copy(editBusy = false, editing = false) }
-            load(s.lote)
-        } catch (e: Exception) {
-            val http = e as? HttpException
-            val msg = when (http?.code()) {
-                403 -> "Solo el Administrador puede corregir."
-                401 -> "Sesión expirada. Vuelve a iniciar sesión."
-                else -> (e.message ?: "No se pudo aplicar la corrección").take(180)
-            }
-            _state.update { it.copy(editBusy = false, editError = msg) }
-        }
-    }
-
-    fun onStatusTarget(value: String) {
-        _state.update { it.copy(statusTarget = value, statusCorrectError = null) }
-    }
-
-    fun onStatusMotivo(value: String) {
-        _state.update { it.copy(statusMotivo = value.take(500), statusCorrectError = null) }
-    }
-
-    fun submitStatusCorrection() = viewModelScope.launch {
-        val s = _state.value
-        if (!s.canCorrect || s.statusCorrectBusy || s.lote.isBlank()) return@launch
-        val target = s.statusTarget.trim().uppercase()
-        val motivo = s.statusMotivo.trim()
-        if (target.isEmpty()) {
-            _state.update { it.copy(statusCorrectError = "Selecciona el estado destino.") }
-            return@launch
-        }
-        if (motivo.isEmpty()) {
-            _state.update { it.copy(statusCorrectError = "El motivo de la modificación es obligatorio.") }
-            return@launch
-        }
-        if (target !in s.statusTargets) {
-            _state.update { it.copy(statusCorrectError = "Transición no permitida.") }
-            return@launch
-        }
-        _state.update { it.copy(statusCorrectBusy = true, statusCorrectError = null) }
-        try {
-            adminLotRepo.correctStatus(s.lote, target, motivo)
-            _state.update { it.copy(statusCorrectBusy = false, statusTarget = "", statusMotivo = "") }
-            load(s.lote)
-        } catch (e: Exception) {
-            val http = e as? HttpException
-            val msg = when (http?.code()) {
-                403 -> "Solo el Administrador puede corregir el estado de plataforma."
-                401 -> "Sesión expirada. Vuelve a iniciar sesión."
-                else -> (e.message ?: "No se pudo corregir el estado de plataforma").take(180)
-            }
-            _state.update { it.copy(statusCorrectBusy = false, statusCorrectError = msg) }
-        }
-    }
-
     private fun countToday(events: List<ScanEventResponse>): Int {
         val today = java.time.LocalDate.now().toString()
         return events.count { (it.createdAt ?: "").startsWith(today) }
@@ -401,21 +236,5 @@ class ResultViewModel(
     companion object {
         private val COMMENT_ROLES = setOf("ADMIN", "ALMACEN", "CALIDAD", "INSPECCION")
         const val COMMENT_MAX = 200
-
-        fun statusTargetsFor(current: String): List<String> {
-            return when (current.trim().uppercase()) {
-                "CUARENTENA" -> listOf("APROBADO")
-                "APROBADO", "RECHAZADO" -> listOf("CUARENTENA")
-                else -> emptyList()
-            }
-        }
-
-        fun toDisplayDate(raw: String?): String {
-            val s = raw?.trim().orEmpty()
-            if (s.length >= 10 && s[4] == '-' && s[7] == '-') {
-                return "${s.substring(8, 10)}/${s.substring(5, 7)}/${s.substring(0, 4)}"
-            }
-            return s
-        }
     }
 }

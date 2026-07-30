@@ -39,16 +39,16 @@ export default function DashboardPage() {
       <h1 className={s.title}>Panel principal</h1>
 
       <div className={s.grid}>
-        {can("LOOKUP") && (
+        {can("CONSULTA_LOTE") && (
           <AppCard
             clickable
             className={s.card}
-            onClick={() => nav("/lookup")}
+            onClick={() => nav("/consulta-lote")}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => e.key === "Enter" && nav("/lookup")}
+            onKeyDown={(e) => e.key === "Enter" && nav("/consulta-lote")}
           >
-            <div className={s.cardTitle}>Buscar lote</div>
+            <div className={s.cardTitle}>Consulta de lote</div>
           </AppCard>
         )}
 

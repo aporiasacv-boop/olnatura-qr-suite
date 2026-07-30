@@ -14,20 +14,14 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 
-/**
- * Integración con Credential Manager de Android.
- * La app no persiste usuario/contraseña; solo delega en el sistema.
- */
+
 object AndroidCredentialHelper {
 
     private const val TAG = "AndroidCredentials"
 
     data class SavedPassword(val id: String, val password: String)
 
-    /**
-     * Ofrece guardar usuario/contraseña tras un login exitoso.
-     * Si el usuario cancela o el proveedor no está disponible, no falla el flujo.
-     */
+    
     suspend fun offerSavePassword(context: Context, username: String, password: String) {
         val id = username.trim()
         if (id.isEmpty() || password.isEmpty()) return
@@ -39,16 +33,13 @@ object AndroidCredentialHelper {
                 request = CreatePasswordRequest(id = id, password = password)
             )
         } catch (_: CreateCredentialCancellationException) {
-            // Usuario rechazó guardar.
+            
         } catch (e: CreateCredentialException) {
             Log.d(TAG, "No se pudo ofrecer guardar credencial: ${e.message}")
         }
     }
 
-    /**
-     * Solicita credenciales guardadas por Android (Password Manager / Credential Manager).
-     * @return credencial seleccionada o null si no hay / usuario cancela.
-     */
+    
     suspend fun requestSavedPassword(context: Context): SavedPassword? {
         val activity = context.findActivity() ?: return null
         val cm = CredentialManager.create(context)

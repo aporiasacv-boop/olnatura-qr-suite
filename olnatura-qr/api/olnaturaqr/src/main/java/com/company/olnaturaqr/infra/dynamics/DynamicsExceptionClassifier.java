@@ -7,9 +7,7 @@ import org.springframework.web.client.RestClientResponseException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeoutException;
 
-/**
- * Clasifica fallos RestClient de Dynamics/Azure AD sin registrar secretos ni bodies.
- */
+
 final class DynamicsExceptionClassifier {
 
     private DynamicsExceptionClassifier() {

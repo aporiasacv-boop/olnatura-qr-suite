@@ -17,10 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Corrección administrativa de datos capturados en la etiqueta.
- * Solo ADMIN. No sobrescribe sin auditoría: cada campo cambia con valor anterior/nuevo + motivo.
- */
+
 @Service
 public class AdminLabelCorrectionService {
 

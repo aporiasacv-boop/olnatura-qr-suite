@@ -9,14 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Captura evidencia Dynamics de un lote y la guarda en diagnostics/{lote}_{fase}.json.
- * No compara, no sincroniza, no modifica estado QR.
- *
- * Ejemplo:
- *   POST /api/v1/diagnostics/liberacion/260717-MEM0003668?fase=ANTES
- *   POST /api/v1/diagnostics/liberacion/260717-MEM0003668?fase=DESPUES
- */
+
 @RestController
 @RequestMapping("/api/v1/diagnostics/liberacion")
 public class LiberacionDiagnosticoController {

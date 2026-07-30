@@ -14,9 +14,9 @@ public class DynamicsProperties {
     private String tenantId;
     private String clientId;
     private String clientSecret;
-    /** Audience/resource del token (por defecto se usa baseUrl en el cliente OAuth). */
+    
     private String resource;
-    /** Override opcional del endpoint de token Azure AD v1. */
+    
     private String tokenUrl;
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(10);

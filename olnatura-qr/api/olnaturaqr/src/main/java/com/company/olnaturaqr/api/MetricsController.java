@@ -45,9 +45,7 @@ public class MetricsController {
         return metricsService.snapshot(days);
     }
 
-    /**
-     * Exportación tabular multi-hoja para Power BI (datos existentes en PostgreSQL).
-     */
+    
     @GetMapping(value = "/export/powerbi", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     public ResponseEntity<byte[]> exportPowerBi(@AuthenticationPrincipal AuthPrincipal principal) {
         try {

@@ -17,9 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Cliente HTTP puro hacia Dynamics OData. No obtiene tokens ni arma DTOs de negocio.
- */
+
 @Component
 @ConditionalOnProperty(prefix = "app.dynamics", name = "mode", havingValue = "real")
 public class RealDynamicsClient implements DynamicsClient {
@@ -116,7 +114,8 @@ public class RealDynamicsClient implements DynamicsClient {
                             .path("/data/QualityOrderHeaders")
                             .queryParam("$filter", filter)
                             .queryParam("$select",
-                                    "ItemBatchNumber,ItemNumber,QualityOrderStatus,PassedBatchDispositionCode,WarehouseId,WarehouseLocationId")
+                                    "ItemBatchNumber,ItemNumber,QualityOrderStatus,PassedBatchDispositionCode,"
+                                            + "WarehouseId,WarehouseLocationId,ValidatedDateTime,ValidatingPersonnelNumber")
                             .queryParam("$top", 1)
                             .build())
                     .headers(headers -> headers.setBearerAuth(accessToken))
@@ -135,7 +134,9 @@ public class RealDynamicsClient implements DynamicsClient {
                     row.QualityOrderStatus,
                     row.PassedBatchDispositionCode,
                     row.WarehouseId,
-                    row.WarehouseLocationId
+                    row.WarehouseLocationId,
+                    blankToNull(row.ValidatedDateTime),
+                    blankToNull(row.ValidatingPersonnelNumber)
             ));
         } catch (RestClientException ex) {
             log.warn("Dynamics OData QualityOrderHeaders falló lote={} tipo={}",
@@ -183,7 +184,7 @@ public class RealDynamicsClient implements DynamicsClient {
 
     @Override
     public Optional<BatchEntryDateRecord> findBatchEntryDate(String batchNumber, String accessToken) {
-        // Logs temporales de prueba (fecha de entrada).
+        
         log.info("[FechaEntrada] Lote consultado={}", batchNumber);
 
         List<InventDimRecord> dims = findInventDimsByBatch(batchNumber, accessToken);
@@ -209,7 +210,7 @@ public class RealDynamicsClient implements DynamicsClient {
             try {
                 rows = findInventTransByDim(inventDimId, accessToken);
             } catch (DynamicsException ex) {
-                // Continuar con los demás inventDimId si uno falla o no tiene datos útiles.
+                
                 log.warn("[FechaEntrada] InventTrans omitido inventDimId={} lote={} reason={}",
                         inventDimId, batchNumber, ex.getClass().getSimpleName());
                 log.info("[FechaEntrada] movimientos obtenidos=0 (error) inventDimId={} lote={}",
@@ -321,7 +322,7 @@ public class RealDynamicsClient implements DynamicsClient {
         }
     }
 
-    /** Recibo de entrada válido: Received (p.ej. MPS) o Purchased (p.ej. MEM). */
+    
     private static boolean isEntryReceiptStatus(String statusReceipt) {
         if (statusReceipt == null || statusReceipt.isBlank()) {
             return false;
@@ -350,7 +351,7 @@ public class RealDynamicsClient implements DynamicsClient {
         try {
             return Instant.parse(trimmed);
         } catch (DateTimeParseException ignored) {
-            // Continuar con LocalDate
+            
         }
         LocalDate day = toLocalDateUtc(trimmed);
         if (day == null) {
@@ -424,6 +425,8 @@ public class RealDynamicsClient implements DynamicsClient {
         public String PassedBatchDispositionCode;
         public String WarehouseId;
         public String WarehouseLocationId;
+        public String ValidatedDateTime;
+        public String ValidatingPersonnelNumber;
     }
 
     private static class ReleasedProductsResponse {

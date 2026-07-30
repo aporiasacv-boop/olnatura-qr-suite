@@ -3,13 +3,13 @@ package com.company.olnaturaqr.api;
 import com.company.olnaturaqr.domain.comment.LoteComment;
 import com.company.olnaturaqr.domain.qr.QrLabel;
 import com.company.olnaturaqr.domain.user.User;
+import com.company.olnaturaqr.infra.dynamics.DynamicsLookupService;
 import com.company.olnaturaqr.repository.LoteCommentRepository;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.repository.UserRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
 import com.company.olnaturaqr.support.qr.LoteExtractor;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
-import com.company.olnaturaqr.support.workflow.LotOperationalGate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,10 +27,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
-/**
- * Bitácora operativa de comentarios por lote.
- * Inmutable: no hay endpoints de edición ni borrado.
- */
+
 @RestController
 @RequestMapping("/api/v1/comments")
 @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','CALIDAD','INSPECCION')")
@@ -41,17 +38,20 @@ public class LoteCommentController {
 
     private final LoteCommentRepository commentRepository;
     private final QrLabelRepository qrLabelRepository;
+    private final DynamicsLookupService dynamicsLookupService;
     private final UserRepository userRepository;
     private final AuditService auditService;
 
     public LoteCommentController(
             LoteCommentRepository commentRepository,
             QrLabelRepository qrLabelRepository,
+            DynamicsLookupService dynamicsLookupService,
             UserRepository userRepository,
             AuditService auditService
     ) {
         this.commentRepository = commentRepository;
         this.qrLabelRepository = qrLabelRepository;
+        this.dynamicsLookupService = dynamicsLookupService;
         this.userRepository = userRepository;
         this.auditService = auditService;
     }
@@ -85,6 +85,8 @@ public class LoteCommentController {
         }
 
         String actualLote = resolveToLote(lote);
+        requireKnownLote(actualLote);
+
         User user = userRepository.findById(principal.id())
                 .orElseThrow(() -> new ResponseStatusException(UNAUTHORIZED, "Usuario no encontrado"));
 
@@ -151,12 +153,22 @@ public class LoteCommentController {
     private String resolveToLote(String raw) {
         String identifier = LoteExtractor.extract(raw).orElse(raw != null ? raw.trim() : "");
         if (identifier.isBlank()) {
-            throw new ResponseStatusException(NOT_FOUND, "Identificador vacío");
+            throw new ResponseStatusException(BAD_REQUEST, "Identificador vacío");
         }
-        QrLabel label = qrLabelRepository.findByPublicToken(identifier)
+        return qrLabelRepository.findByPublicToken(identifier)
                 .or(() -> qrLabelRepository.findByLote(identifier))
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Lote no encontrado: " + identifier));
-        LotOperationalGate.requireActive(label);
-        return label.getLote();
+                .map(QrLabel::getLote)
+                .orElse(identifier);
+    }
+
+    private void requireKnownLote(String actualLote) {
+        if (qrLabelRepository.findByLote(actualLote).isPresent()) {
+            return;
+        }
+        dynamicsLookupService.lookupByBatchNumber(actualLote)
+                .orElseThrow(() -> new ResponseStatusException(
+                        NOT_FOUND,
+                        "Lote no encontrado en Dynamics: " + actualLote
+                ));
     }
 }

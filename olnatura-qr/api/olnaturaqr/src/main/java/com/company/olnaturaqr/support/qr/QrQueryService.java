@@ -9,6 +9,7 @@ import com.company.olnaturaqr.support.security.AuthPrincipal;
 import com.company.olnaturaqr.support.workflow.AdminStatusCorrectionService;
 import com.company.olnaturaqr.support.workflow.ApprovalService;
 import com.company.olnaturaqr.support.workflow.LotOperationalGate;
+import com.company.olnaturaqr.support.workflow.OperationalStatusPresentation;
 import com.company.olnaturaqr.support.workflow.OperationalStatusResolver;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.support.workflow.WorkflowTransitions;
@@ -46,21 +47,13 @@ public class QrQueryService {
         this.approvalService = approvalService;
     }
 
-    /**
-     * Consulta por lote: lee etiqueta en BD y vuelve a consultar Dynamics en vivo.
-     * No escribe en Dynamics ni muta Estado Operativo / platformStatus.
-     */
+    
     @Transactional(readOnly = true)
     public QrDto.Response getByLote(String loteRaw, AuthPrincipal principal) {
         return buildResponse(loteRaw, principal, false);
     }
 
-    /**
-     * Sincronización manual: fuerza una nueva lectura OData del ERP para el lote.
-     * <p><strong>Solo lectura.</strong> No modifica Dynamics, no cambia estados,
-     * no ejecuta aprobaciones ni correcciones administrativas, no persiste
-     * información operacional. Reutiliza el mismo ensamblaje que {@link #getByLote}.
-     */
+    
     @Transactional(readOnly = true)
     public QrDto.Response syncWithDynamics(String loteRaw, AuthPrincipal principal) {
         return buildResponse(loteRaw, principal, true);
@@ -102,7 +95,7 @@ public class QrQueryService {
                 label.getCantidadPorEnvase()
         );
 
-        // platformStatus = qr_labels.status (workflow interno). Independiente del Estado Operativo.
+        
         String platformStatus = WorkflowStatus.normalize(label.getStatus());
         Instant syncedAt = Instant.now();
 
@@ -122,7 +115,7 @@ public class QrQueryService {
                         null,
                         null,
                         null,
-                        OperationalStatusResolver.STATUS_DESCONOCIDO,
+                        OperationalStatusPresentation.forUi(OperationalStatusResolver.STATUS_DESCONOCIDO),
                         OperationalStatusResolver.RULE_INSUFFICIENT,
                         OperationalStatusResolver.SOURCE_DYNAMICS,
                         platformStatus,
@@ -133,7 +126,9 @@ public class QrQueryService {
                         null,
                         null,
                         "DB_ONLY",
-                        syncedAt
+                        syncedAt,
+                        null,
+                        null
                     );
                 });
 
@@ -164,7 +159,7 @@ public class QrQueryService {
                 d.cantidadAlmacen(),
                 d.unidadInventario(),
                 d.fechaEntrada(),
-                d.operationalStatus(),
+                OperationalStatusPresentation.forUi(d.operationalStatus()),
                 d.operationalStatusRule(),
                 d.statusSource(),
                 platformStatus,
@@ -175,7 +170,9 @@ public class QrQueryService {
                 d.almacen(),
                 d.ubicacion(),
                 d.fuente(),
-                lastSyncedAt
+                lastSyncedAt,
+                d.fechaLiberacion(),
+                d.liberadoPor()
         );
     }
 

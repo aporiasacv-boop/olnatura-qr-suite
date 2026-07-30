@@ -2,9 +2,7 @@ package com.company.olnaturaqr.support.presentation;
 
 import java.util.Map;
 
-/**
- * Traducción centralizada de roles internos para presentación al usuario.
- */
+
 public final class RoleDisplayTranslator {
 
     private static final Map<String, String> LABELS = Map.of(

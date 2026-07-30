@@ -1,4 +1,4 @@
-﻿# Fase 2: probe trazabilidad con BatchNumber exactos (solo lectura).
+﻿
 [CmdletBinding()]
 param(
   [string]$OutDir = ""
@@ -104,7 +104,7 @@ foreach ($L in $lots) {
   $op = Resolve-Op $locs $qWh $disp
   Write-Host ("  OP=" + $op.status + " / " + $op.rule)
 
-  # InventTrans for REM/RES/CUARENTENA dims + also MPM/MEM for baseline entry
+  
   $focus = @($dims | Where-Object { (NormWh $_.InventLocationId) -in @("REM","RES","CUARENTENA") })
   $also = @($dims | Where-Object { (NormWh $_.InventLocationId) -notin @("REM","RES","CUARENTENA") } | Select-Object -First 2)
   $toQuery = @($focus + $also | Select-Object -Unique)
@@ -122,7 +122,7 @@ foreach ($L in $lots) {
     Write-Host ("  Trans $loc dim=$dimId rows=" + $rows.Count)
   }
 
-  # Candidate movement to REM/RES/CUARENTENA = earliest DatePhysical on that dim with Qty != 0
+  
   $movementCandidates = @()
   foreach ($d in $focus) {
     $loc = [string]$d.InventLocationId
@@ -179,8 +179,8 @@ foreach ($L in $lots) {
         ItemBatchNumber = $_.ItemBatchNumber
         ItemNumber = $_.ItemNumber
         QualityOrderStatus = $_.QualityOrderStatus
-        ValidationStatus = $null  # campo NO publicado en QualityOrderHeaders
-        InventoryBatchId = $null  # campo NO publicado
+        ValidationStatus = $null  
+        InventoryBatchId = $null  
         ValidatedDateTime = $_.ValidatedDateTime
         ValidatingPersonnelNumber = $_.ValidatingPersonnelNumber
         QMSAssignedToPersonnelNumber = $_.QMSAssignedToPersonnelNumber
@@ -199,7 +199,7 @@ foreach ($L in $lots) {
   $summaries += $sum
 }
 
-# Workers
+
 Write-Host "`n=== BaseWorkers ==="
 $workers = @()
 foreach ($pn in ($personnel | Sort-Object)) {
