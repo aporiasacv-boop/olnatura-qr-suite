@@ -58,8 +58,17 @@ export function parseDDMMYYYYToISO(input: string | null | undefined): string {
 }
 
 function parseToDate(s: string): Date | null {
-  const iso = /^\d{4}-\d{2}-\d{2}/.test(s);
-  if (iso) return new Date(s);
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
+  if (iso) {
+    const year = Number(iso[1]);
+    const month = Number(iso[2]);
+    const day = Number(iso[3]);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+      return null;
+    }
+    return date;
+  }
   const r = parseFlexibleDMY(s.trim());
   if (r) return new Date(r.y, r.m - 1, r.d);
   return new Date(s);

@@ -290,7 +290,7 @@ export default function GenerateQrPage() {
                   reanalisis={
                     (labelData as any).fechaTipo === "REANALISIS"
                       ? ((labelData as any).fechaValor ?? labelData.reanalisis ?? "")
-                      : ""
+                      : (labelData.reanalisis ?? "")
                   }
                   cantidad={(() => {
                     const n = Number(printTo);
