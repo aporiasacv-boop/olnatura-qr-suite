@@ -6,6 +6,7 @@ import com.olnatura.qr.data.model.LoteCommentResponse
 import com.olnatura.qr.data.model.MeResponse
 import com.olnatura.qr.data.model.QrResponse
 import com.olnatura.qr.data.model.ScanEventResponse
+import com.olnatura.qr.data.repo.AdminLotRepository
 import com.olnatura.qr.data.repo.AuthRepository
 import com.olnatura.qr.data.repo.CommentRepository
 import com.olnatura.qr.data.repo.QrRepository
@@ -34,13 +35,17 @@ data class ResultState(
     val syncError: String? = null,
     val me: MeResponse? = null,
     val roles: Set<String> = emptySet(),
+    val isAdmin: Boolean = false,
     val qr: QrResponse? = null,
     val events: List<ScanEventResponse> = emptyList(),
     val comments: List<LoteCommentResponse> = emptyList(),
-    val commentsAllowed: Boolean = false,
+    val commentsVisible: Boolean = false,
+    val canCreateComments: Boolean = false,
     val commentDraft: String = "",
     val commentBusy: Boolean = false,
     val commentError: String? = null,
+    val reprintBusy: Boolean = false,
+    val reprintError: String? = null,
     val todayCount: Int = 0,
     val error: String? = null
 )
@@ -49,7 +54,8 @@ class ResultViewModel(
     private val authRepo: AuthRepository,
     private val qrRepo: QrRepository,
     private val scanRepo: ScanRepository,
-    private val commentRepo: CommentRepository
+    private val commentRepo: CommentRepository,
+    private val adminLotRepo: AdminLotRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ResultState())
@@ -91,12 +97,16 @@ class ResultViewModel(
         }
 
         val roles = me.roles.map { it.uppercase() }.toSet()
-        val commentsAllowed = roles.any { it in COMMENT_ROLES }
+        val commentsVisible = roles.any { it in VIEW_COMMENT_ROLES }
+        val canCreateComments = me.canCreateLoteComments
+        val isAdmin = roles.contains("ADMIN")
         _state.update {
             it.copy(
                 me = me,
                 roles = roles,
-                commentsAllowed = commentsAllowed,
+                isAdmin = isAdmin,
+                commentsVisible = commentsVisible,
+                canCreateComments = canCreateComments,
                 gate = GateState.Authorized
             )
         }
@@ -130,7 +140,7 @@ class ResultViewModel(
         runCatching { scanRepo.postScan(lote) }
         val events = runCatching { scanRepo.history(lote) }.getOrDefault(emptyList())
         val todayCount = countToday(events)
-        val comments = if (commentsAllowed) {
+        val comments = if (commentsVisible) {
             runCatching { commentRepo.list(lote) }.getOrDefault(emptyList())
         } else {
             emptyList()
@@ -185,6 +195,40 @@ class ResultViewModel(
         _state.update { it.copy(syncError = null) }
     }
 
+    fun confirmPhysicalReprint() = viewModelScope.launch {
+        val s = _state.value
+        val labelId = s.qr?.label?.id?.trim().orEmpty()
+        if (!s.isAdmin || labelId.isEmpty() || s.reprintBusy) return@launch
+        _state.update { it.copy(reprintBusy = true, reprintError = null) }
+        try {
+            adminLotRepo.confirmReprint(labelId)
+            val current = s.qr
+            val updated = if (current != null) {
+                current.copy(label = current.label.copy(reprintRequired = false))
+            } else {
+                null
+            }
+            _state.update {
+                it.copy(
+                    qr = updated,
+                    reprintBusy = false,
+                    reprintError = null
+                )
+            }
+        } catch (e: Exception) {
+            val http = e as? HttpException
+            when (http?.code()) {
+                401, 403 -> _state.update { it.copy(reprintBusy = false, gate = GateState.Unauthorized) }
+                else -> _state.update {
+                    it.copy(
+                        reprintBusy = false,
+                        reprintError = "No se pudo confirmar la reimpresión."
+                    )
+                }
+            }
+        }
+    }
+
     fun onCommentDraft(value: String) {
         _state.update { it.copy(commentDraft = value.take(COMMENT_MAX), commentError = null) }
     }
@@ -192,7 +236,7 @@ class ResultViewModel(
     fun submitComment() = viewModelScope.launch {
         val s = _state.value
         val text = s.commentDraft.trim()
-        if (!s.commentsAllowed || text.isEmpty() || s.commentBusy || s.lote.isBlank()) return@launch
+        if (!s.canCreateComments || text.isEmpty() || s.commentBusy || s.lote.isBlank()) return@launch
         if (text.length > COMMENT_MAX) {
             _state.update { it.copy(commentError = "Máximo $COMMENT_MAX caracteres.") }
             return@launch
@@ -208,11 +252,12 @@ class ResultViewModel(
                 )
             }
         } catch (e: Exception) {
-            val http = e as? HttpException
-            val msg = when (http?.code()) {
-                403 -> "Tu rol no puede agregar comentarios."
-                401 -> "Sesión expirada. Vuelve a iniciar sesión."
-                else -> (e.message ?: "No se pudo registrar el comentario").take(160)
+            val msg = when (e) {
+                is HttpException -> when (e.code()) {
+                    403 -> "No tienes permiso para agregar comentarios."
+                    else -> "No se pudo guardar el comentario."
+                }
+                else -> "No se pudo guardar el comentario."
             }
             _state.update { it.copy(commentBusy = false, commentError = msg) }
         }
@@ -234,7 +279,7 @@ class ResultViewModel(
     }
 
     companion object {
-        private val COMMENT_ROLES = setOf("ADMIN", "ALMACEN", "CALIDAD", "INSPECCION")
+        private val VIEW_COMMENT_ROLES = setOf("ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION", "VALIDACION")
         const val COMMENT_MAX = 200
     }
 }

@@ -45,7 +45,12 @@ public class QrDto {
             LocalDate reanalisis,
             int envaseNum,
             int envaseTotal,
-            String cantidadPorEnvase
+            String cantidadPorEnvase,
+            boolean restosEnabled,
+            String cantidadResto,
+            List<String> restosCantidades,
+            boolean reprintRequired,
+            String id
     ) {}
 
     public record Dynamic(
@@ -54,6 +59,7 @@ public class QrDto {
             String lote,
             String caducidad,
             Double cantidadAlmacen,
+            Double cantidadRecibida,
             
             String unidadInventario,
             

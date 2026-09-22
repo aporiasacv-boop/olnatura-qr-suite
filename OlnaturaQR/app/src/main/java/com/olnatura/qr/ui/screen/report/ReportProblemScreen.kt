@@ -3,7 +3,6 @@ package com.olnatura.qr.ui.screen.report
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +19,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,9 +34,7 @@ import com.olnatura.qr.ui.theme.OlnCream
 import com.olnatura.qr.ui.theme.OlnGreen
 
 enum class ReportMode {
-    
     SCAN,
-    
     ACCESS
 }
 
@@ -47,6 +46,12 @@ fun ReportProblemScreen(
     mode: ReportMode = ReportMode.SCAN,
     onDone: () -> Unit
 ) {
+    val ui by vm.ui.collectAsState()
+
+    LaunchedEffect(mode, lote) {
+        vm.reset()
+    }
+
     val motivos = when (mode) {
         ReportMode.SCAN -> listOf(
             "QR ilegible",
@@ -65,9 +70,9 @@ fun ReportProblemScreen(
     }
 
     var expanded by remember { mutableStateOf(false) }
-    var motivo by remember { mutableStateOf<String?>(null) }
-    var comentario by remember { mutableStateOf("") }
-    val canSend = motivo != null
+    var motivo by remember(mode) { mutableStateOf<String?>(null) }
+    var comentario by remember(mode) { mutableStateOf("") }
+    val canSend = motivo != null && !ui.busy && !ui.success
 
     val title = when (mode) {
         ReportMode.SCAN -> "Reportar problema"
@@ -76,8 +81,7 @@ fun ReportProblemScreen(
 
     Scaffold(
         topBar = { OlnTopBar(title, onBack = onDone) },
-        containerColor = OlnCream,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        containerColor = OlnCream
     ) { padding ->
         TabletContent {
             Column(
@@ -88,6 +92,22 @@ fun ReportProblemScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                if (ui.success) {
+                    Text("Reporte enviado", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        "Un administrador lo revisará pronto.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    PillButton(
+                        text = "Listo",
+                        enabled = true,
+                        onClick = onDone,
+                        containerColor = OlnGreen
+                    )
+                    return@Column
+                }
+
                 Text(
                     if (mode == ReportMode.ACCESS) {
                         "¿Qué ocurre con tu acceso?"
@@ -109,6 +129,7 @@ fun ReportProblemScreen(
                         value = motivo ?: "",
                         onValueChange = {},
                         readOnly = true,
+                        enabled = !ui.busy,
                         label = { Text("Selecciona un motivo") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier
@@ -137,6 +158,7 @@ fun ReportProblemScreen(
                 OutlinedTextField(
                     value = comentario,
                     onValueChange = { comentario = it },
+                    enabled = !ui.busy,
                     placeholder = {
                         Text(
                             if (mode == ReportMode.ACCESS) {
@@ -152,12 +174,22 @@ fun ReportProblemScreen(
                     shape = RoundedCornerShape(16.dp)
                 )
 
+                if (ui.error != null) {
+                    Text(
+                        ui.error!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
                 Spacer(Modifier.height(8.dp))
 
                 PillButton(
-                    text = "Enviar",
+                    text = if (ui.busy) "Enviando…" else "Enviar",
                     enabled = canSend,
-                    onClick = { onDone() },
+                    onClick = {
+                        vm.submit(mode, lote, motivo.orEmpty(), comentario)
+                    },
                     containerColor = OlnGreen
                 )
             }

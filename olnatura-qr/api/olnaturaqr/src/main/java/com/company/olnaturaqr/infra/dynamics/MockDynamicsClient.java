@@ -118,7 +118,7 @@ public class MockDynamicsClient implements DynamicsClient {
         if (b == null || b.fechaEntrada() == null || b.fechaEntrada().isBlank()) {
             return Optional.empty();
         }
-        return Optional.of(new BatchEntryDateRecord(b.fechaEntrada()));
+        return Optional.of(new BatchEntryDateRecord(b.fechaEntrada(), b.qty()));
     }
 
     @Override

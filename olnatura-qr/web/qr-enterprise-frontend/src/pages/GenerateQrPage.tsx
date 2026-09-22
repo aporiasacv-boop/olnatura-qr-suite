@@ -14,6 +14,8 @@ import {
   parseEnvaseTotal,
   validateReprintRange,
 } from "../utils/labelPreviewPermissions";
+import { cantidadForEnvase, cantidadTotalOf, isRestosEnabled } from "../utils/envaseRestos";
+import { resolveLabelDocumentCode } from "../utils/labelDocumentCode";
 
 function logAudit(actionType: string, lote: string | null) {
   api("/audit/log", {
@@ -291,16 +293,23 @@ export default function GenerateQrPage() {
                       : ""
                   }
                   cantidad={(() => {
-                    const manual = String(
-                      (labelData as { cantidadPorEnvase?: string })?.cantidadPorEnvase ?? ""
-                    ).trim();
-                    return manual || "N/A";
+                    const n = Number(printTo);
+                    const envase = Number.isFinite(n) && n >= 1 ? n : parseEnvaseTotal(labelData);
+                    return cantidadForEnvase(labelData, envase);
                   })()}
-                  envaseNum={labelData.envaseNum ?? "—"}
+                  envaseNum={(() => {
+                    const n = Number(printTo);
+                    if (Number.isFinite(n) && n >= 1) return n;
+                    return isRestosEnabled(labelData)
+                      ? labelData.envaseTotal ?? "—"
+                      : labelData.envaseNum ?? "—";
+                  })()}
                   envaseTotal={labelData.envaseTotal ?? "—"}
+                  cantidadTotal={cantidadTotalOf(labelData)}
                   qrData={qrDataUrl!}
                   logoUrl={`${import.meta.env.BASE_URL}logo-olnatura.png`}
-                  documentCode={(labelData as any).documentCode ?? "AL-001-E02/04"}
+                  documentCode={resolveLabelDocumentCode((labelData as any).documentCode)}
+                  tipoMaterial={String(labelData.tipoMaterial ?? "").trim() || null}
                 />
               </div>
             </div>

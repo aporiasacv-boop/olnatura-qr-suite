@@ -23,7 +23,7 @@ public class DynamicsLookupController {
         this.dynamicsLookupService = dynamicsLookupService;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION')")
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION','VALIDACION')")
     @GetMapping("/lookup/{lote}")
     public DynamicsLookupDto lookupByLote(@PathVariable String lote) {
         DynamicsLookupDto dto = dynamicsLookupService.lookupByBatchNumber(lote)
@@ -37,6 +37,7 @@ public class DynamicsLookupController {
                 dto.lote(),
                 dto.caducidad(),
                 dto.cantidadAlmacen(),
+                dto.cantidadRecibida(),
                 dto.unidadInventario(),
                 dto.fechaEntrada(),
                 OperationalStatusPresentation.forUi(dto.operationalStatus()),

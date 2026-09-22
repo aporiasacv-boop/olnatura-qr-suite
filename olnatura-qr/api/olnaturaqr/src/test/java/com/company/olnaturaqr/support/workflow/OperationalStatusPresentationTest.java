@@ -11,6 +11,7 @@ class OperationalStatusPresentationTest {
         assertEquals("APROBADO", OperationalStatusPresentation.forUi("APROBADO"));
         assertEquals("RECHAZADO", OperationalStatusPresentation.forUi("rechazado"));
         assertEquals("CUARENTENA", OperationalStatusPresentation.forUi("CUARENTENA"));
+        assertEquals("APROBADO", OperationalStatusPresentation.forUi("parcial"));
     }
 
     @Test

@@ -17,6 +17,9 @@ public final class OperationalStatusPresentation {
             return OperationalStatusResolver.STATUS_CUARENTENA;
         }
         String s = resolvedOperationalStatus.trim().toUpperCase(Locale.ROOT);
+        if (OperationalStatusResolver.STATUS_PARCIAL.equals(s)) {
+            return OperationalStatusResolver.STATUS_APROBADO;
+        }
         if (OperationalStatusResolver.STATUS_APROBADO.equals(s)
                 || OperationalStatusResolver.STATUS_RECHAZADO.equals(s)
                 || OperationalStatusResolver.STATUS_CUARENTENA.equals(s)) {

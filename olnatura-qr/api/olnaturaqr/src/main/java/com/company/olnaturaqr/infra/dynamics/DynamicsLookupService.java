@@ -68,7 +68,9 @@ public class DynamicsLookupService {
             String unidadInventario = resolveInventoryUnit(itemNumber, accessToken);
 
             List<DynamicsClient.InventDimRecord> inventDims = resolveInventDims(batchNumber, accessToken);
-            String fechaEntrada = resolveFechaEntrada(batchNumber, accessToken);
+            BatchEntryInfo entryInfo = resolveBatchEntry(batchNumber, accessToken);
+            String fechaEntrada = entryInfo.fechaEntrada();
+            Double cantidadRecibida = entryInfo.cantidadRecibida();
 
             Optional<DynamicsClient.QualityOrderRecord> qualityOpt =
                     dynamicsClient.findQualityOrderByItemBatch(batchNumber, accessToken);
@@ -134,6 +136,7 @@ public class DynamicsLookupService {
                     batch.batchNumber() != null ? batch.batchNumber() : batchNumber,
                     blankToNull(batch.batchExpirationDate()),
                     onHand != null ? onHand.availableOnHandQuantity() : null,
+                    cantidadRecibida,
                     unidadInventario,
                     fechaEntrada,
                     op.status(),
@@ -200,20 +203,24 @@ public class DynamicsLookupService {
         }
     }
 
-    private String resolveFechaEntrada(String batchNumber, String accessToken) {
+    private record BatchEntryInfo(String fechaEntrada, Double cantidadRecibida) {}
+
+    private BatchEntryInfo resolveBatchEntry(String batchNumber, String accessToken) {
         try {
             return dynamicsClient.findBatchEntryDate(batchNumber, accessToken)
-                    .map(DynamicsClient.BatchEntryDateRecord::datePhysical)
-                    .map(DynamicsLookupService::blankToNull)
-                    .orElse(null);
+                    .map(r -> new BatchEntryInfo(
+                            blankToNull(r.datePhysical()),
+                            r.receivedQuantity()
+                    ))
+                    .orElse(new BatchEntryInfo(null, null));
         } catch (DynamicsException ex) {
-            log.warn("DynamicsLookup: fechaEntrada omitida lote={} reason={}",
+            log.warn("DynamicsLookup: fechaEntrada/cantidadRecibida omitida lote={} reason={}",
                     batchNumber, ex.getClass().getSimpleName());
-            return null;
+            return new BatchEntryInfo(null, null);
         } catch (Exception ex) {
-            log.warn("DynamicsLookup: fechaEntrada error lote={} tipo={}",
+            log.warn("DynamicsLookup: fechaEntrada/cantidadRecibida error lote={} tipo={}",
                     batchNumber, ex.getClass().getSimpleName());
-            return null;
+            return new BatchEntryInfo(null, null);
         }
     }
 

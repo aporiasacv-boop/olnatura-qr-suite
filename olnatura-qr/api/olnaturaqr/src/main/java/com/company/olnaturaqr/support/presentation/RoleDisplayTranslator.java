@@ -10,7 +10,8 @@ public final class RoleDisplayTranslator {
             "CALIDAD", "Calidad",
             "INSPECCION", "Inspección",
             "ALMACEN", "Almacén",
-            "PRODUCCION", "Producción"
+            "PRODUCCION", "Producción",
+            "VALIDACION", "Validación"
     );
 
     private RoleDisplayTranslator() {

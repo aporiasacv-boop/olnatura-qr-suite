@@ -1,0 +1,257 @@
+﻿{
+    "suffix":  "MPS0006246",
+    "batchNumber":  "260203-MPS0006246",
+    "itemNumber":  "200923430500",
+    "batchDispositionCode":  "Aprobado",
+    "inventLocations":  [
+                            "MPS"
+                        ],
+    "operationalStatus":  "APROBADO",
+    "operationalRule":  "BatchDispositionCode",
+    "operationalWarehouse":  "MPS",
+    "expectedStatus":  "CUARENTENA",
+    "expectedWarehouse":  "CUARENTENA",
+    "matchExpected":  false,
+    "qualityOrderCount":  1,
+    "qualityOrders":  [
+                          {
+                              "@odata.etag":  "W/\"JzUzOTAzMzk3MSw1NjM3NzQxNTgzJw==\"",
+                              "QualityOrderNumber":  "OCL0014703",
+                              "ItemBatchNumber":  "260203-MPS0006246",
+                              "ItemNumber":  "200923430500",
+                              "QualityOrderStatus":  "Pass",
+                              "ValidatedDateTime":  "2026-02-20T20:57:01Z",
+                              "ValidatingPersonnelNumber":  "3960",
+                              "PassedBatchDispositionCode":  "Aprobado",
+                              "FailedBatchDispositionCode":  "Rechazado",
+                              "WarehouseId":  "MPS",
+                              "WarehouseLocationId":  "Disponible",
+                              "QMSAssignedToPersonnelNumber":  ""
+                          }
+                      ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#00000001500A7957",
+                           "InventLocationId":  "MPS",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       }
+                   ],
+    "movements":  [
+                      {
+                          "inventDimId":  "#00000001500A7957",
+                          "InventLocationId":  "MPS",
+                          "InventSiteId":  "OLNATURA",
+                          "wMSLocationId":  "Disponible",
+                          "inventTransRowCount":  14,
+                          "definitive":  {
+                                             "DatePhysical":  "2026-02-03T12:00:00Z",
+                                             "DateFinancial":  "2026-02-03T12:00:00Z",
+                                             "DateInvent":  "2026-02-03T12:00:00Z",
+                                             "DateStatus":  "2026-02-03T12:00:00Z",
+                                             "DateClosed":  "2026-02-28T12:00:00Z",
+                                             "StatusIssue":  "None",
+                                             "StatusReceipt":  "Purchased",
+                                             "Qty":  120,
+                                             "Voucher":  "AFP0037801",
+                                             "InventTransOrigin":  5637993800,
+                                             "PackingSlipId":  "0132716527",
+                                             "InvoiceId":  "0132716527",
+                                             "ReceiptId":  "",
+                                             "TransChildType":  "None",
+                                             "TransChildRefId":  "",
+                                             "RecordId":  5638519115,
+                                             "inventDimId":  "#00000001500A7957",
+                                             "CreatedDateTime":  null,
+                                             "ModifiedDateTime":  null,
+                                             "SysModifiedBy":  null,
+                                             "CreatedBy":  null,
+                                             "ModifiedBy":  null,
+                                             "ReferenceId":  null,
+                                             "ReferenceCategory":  null,
+                                             "ReferenceType":  null,
+                                             "InventTransType":  null
+                                         },
+                          "allRows":  [
+                                          {
+                                              "DatePhysical":  "2026-02-03T12:00:00Z",
+                                              "DateFinancial":  "2026-02-03T12:00:00Z",
+                                              "StatusIssue":  "None",
+                                              "StatusReceipt":  "Purchased",
+                                              "Qty":  49780,
+                                              "Voucher":  "AFP0037801",
+                                              "InventTransOrigin":  5637993800,
+                                              "RecordId":  5638447999
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-02-03T12:00:00Z",
+                                              "DateFinancial":  "2026-02-03T12:00:00Z",
+                                              "StatusIssue":  "None",
+                                              "StatusReceipt":  "Purchased",
+                                              "Qty":  120,
+                                              "Voucher":  "AFP0037801",
+                                              "InventTransOrigin":  5637993800,
+                                              "RecordId":  5638519115
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-02-20T12:00:00Z",
+                                              "DateFinancial":  "2026-02-20T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -1,
+                                              "Voucher":  "ADI0016703",
+                                              "InventTransOrigin":  5638031274,
+                                              "RecordId":  5638510715
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-02-20T12:00:00Z",
+                                              "DateFinancial":  "2026-02-20T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -119,
+                                              "Voucher":  "ADI0016703",
+                                              "InventTransOrigin":  5638031274,
+                                              "RecordId":  5638519109
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-05-11T12:00:00Z",
+                                              "DateFinancial":  "2026-06-30T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -5416.36,
+                                              "Voucher":  "AGC00014646",
+                                              "InventTransOrigin":  5638060476,
+                                              "RecordId":  5638566086
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-05-11T12:00:00Z",
+                                              "DateFinancial":  "2026-05-18T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -4247.38,
+                                              "Voucher":  "LS00043568",
+                                              "InventTransOrigin":  5638060500,
+                                              "RecordId":  5638566114
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-05-11T12:00:00Z",
+                                              "DateFinancial":  "2026-06-30T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -5416.36,
+                                              "Voucher":  "AGC00014668",
+                                              "InventTransOrigin":  5638060524,
+                                              "RecordId":  5638566142
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-05-11T12:00:00Z",
+                                              "DateFinancial":  "2026-06-30T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -5416.36,
+                                              "Voucher":  "AGC00014672",
+                                              "InventTransOrigin":  5638060548,
+                                              "RecordId":  5638566169
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-05-18T12:00:00Z",
+                                              "DateFinancial":  "1900-01-01T12:00:00Z",
+                                              "StatusIssue":  "Deducted",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -5416.36,
+                                              "Voucher":  "",
+                                              "InventTransOrigin":  5638064195,
+                                              "RecordId":  5638572043
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-05-18T12:00:00Z",
+                                              "DateFinancial":  "2026-05-18T12:00:00Z",
+                                              "StatusIssue":  "None",
+                                              "StatusReceipt":  "Purchased",
+                                              "Qty":  4247.38,
+                                              "Voucher":  "LS00043568",
+                                              "InventTransOrigin":  5638060500,
+                                              "RecordId":  5638572835
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-05-19T12:00:00Z",
+                                              "DateFinancial":  "2026-06-30T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -4247.38,
+                                              "Voucher":  "AGC00014664",
+                                              "InventTransOrigin":  5638060500,
+                                              "RecordId":  5638573388
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-06-18T12:00:00Z",
+                                              "DateFinancial":  "2026-07-10T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -5416.38,
+                                              "Voucher":  "AGC00014767",
+                                              "InventTransOrigin":  5638074654,
+                                              "RecordId":  5638592379
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-06-18T12:00:00Z",
+                                              "DateFinancial":  "2026-07-21T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -5416.38,
+                                              "Voucher":  "AGC00014791",
+                                              "InventTransOrigin":  5638074678,
+                                              "RecordId":  5638592389
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-06-18T12:00:00Z",
+                                              "DateFinancial":  "2026-07-10T12:00:00Z",
+                                              "StatusIssue":  "Sold",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -5416.36,
+                                              "Voucher":  "AGC00014784",
+                                              "InventTransOrigin":  5638074702,
+                                              "RecordId":  5638591221
+                                          }
+                                      ],
+                          "inventDimAudit":  {
+                                                 "SysModifiedBy":  "mp.suplementos",
+                                                 "SysCreatedBy":  null,
+                                                 "SysCreatedDateTime":  "2026-02-03T23:35:52Z",
+                                                 "SysModifiedDateTime":  "2026-02-03T23:35:52Z",
+                                                 "createdEqualsModified":  true,
+                                                 "datePhysicalDayAlignsWithSysCreated":  true
+                                             }
+                      }
+                  ],
+    "comparativeRow":  {
+                           "lote":  "260203-MPS0006246",
+                           "suffix":  "MPS0006246",
+                           "estadoOperativo":  "APROBADO",
+                           "regla":  "BatchDispositionCode",
+                           "almacen":  "MPS",
+                           "inventDimId":  "#00000001500A7957",
+                           "inventSiteId":  "OLNATURA",
+                           "wMSLocationId":  "Disponible",
+                           "datePhysical":  "2026-02-03T12:00:00Z",
+                           "dateFinancial":  "2026-02-03T12:00:00Z",
+                           "statusReceipt":  "Purchased",
+                           "statusIssue":  "None",
+                           "qty":  120,
+                           "inventTransOrigin":  5637993800,
+                           "voucher":  "AFP0037801",
+                           "sysModifiedBy":  "mp.suplementos",
+                           "sysCreatedBy":  null,
+                           "sysCreatedDateTime":  "2026-02-03T23:35:52Z",
+                           "sysModifiedDateTime":  "2026-02-03T23:35:52Z",
+                           "createdEqualsModified":  true,
+                           "dateAlignsWithDimCreate":  true,
+                           "campoFechaRecomendado":  "InventTransCDSEntities.DatePhysical",
+                           "campoCuentaRecomendado":  "InventDimBiEntities.SysModifiedBy",
+                           "confianza":  "Baja",
+                           "expected":  "CUARENTENA",
+                           "expectedWh":  "CUARENTENA",
+                           "matchExpected":  false,
+                           "inventTransMissingAuditFields":  true
+                       }
+}

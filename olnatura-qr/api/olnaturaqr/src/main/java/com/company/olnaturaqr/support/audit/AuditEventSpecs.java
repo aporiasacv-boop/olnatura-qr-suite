@@ -29,7 +29,12 @@ public final class AuditEventSpecs {
                 preds.add(cb.lessThan(root.get("createdAt"), toExclusive));
             }
             if (actionType != null && !actionType.isBlank()) {
-                preds.add(cb.equal(cb.upper(root.get("actionType")), actionType.trim().toUpperCase()));
+                String key = actionType.trim().toUpperCase();
+                if ("SCAN".equals(key) || "SCAN_QR".equals(key)) {
+                    preds.add(cb.upper(root.get("actionType")).in("SCAN", "SCAN_QR"));
+                } else {
+                    preds.add(cb.equal(cb.upper(root.get("actionType")), key));
+                }
             }
             if (lote != null && !lote.isBlank()) {
                 preds.add(cb.like(cb.upper(root.get("lote")), "%" + lote.trim().toUpperCase() + "%"));

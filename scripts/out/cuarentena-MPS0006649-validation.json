@@ -1,0 +1,124 @@
+﻿{
+    "lote":  "260727-MPS0006649",
+    "itemNumber":  "201223360100",
+    "batchDispositionCode":  "",
+    "estadoOperativo":  "APROBADO",
+    "regla":  "BatchDispositionCode",
+    "operationalWarehouse":  "MPS",
+    "inventLocations":  [
+                            "MPS"
+                        ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#00000001500B1222",
+                           "inventBatchId":  "260727-MPS0006649",
+                           "InventLocationId":  "MPS",
+                           "InventSiteId":  "OLNATURA",
+                           "wMSLocationId":  "Disponible"
+                       }
+                   ],
+    "qualityOrders":  [
+                          {
+                              "QualityOrderNumber":  "OCL0015660",
+                              "QualityOrderStatus":  "Open",
+                              "WarehouseId":  "MPS",
+                              "WarehouseLocationId":  "Disponible",
+                              "ValidatedDateTime":  "1900-01-01T00:00:00Z",
+                              "ValidatingPersonnelNumber":  ""
+                          }
+                      ],
+    "primaryInventDimId":  "#00000001500B1222",
+    "primaryInventLocationId":  "MPS",
+    "primaryInventSiteId":  "OLNATURA",
+    "primaryWms":  "Disponible",
+    "datePhysical":  "2026-07-27T12:00:00Z",
+    "dateFinancial":  "1900-01-01T12:00:00Z",
+    "statusReceipt":  "Received",
+    "statusIssue":  "None",
+    "qty":  9999,
+    "voucher":  "",
+    "sysModifiedBy":  "mp.suplementos",
+    "sysCreatedDateTime":  "2026-07-27T20:42:09Z",
+    "sysModifiedDateTime":  "2026-07-27T20:42:09Z",
+    "createdEqualsModified":  true,
+    "dateAligns":  true,
+    "matchCuarentena":  false,
+    "patternHolds":  false,
+    "confianza":  "Baja",
+    "patternSameAsRemRes":  false,
+    "difference":  "Estado/almacen no es CUARENTENA (OP=APROBADO, loc=MPS)",
+    "movements":  [
+                      {
+                          "inventDimId":  "#00000001500B1222",
+                          "InventLocationId":  "MPS",
+                          "InventSiteId":  "OLNATURA",
+                          "wMSLocationId":  "Disponible",
+                          "inventTransRowCount":  5,
+                          "definitive":  {
+                                             "DatePhysical":  "2026-07-27T12:00:00Z",
+                                             "DateFinancial":  "1900-01-01T12:00:00Z",
+                                             "StatusIssue":  "None",
+                                             "StatusReceipt":  "Received",
+                                             "Qty":  9999,
+                                             "Voucher":  "",
+                                             "InventTransOrigin":  5638059121,
+                                             "RecordId":  5638562048,
+                                             "inventDimId":  "#00000001500B1222"
+                                         },
+                          "allRows":  [
+                                          {
+                                              "DatePhysical":  "2026-07-27T12:00:00Z",
+                                              "DateFinancial":  "1900-01-01T12:00:00Z",
+                                              "StatusIssue":  "None",
+                                              "StatusReceipt":  "Received",
+                                              "Qty":  9999,
+                                              "Voucher":  "",
+                                              "RecordId":  5638562048
+                                          },
+                                          {
+                                              "DatePhysical":  "2026-07-27T12:00:00Z",
+                                              "DateFinancial":  "1900-01-01T12:00:00Z",
+                                              "StatusIssue":  "None",
+                                              "StatusReceipt":  "Received",
+                                              "Qty":  1,
+                                              "Voucher":  "",
+                                              "RecordId":  5638618581
+                                          },
+                                          {
+                                              "DatePhysical":  "1900-01-01T12:00:00Z",
+                                              "DateFinancial":  "1900-01-01T12:00:00Z",
+                                              "StatusIssue":  "ReservPhysical",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -1,
+                                              "Voucher":  "",
+                                              "RecordId":  5638618580
+                                          },
+                                          {
+                                              "DatePhysical":  "1900-01-01T12:00:00Z",
+                                              "DateFinancial":  "1900-01-01T12:00:00Z",
+                                              "StatusIssue":  "ReservPhysical",
+                                              "StatusReceipt":  "None",
+                                              "Qty":  -9999,
+                                              "Voucher":  "",
+                                              "RecordId":  5638618582
+                                          },
+                                          {
+                                              "DatePhysical":  "1900-01-01T12:00:00Z",
+                                              "DateFinancial":  "1900-01-01T12:00:00Z",
+                                              "StatusIssue":  "None",
+                                              "StatusReceipt":  "Ordered",
+                                              "Qty":  9999,
+                                              "Voucher":  "",
+                                              "RecordId":  5638618583
+                                          }
+                                      ],
+                          "inventDimAudit":  {
+                                                 "SysModifiedBy":  "mp.suplementos",
+                                                 "SysCreatedDateTime":  "2026-07-27T20:42:09Z",
+                                                 "SysModifiedDateTime":  "2026-07-27T20:42:09Z",
+                                                 "createdEqualsModified":  true,
+                                                 "dateAligns":  true
+                                             }
+                      }
+                  ]
+}

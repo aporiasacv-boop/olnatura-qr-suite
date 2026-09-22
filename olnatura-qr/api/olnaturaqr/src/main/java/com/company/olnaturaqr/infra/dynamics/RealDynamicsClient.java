@@ -203,6 +203,8 @@ public class RealDynamicsClient implements DynamicsClient {
         Instant minPhysical = null;
         String minRaw = null;
         int validTotal = 0;
+        double receivedQtySum = 0d;
+        boolean hasReceivedQty = false;
 
         for (String inventDimId : inventDimIds) {
             log.info("[FechaEntrada] InventDimId consultado={} lote={}", inventDimId, batchNumber);
@@ -235,6 +237,10 @@ public class RealDynamicsClient implements DynamicsClient {
                 }
                 validForDim++;
                 validTotal++;
+                if (row.Qty != null && row.Qty > 0d) {
+                    receivedQtySum += row.Qty;
+                    hasReceivedQty = true;
+                }
                 if (minPhysical == null || instant.isBefore(minPhysical)) {
                     minPhysical = instant;
                     minRaw = row.DatePhysical.trim();
@@ -250,8 +256,10 @@ public class RealDynamicsClient implements DynamicsClient {
             log.info("[FechaEntrada] No se encontró fecha válida lote={}", batchNumber);
             return Optional.empty();
         }
-        log.info("[FechaEntrada] Fecha de entrada seleccionada={} lote={}", minRaw, batchNumber);
-        return Optional.of(new BatchEntryDateRecord(minRaw));
+        Double receivedQuantity = hasReceivedQty ? receivedQtySum : null;
+        log.info("[FechaEntrada] Fecha de entrada seleccionada={} cantidadRecibida={} lote={}",
+                minRaw, receivedQuantity, batchNumber);
+        return Optional.of(new BatchEntryDateRecord(minRaw, receivedQuantity));
     }
 
     @Override
@@ -302,7 +310,7 @@ public class RealDynamicsClient implements DynamicsClient {
                     .uri(uriBuilder -> uriBuilder
                             .path("/data/InventTransCDSEntities")
                             .queryParam("$filter", filter)
-                            .queryParam("$select", "inventDimId,StatusReceipt,DatePhysical")
+                            .queryParam("$select", "inventDimId,StatusReceipt,DatePhysical,Qty")
                             .queryParam("$top", 100)
                             .build())
                     .headers(headers -> headers.setBearerAuth(accessToken))
@@ -457,5 +465,6 @@ public class RealDynamicsClient implements DynamicsClient {
         public String inventDimId;
         public String StatusReceipt;
         public String DatePhysical;
+        public Double Qty;
     }
 }

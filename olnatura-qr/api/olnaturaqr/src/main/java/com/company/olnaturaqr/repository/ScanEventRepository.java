@@ -12,6 +12,8 @@ import java.util.UUID;
 public interface ScanEventRepository extends JpaRepository<ScanEvent, UUID> {
     List<ScanEvent> findTop50ByLoteOrderByCreatedAtDesc(String lote);
 
+    void deleteByLote(String lote);
+
     @Query(value = """
             SELECT COUNT(*) FROM scan_events
             WHERE created_at >= :from AND created_at < :to

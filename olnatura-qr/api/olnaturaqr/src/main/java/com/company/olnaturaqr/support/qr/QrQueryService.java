@@ -6,13 +6,11 @@ import com.company.olnaturaqr.infra.dynamics.DynamicsLookupDto;
 import com.company.olnaturaqr.infra.dynamics.DynamicsLookupService;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
-import com.company.olnaturaqr.support.workflow.AdminStatusCorrectionService;
 import com.company.olnaturaqr.support.workflow.ApprovalService;
 import com.company.olnaturaqr.support.workflow.LotOperationalGate;
 import com.company.olnaturaqr.support.workflow.OperationalStatusPresentation;
 import com.company.olnaturaqr.support.workflow.OperationalStatusResolver;
-import com.company.olnaturaqr.support.workflow.WorkflowStatus;
-import com.company.olnaturaqr.support.workflow.WorkflowTransitions;
+import com.company.olnaturaqr.support.workflow.OperationalStatusSyncService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -36,24 +34,25 @@ public class QrQueryService {
     private final QrLabelRepository qrLabelRepository;
     private final DynamicsLookupService dynamicsLookupService;
     private final ApprovalService approvalService;
+    private final OperationalStatusSyncService operationalStatusSyncService;
 
     public QrQueryService(
             QrLabelRepository qrLabelRepository,
             DynamicsLookupService dynamicsLookupService,
-            ApprovalService approvalService
+            ApprovalService approvalService,
+            OperationalStatusSyncService operationalStatusSyncService
     ) {
         this.qrLabelRepository = qrLabelRepository;
         this.dynamicsLookupService = dynamicsLookupService;
         this.approvalService = approvalService;
+        this.operationalStatusSyncService = operationalStatusSyncService;
     }
 
-    
     @Transactional(readOnly = true)
     public QrDto.Response getByLote(String loteRaw, AuthPrincipal principal) {
         return buildResponse(loteRaw, principal, false);
     }
 
-    
     @Transactional(readOnly = true)
     public QrDto.Response syncWithDynamics(String loteRaw, AuthPrincipal principal) {
         return buildResponse(loteRaw, principal, true);
@@ -78,7 +77,7 @@ public class QrQueryService {
 
         String lote = label.getLote();
         if (manualSync) {
-            log.info("[SyncDynamics] Lectura manual solicitada lote={} (solo consulta OData; sin escritura en ERP)", lote);
+            log.info("[SyncDynamics] Lectura manual solicitada lote={} (OData + sync estado operativo local)", lote);
         }
 
         var dtoLabel = new QrDto.Label(
@@ -92,19 +91,37 @@ public class QrQueryService {
                 label.getReanalisis(),
                 label.getEnvaseNum(),
                 label.getEnvaseTotal(),
-                label.getCantidadPorEnvase()
+                label.getCantidadPorEnvase(),
+                label.isRestosEnabled(),
+                label.getCantidadResto(),
+                com.company.olnaturaqr.support.label.EnvaseRestos.listOf(label),
+                label.isReprintRequired(),
+                label.getId() != null ? label.getId().toString() : null
         );
 
-        
-        String platformStatus = WorkflowStatus.normalize(label.getStatus());
         Instant syncedAt = Instant.now();
+        String syncReason = manualSync
+                ? OperationalStatusSyncService.REASON_SYNC_MANUAL
+                : OperationalStatusSyncService.REASON_CONSULTA;
 
         QrDto.Dynamic dyn = lookupDynamicsOrFail(lote)
                 .map(d -> {
-                    logEstadoDiag(lote, platformStatus, d);
+                    OperationalStatusSyncService.SyncResult sync =
+                            operationalStatusSyncService.applyDynamicsStatusById(
+                                    label.getId(),
+                                    d.operationalStatus(),
+                                    syncReason,
+                                    principal
+                            );
+                    if (sync.updated() && sync.to() != null) {
+                        label.setStatus(sync.to());
+                    }
+                    String platformStatus = platformStatusAfterSync(label, sync);
+                    logEstadoDiag(lote, platformStatus, d, sync);
                     return toDynamicDto(d, platformStatus, syncedAt);
                 })
                 .orElseGet(() -> {
+                    String platformStatus = OperationalStatusSyncService.normalizeStored(label.getStatus());
                     log.info("[EstadoOperativo] lote={} status=DESCONOCIDO rule=Información insuficiente (sin Dynamics) platformStatus={}",
                             lote, platformStatus);
                     return new QrDto.Dynamic(
@@ -112,6 +129,7 @@ public class QrQueryService {
                         label.getNombre(),
                         lote,
                         label.getCaducidad() != null ? label.getCaducidad().toString() : null,
+                        null,
                         null,
                         null,
                         null,
@@ -132,14 +150,26 @@ public class QrQueryService {
                     );
                 });
 
-        List<String> transitions = principal != null
-                ? WorkflowTransitions.allowedFrom(platformStatus)
-                : Collections.emptyList();
+        String platformStatus = OperationalStatusSyncService.normalizeStored(
+                dyn.platformStatus() != null ? dyn.platformStatus() : label.getStatus()
+        );
+
+        List<String> transitions = Collections.emptyList();
 
         ApprovalService.ApprovalView av = approvalService.view(label, principal);
-        QrDto.Permissions perms = buildPermissions(principal, av, platformStatus);
+        QrDto.Permissions perms = buildPermissions(principal, av);
 
         return new QrDto.Response(dtoLabel, dyn, transitions, perms);
+    }
+
+    private static String platformStatusAfterSync(
+            QrLabel label,
+            OperationalStatusSyncService.SyncResult sync
+    ) {
+        if (sync != null && sync.to() != null) {
+            return sync.to();
+        }
+        return OperationalStatusSyncService.normalizeStored(label.getStatus());
     }
 
     private Optional<DynamicsLookupDto> lookupDynamicsOrFail(String lote) {
@@ -157,6 +187,7 @@ public class QrQueryService {
                 d.lote(),
                 d.caducidad(),
                 d.cantidadAlmacen(),
+                d.cantidadRecibida(),
                 d.unidadInventario(),
                 d.fechaEntrada(),
                 OperationalStatusPresentation.forUi(d.operationalStatus()),
@@ -176,13 +207,21 @@ public class QrQueryService {
         );
     }
 
-    private static void logEstadoDiag(String lote, String platformStatus, DynamicsLookupDto d) {
-        log.info("[EstadoOperativo] lote={} operationalStatus={} rule={} platformStatus(histórico)={} BatchDispositionCode={}",
+    private static void logEstadoDiag(
+            String lote,
+            String platformStatus,
+            DynamicsLookupDto d,
+            OperationalStatusSyncService.SyncResult sync
+    ) {
+        log.info(
+                "[EstadoOperativo] lote={} operationalStatus={} rule={} platformStatus={} syncUpdated={} BatchDispositionCode={}",
                 lote,
                 d.operationalStatus(),
                 d.operationalStatusRule(),
                 platformStatus,
-                dash(d.batchDispositionCode()));
+                sync != null && sync.updated(),
+                dash(d.batchDispositionCode())
+        );
     }
 
     private static String dash(String value) {
@@ -191,12 +230,10 @@ public class QrQueryService {
 
     private QrDto.Permissions buildPermissions(
             AuthPrincipal principal,
-            ApprovalService.ApprovalView av,
-            String platformStatus
+            ApprovalService.ApprovalView av
     ) {
         QrDto.ApprovalLeg calidad = toLeg(av != null ? av.calidad() : null);
         QrDto.ApprovalLeg inspeccion = toLeg(av != null ? av.inspeccion() : null);
-        List<String> adminStatusTargets = AdminStatusCorrectionService.allowedTargets(platformStatus);
         if (principal == null || principal.roles() == null) {
             return new QrDto.Permissions(
                     false, false, false, false, false, false, false,
@@ -215,29 +252,30 @@ public class QrQueryService {
                 || rolesContains(roles, "ALMACEN")
                 || rolesContains(roles, "PRODUCCION")
                 || rolesContains(roles, "CALIDAD")
-                || rolesContains(roles, "INSPECCION");
+                || rolesContains(roles, "INSPECCION")
+                || rolesContains(roles, "VALIDACION");
         boolean canDownloadAuditPdf = isAdmin
                 || rolesContains(roles, "CALIDAD")
-                || rolesContains(roles, "INSPECCION");
-        boolean canCorrectStatus = isAdmin && !adminStatusTargets.isEmpty();
+                || rolesContains(roles, "INSPECCION")
+                || rolesContains(roles, "VALIDACION");
 
         return new QrDto.Permissions(
-                av.canChangeStatus(),
+                false,
                 canRegisterScan,
                 canCreateLabel,
-                av.canApproveCalidad(),
-                av.canApproveInspeccion(),
-                av.canReject(),
+                false,
+                false,
+                false,
                 canDownloadAuditPdf,
                 av.calidadApproved(),
                 av.inspeccionApproved(),
-                av.pendingMessage(),
+                null,
                 av.tipoMaterialDisplay(),
                 calidad,
                 inspeccion,
                 isAdmin,
-                canCorrectStatus,
-                canCorrectStatus ? adminStatusTargets : Collections.emptyList()
+                false,
+                Collections.emptyList()
         );
     }
 

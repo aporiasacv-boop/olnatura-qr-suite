@@ -3,28 +3,58 @@ import { brand } from "../../styles/brand";
 
 const useStyles = makeStyles({
   fieldBox: {
+    backgroundColor: "#FFFFFF",
     ...shorthands.border("1px", "solid", brand.border),
     ...shorthands.borderRadius("10px"),
-    ...shorthands.padding("10px"),
+    ...shorthands.padding("8px", "10px"),
+    display: "grid",
+    gap: "2px",
   },
-  fieldLabel: { color: brand.muted, fontSize: "12px" },
-  fieldValue: { marginTop: "4px", fontWeight: 600, wordBreak: "break-word" },
-  plainBlock: { display: "grid", gap: "2px" },
-  plainLabel: { fontSize: "11px", color: brand.muted, fontWeight: 600 },
-  plainValue: {
+  fieldLabel: {
+    color: brand.muted,
+    fontSize: "11px",
+    fontWeight: 600,
+  },
+  fieldValue: {
     fontSize: "13px",
+    lineHeight: "1.3",
     color: brand.text,
     fontWeight: 600,
     wordBreak: "break-word",
   },
+  plainBlock: {
+    display: "grid",
+    gap: "3px",
+  },
+  plainLabel: {
+    fontSize: "12px",
+    color: "#5A6570",
+    fontWeight: 500,
+    lineHeight: "1.3",
+  },
+  plainValue: {
+    fontSize: "15px",
+    color: "#1A2330",
+    fontWeight: 700,
+    lineHeight: "1.35",
+    wordBreak: "break-word",
+  },
 });
 
-export function PlainField({ label, value }: { label: string; value: string }) {
+export function PlainField({
+  label,
+  value,
+  boxed = true,
+}: {
+  label: string;
+  value: string;
+  boxed?: boolean;
+}) {
   const s = useStyles();
   return (
-    <div className={s.plainBlock}>
-      <div className={s.plainLabel}>{label}</div>
-      <div className={s.plainValue}>{value}</div>
+    <div className={boxed ? s.fieldBox : s.plainBlock}>
+      <div className={boxed ? s.fieldLabel : s.plainLabel}>{label}</div>
+      <div className={boxed ? s.fieldValue : s.plainValue}>{value}</div>
     </div>
   );
 }
@@ -48,14 +78,10 @@ export function CopyField({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          marginTop: boxed ? 4 : 0,
+          gap: 6,
         }}
       >
-        <div
-          className={boxed ? s.fieldValue : s.plainValue}
-          style={{ marginTop: 0, flex: 1 }}
-        >
+        <div className={boxed ? s.fieldValue : s.plainValue} style={{ flex: 1 }}>
           {value}
         </div>
         {value && value !== "—" ? (

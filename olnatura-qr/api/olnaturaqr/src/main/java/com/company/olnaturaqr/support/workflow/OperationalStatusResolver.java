@@ -12,17 +12,26 @@ public final class OperationalStatusResolver {
     public static final String STATUS_APROBADO = "APROBADO";
     public static final String STATUS_CUARENTENA = "CUARENTENA";
     public static final String STATUS_RECHAZADO = "RECHAZADO";
+    public static final String STATUS_PARCIAL = "PARCIAL";
     public static final String STATUS_DESCONOCIDO = "DESCONOCIDO";
 
     public static final String SOURCE_DYNAMICS = "Dynamics 365 Finance & Operations";
     public static final String RULE_WAREHOUSE_REM = "Almacén REM";
     public static final String RULE_WAREHOUSE_RES = "Almacén RES";
+    public static final String RULE_WAREHOUSE_PARTIAL = "Almacén disponible + REM/RES";
     public static final String RULE_WAREHOUSE_CUARENTENA = "Almacén CUARENTENA";
+    public static final String RULE_OPERABLE_WITHOUT_QUALITY = "Almacén operable sin QualityOrder";
     public static final String RULE_QUALITY_ORDER_OPEN = "QualityOrderStatus Open";
     public static final String RULE_QUALITY_PASS_APPROVED = "QualityOrder Pass + BatchDispositionCode";
     public static final String RULE_QUALITY_PASS_VALIDATED = "QualityOrder Pass + ValidatedDateTime";
     public static final String RULE_BATCH_DISPOSITION = "BatchDispositionCode";
     public static final String RULE_INSUFFICIENT = "Información insuficiente";
+
+    private static final Set<String> OPERABLE_WAREHOUSES = Set.of("MEM", "MES", "MPS", "MPM");
+
+    // Caso almacén operable + REM/RES + liberado: en Dynamics no existe PARCIAL;
+    // se reporta como APROBADO. Flag conservado por si hace falta desactivar la rama.
+    public static final boolean ENABLE_PARTIAL_STATE_EXPERIMENT = true;
 
     private OperationalStatusResolver() {}
 
@@ -67,10 +76,12 @@ public final class OperationalStatusResolver {
     }
 
     /**
-     * Prioridad oficial (validación Calidad):
-     * 1 REM / RES → RECHAZADO
-     * 2 QualityOrderStatus Open (pendiente) → CUARENTENA
-     * 3 Pass + ValidatedDateTime válido + no REM/RES → APROBADO
+     * Prioridad:
+     * 1 (si ENABLE_PARTIAL_STATE_EXPERIMENT) operable + REM/RES + Pass + ValidatedDateTime → APROBADO
+     * 2 REM / RES → RECHAZADO
+     * 3 QualityOrderStatus Open → CUARENTENA
+     * 4 Pass + ValidatedDateTime → APROBADO
+     * 5 Almacén operable (MEM/MES/MPS/MPM) sin QualityOrder → CUARENTENA
      * else → DESCONOCIDO
      * <p>
      * {@code batchDispositionCode} no participa en la decisión.
@@ -88,18 +99,27 @@ public final class OperationalStatusResolver {
         }
 
         List<String> warehouses = collectWarehouses(inventLocationIds, qualityWarehouseId);
+        boolean hasRem = warehouses.stream().anyMatch(w -> "REM".equals(normalizeWarehouse(w)));
+        boolean hasRes = warehouses.stream().anyMatch(w -> "RES".equals(normalizeWarehouse(w)));
+        boolean hasRejectWh = hasRem || hasRes;
+        boolean hasOperableWh = warehouses.stream().anyMatch(w -> OPERABLE_WAREHOUSES.contains(normalizeWarehouse(w)));
+        boolean liberated = isPassedQualityStatus(qualityOrderStatus)
+                && isValidValidatedDateTime(validatedDateTime);
 
-        for (String wh : warehouses) {
-            String norm = normalizeWarehouse(wh);
-            if ("REM".equals(norm)) {
-                return new Result(STATUS_RECHAZADO, RULE_WAREHOUSE_REM, wh.trim(), SOURCE_DYNAMICS);
-            }
+        if (ENABLE_PARTIAL_STATE_EXPERIMENT && hasRejectWh && hasOperableWh && liberated) {
+            String applied = hasRem
+                    ? firstMatchingWarehouse(warehouses, "REM")
+                    : firstMatchingWarehouse(warehouses, "RES");
+            return new Result(STATUS_APROBADO, RULE_WAREHOUSE_PARTIAL, applied, SOURCE_DYNAMICS);
         }
-        for (String wh : warehouses) {
-            String norm = normalizeWarehouse(wh);
-            if ("RES".equals(norm)) {
-                return new Result(STATUS_RECHAZADO, RULE_WAREHOUSE_RES, wh.trim(), SOURCE_DYNAMICS);
-            }
+
+        if (hasRem) {
+            return new Result(STATUS_RECHAZADO, RULE_WAREHOUSE_REM,
+                    firstMatchingWarehouse(warehouses, "REM"), SOURCE_DYNAMICS);
+        }
+        if (hasRes) {
+            return new Result(STATUS_RECHAZADO, RULE_WAREHOUSE_RES,
+                    firstMatchingWarehouse(warehouses, "RES"), SOURCE_DYNAMICS);
         }
 
         if (isPendingQualityStatus(qualityOrderStatus)) {
@@ -107,8 +127,13 @@ public final class OperationalStatusResolver {
                     firstWarehouseOrNull(warehouses), SOURCE_DYNAMICS);
         }
 
-        if (isPassedQualityStatus(qualityOrderStatus) && isValidValidatedDateTime(validatedDateTime)) {
+        if (liberated) {
             return new Result(STATUS_APROBADO, RULE_QUALITY_PASS_VALIDATED,
+                    firstWarehouseOrNull(warehouses), SOURCE_DYNAMICS);
+        }
+
+        if (hasOperableWh && isBlank(qualityOrderStatus)) {
+            return new Result(STATUS_CUARENTENA, RULE_OPERABLE_WITHOUT_QUALITY,
                     firstWarehouseOrNull(warehouses), SOURCE_DYNAMICS);
         }
 
@@ -160,9 +185,6 @@ public final class OperationalStatusResolver {
         return "PASS".equals(s) || "PASSED".equals(s);
     }
 
-    /**
-     * ValidatedDateTime usable para liberación: no vacío y distinto de sentinel 1900-01-01.
-     */
     static boolean isValidValidatedDateTime(String validatedDateTime) {
         if (isBlank(validatedDateTime)) {
             return false;
@@ -197,6 +219,18 @@ public final class OperationalStatusResolver {
         return "CUARENTENA".equals(upper)
                 || "QUARANTINE".equals(upper)
                 || "HOLD".equals(upper);
+    }
+
+    private static String firstMatchingWarehouse(List<String> warehouses, String code) {
+        if (warehouses == null) {
+            return null;
+        }
+        for (String wh : warehouses) {
+            if (code.equals(normalizeWarehouse(wh))) {
+                return wh.trim();
+            }
+        }
+        return null;
     }
 
     private static String firstWarehouseOrNull(List<String> warehouses) {

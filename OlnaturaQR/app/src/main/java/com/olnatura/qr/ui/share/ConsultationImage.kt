@@ -23,7 +23,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
 object ConsultationImage {
 
     private const val BG = 0xFFF3F6EF.toInt()
@@ -71,40 +70,32 @@ object ConsultationImage {
         }
 
         val headerBarH = 18f
-        val topBlock =
-            36f + 
-                10f +
-                34f + 
-                28f +
-                productLayout.height +
-                18f +
-                40f + 
-                28f
-
+        val brandBlockH = 50f
+        val titleBlockH = 54f
+        val productBlockH = productLayout.height + 16f
+        val loteBlockH = 56f
+        val dividerGap = 22f
         val rowsH = rowLayouts.sumOf { it.third.toDouble() }.toFloat() +
-            (rowLayouts.size - 1) * 28f + 
-            rowLayouts.size * 1f 
-
+            (rowLayouts.size - 1) * 28f
         val statusH = 88f
-        val footerH = 40f
-        val cardInnerH = topBlock + rowsH + 36f + statusH + 28f + footerH
+        val footerH = 48f
+        val cardInnerH = brandBlockH + titleBlockH + productBlockH + loteBlockH +
+            dividerGap + rowsH + 36f + statusH + 28f + footerH
         val height = (margin + headerBarH + 28f + cardInnerH + cardPad * 2 + margin).toInt()
+            .coerceAtLeast(1)
 
         val bmp = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
         canvas.drawColor(BG)
 
-        
         val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = GREEN }
         canvas.drawRect(0f, 0f, WIDTH.toFloat(), headerBarH, barPaint)
 
-        
         val cardTop = margin + headerBarH
         val cardRect = RectF(margin, cardTop, WIDTH - margin, cardTop + cardInnerH + cardPad * 2)
         val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = CARD }
         canvas.drawRoundRect(cardRect, 28f, 28f, cardPaint)
 
-        
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = DIVIDER
             style = Paint.Style.STROKE
@@ -114,27 +105,24 @@ object ConsultationImage {
 
         var y = cardTop + cardPad
 
-        
-        canvas.drawText("OLNATURA QR", margin + cardPad, y + 36f, brandPaint)
-        y += 36f + 14f
-        canvas.drawText("Ficha de consulta de lote", margin + cardPad, y + 28f, titlePaint)
-        y += 28f + 26f
+        canvas.drawText("Olnatura QR", margin + cardPad, y + 36f, brandPaint)
+        y += brandBlockH
 
-        
+        canvas.drawText("Ficha de consulta de lote", margin + cardPad, y + 28f, titlePaint)
+        y += titleBlockH
+
         canvas.save()
         canvas.translate(margin + cardPad, y)
         productLayout.draw(canvas)
         canvas.restore()
-        y += productLayout.height + 16f
+        y += productBlockH
 
         canvas.drawText("Lote  ${payload.lote.ifBlank { "—" }}", margin + cardPad, y + 30f, lotePaint)
-        y += 30f + 26f
+        y += loteBlockH
 
-        
         drawDivider(canvas, margin + cardPad, WIDTH - margin - cardPad, y)
-        y += 22f
+        y += dividerGap
 
-        
         rowLayouts.forEachIndexed { index, (labelLayout, valueLayout, rowH) ->
             canvas.save()
             canvas.translate(margin + cardPad, y)
@@ -155,7 +143,6 @@ object ConsultationImage {
 
         y += 28f
 
-        
         val (statusBg, statusFg) = statusColors(payload.status)
         statusPaint.color = statusFg
         val statusRect = RectF(
@@ -218,6 +205,8 @@ object ConsultationImage {
         return when {
             s in listOf("APROBADO", "LIBERADO", "VERIFICADO", "INSUMO VERIFICADO") ->
                 0xFFDDF2D7.toInt() to 0xFF2E6B2E.toInt()
+            s == "PARCIAL" ->
+                0xFFE8F1FB.toInt() to 0xFF1E4B8F.toInt()
             s == "RECHAZADO" ->
                 0xFFFEE2E2.toInt() to 0xFF991B1B.toInt()
             s in listOf("CUARENTENA", "PENDIENTE") ->

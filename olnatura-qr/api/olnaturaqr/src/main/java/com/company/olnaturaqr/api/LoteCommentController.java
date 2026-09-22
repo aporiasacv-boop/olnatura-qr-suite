@@ -27,13 +27,13 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
-
 @RestController
 @RequestMapping("/api/v1/comments")
-@PreAuthorize("hasAnyRole('ADMIN','ALMACEN','CALIDAD','INSPECCION')")
 public class LoteCommentController {
 
-    private static final Set<String> ALLOWED_ROLES = Set.of("ADMIN", "ALMACEN", "CALIDAD", "INSPECCION");
+    private static final Set<String> KNOWN_ROLES = Set.of(
+            "ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION", "VALIDACION"
+    );
     private static final int MAX_BODY = 200;
 
     private final LoteCommentRepository commentRepository;
@@ -56,6 +56,7 @@ public class LoteCommentController {
         this.auditService = auditService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION','VALIDACION')")
     @GetMapping("/{lote}")
     public ResponseEntity<List<LoteCommentDto.Response>> list(@PathVariable String lote) {
         String actualLote = resolveToLote(lote);
@@ -66,6 +67,7 @@ public class LoteCommentController {
         return ResponseEntity.ok(items);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/{lote}")
     public ResponseEntity<LoteCommentDto.Response> create(
             @PathVariable String lote,
@@ -84,17 +86,20 @@ public class LoteCommentController {
             throw new ResponseStatusException(BAD_REQUEST, "El comentario supera el máximo de " + MAX_BODY + " caracteres");
         }
 
+        User user = userRepository.findById(principal.id())
+                .orElseThrow(() -> new ResponseStatusException(UNAUTHORIZED, "Usuario no encontrado"));
+        if (!user.isCanCreateLoteComments()) {
+            throw new ResponseStatusException(FORBIDDEN, "No tienes permiso para agregar comentarios");
+        }
+        if (principal.roles() != null && principal.roles().stream()
+                .anyMatch(r -> r != null && "VALIDACION".equalsIgnoreCase(r.trim()))) {
+            throw new ResponseStatusException(FORBIDDEN, "El rol Validación solo puede ver comentarios");
+        }
+
         String actualLote = resolveToLote(lote);
         requireKnownLote(actualLote);
 
-        User user = userRepository.findById(principal.id())
-                .orElseThrow(() -> new ResponseStatusException(UNAUTHORIZED, "Usuario no encontrado"));
-
         String role = resolveAuthorRole(principal, user);
-        if (!ALLOWED_ROLES.contains(role)) {
-            throw new ResponseStatusException(FORBIDDEN, "Tu rol no puede agregar comentarios");
-        }
-
         String displayName = user.getUsername() != null && !user.getUsername().isBlank()
                 ? user.getUsername().trim()
                 : principal.username();
@@ -104,7 +109,7 @@ public class LoteCommentController {
         c.setAuthorUserId(user.getId());
         c.setAuthorUsername(user.getUsername());
         c.setAuthorDisplayName(displayName);
-        c.setAuthorRole(role);
+        c.setAuthorRole(role.isBlank() ? "—" : role);
         c.setBody(body);
 
         LoteComment saved = commentRepository.save(c);
@@ -134,7 +139,7 @@ public class LoteCommentController {
     private static String resolveAuthorRole(AuthPrincipal principal, User user) {
         if (user.getRole() != null && user.getRole().getName() != null) {
             String fromDb = user.getRole().getName().trim().toUpperCase(Locale.ROOT);
-            if (ALLOWED_ROLES.contains(fromDb)) {
+            if (KNOWN_ROLES.contains(fromDb)) {
                 return fromDb;
             }
         }
@@ -142,7 +147,7 @@ public class LoteCommentController {
             for (String r : principal.roles()) {
                 if (r == null) continue;
                 String n = r.trim().toUpperCase(Locale.ROOT);
-                if (ALLOWED_ROLES.contains(n)) {
+                if (KNOWN_ROLES.contains(n)) {
                     return n;
                 }
             }

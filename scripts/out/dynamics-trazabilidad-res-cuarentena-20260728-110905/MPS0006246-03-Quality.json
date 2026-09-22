@@ -1,0 +1,19 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#QualityOrderHeaders(QualityOrderNumber,ItemBatchNumber,ItemNumber,QualityOrderStatus,ValidatedDateTime,ValidatingPersonnelNumber,PassedBatchDispositionCode,FailedBatchDispositionCode,WarehouseId,WarehouseLocationId,QMSAssignedToPersonnelNumber)",
+    "value":  [
+                  {
+                      "@odata.etag":  "W/\"JzUzOTAzMzk3MSw1NjM3NzQxNTgzJw==\"",
+                      "QualityOrderNumber":  "OCL0014703",
+                      "ItemBatchNumber":  "260203-MPS0006246",
+                      "ItemNumber":  "200923430500",
+                      "QualityOrderStatus":  "Pass",
+                      "ValidatedDateTime":  "2026-02-20T20:57:01Z",
+                      "ValidatingPersonnelNumber":  "3960",
+                      "PassedBatchDispositionCode":  "Aprobado",
+                      "FailedBatchDispositionCode":  "Rechazado",
+                      "WarehouseId":  "MPS",
+                      "WarehouseLocationId":  "Disponible",
+                      "QMSAssignedToPersonnelNumber":  ""
+                  }
+              ]
+}

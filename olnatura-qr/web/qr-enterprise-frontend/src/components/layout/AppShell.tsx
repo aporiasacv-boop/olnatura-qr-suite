@@ -8,7 +8,7 @@ import { brand } from "../../styles/brand";
 const useStyles = makeStyles({
   root: {
     display: "grid",
-    gridTemplateColumns: "260px 1fr",
+    gridTemplateColumns: "260px minmax(0, 1fr)",
     height: "100vh",
     backgroundColor: "transparent",
   },
@@ -25,8 +25,10 @@ const useStyles = makeStyles({
   },
   content: {
     ...shorthands.padding("24px"),
-    overflow: "auto",
+    overflowX: "hidden",
+    overflowY: "auto",
     backgroundColor: "transparent",
+    minWidth: 0,
   },
   surface: {
     backgroundColor: brand.surfaceSolid,
@@ -36,6 +38,9 @@ const useStyles = makeStyles({
     ...shorthands.border("1px", "solid", brand.border),
     ...shorthands.padding("24px"),
     minHeight: "100%",
+    minWidth: 0,
+    maxWidth: "100%",
+    overflowX: "hidden",
   },
 });
 

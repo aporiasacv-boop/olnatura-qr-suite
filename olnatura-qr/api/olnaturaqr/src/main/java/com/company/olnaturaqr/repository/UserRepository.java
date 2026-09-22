@@ -2,6 +2,8 @@ package com.company.olnaturaqr.repository;
 
 import com.company.olnaturaqr.domain.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,4 +20,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   List<User> findTop50ByEnabledFalseOrderByCreatedAtDesc();
 
   List<User> findAllByOrderByCreatedAtDesc();
+
+  long countByEnabledFalse();
+
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("delete from User u where u.enabled = false")
+  int deleteByEnabledFalse();
 }

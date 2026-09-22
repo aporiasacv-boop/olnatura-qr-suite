@@ -25,12 +25,14 @@
         android:label="Olnatura QR"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.OlnaturaQR"
         android:usesCleartextTraffic="true"
         android:resizeableActivity="true">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:theme="@style/Theme.OlnaturaQR"
             android:screenOrientation="fullUser"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:windowSoftInputMode="adjustResize"

@@ -5,10 +5,10 @@ import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
 import com.company.olnaturaqr.support.workflow.AdminLabelCorrectionService;
+import com.company.olnaturaqr.support.workflow.AdminLotDeleteService;
 import com.company.olnaturaqr.support.workflow.AdminLotStatus;
-import com.company.olnaturaqr.support.workflow.AdminStatusCorrectionService;
+import com.company.olnaturaqr.support.workflow.LabelDynamicsAlignService;
 import com.company.olnaturaqr.support.workflow.LotOperationalGate;
-import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.support.qr.LoteExtractor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,18 +34,21 @@ public class AdminLotsController {
     private final QrLabelRepository qrLabelRepository;
     private final AuditService auditService;
     private final AdminLabelCorrectionService correctionService;
-    private final AdminStatusCorrectionService statusCorrectionService;
+    private final LabelDynamicsAlignService labelDynamicsAlignService;
+    private final AdminLotDeleteService lotDeleteService;
 
     public AdminLotsController(
             QrLabelRepository qrLabelRepository,
             AuditService auditService,
             AdminLabelCorrectionService correctionService,
-            AdminStatusCorrectionService statusCorrectionService
+            LabelDynamicsAlignService labelDynamicsAlignService,
+            AdminLotDeleteService lotDeleteService
     ) {
         this.qrLabelRepository = qrLabelRepository;
         this.auditService = auditService;
         this.correctionService = correctionService;
-        this.statusCorrectionService = statusCorrectionService;
+        this.labelDynamicsAlignService = labelDynamicsAlignService;
+        this.lotDeleteService = lotDeleteService;
     }
 
     @GetMapping
@@ -61,6 +64,40 @@ public class AdminLotsController {
             rows = qrLabelRepository.findAllByOrderByCreatedAtDesc();
         }
         return rows.stream().map(this::toDto).toList();
+    }
+
+    @PostMapping("/align-from-dynamics")
+    public LabelDynamicsAlignService.AlignSummary alignFromDynamics(
+            @AuthenticationPrincipal AuthPrincipal principal
+    ) {
+        return labelDynamicsAlignService.alignAll(principal);
+    }
+
+    @PostMapping("/sync-dynamics-batch")
+    public LabelDynamicsAlignService.AlignBatchSummary syncDynamicsBatch(
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        int safeLimit = Math.min(Math.max(limit, 1), 50);
+        int safeOffset = Math.max(offset, 0);
+        return labelDynamicsAlignService.alignBatch(principal, safeOffset, safeLimit);
+    }
+
+    @PostMapping("/{id}/sync-dynamics")
+    public LabelDynamicsAlignService.AlignRow syncDynamicsOne(
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @PathVariable UUID id
+    ) {
+        return labelDynamicsAlignService.alignOne(principal, id);
+    }
+
+    @PostMapping("/{id}/confirm-reprint")
+    public LabelDynamicsAlignService.AlignRow confirmReprint(
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @PathVariable UUID id
+    ) {
+        return labelDynamicsAlignService.confirmReprint(principal, id);
     }
 
     @PatchMapping("/{id}/admin-status")
@@ -94,6 +131,15 @@ public class AdminLotsController {
         return ResponseEntity.ok(toDto(q));
     }
 
+    @PostMapping("/{id}/delete")
+    public ResponseEntity<AdminLotDeleteService.DeleteResult> deleteLot(
+            @AuthenticationPrincipal AuthPrincipal principal,
+            @PathVariable UUID id,
+            @RequestBody AdminLotDeleteService.DeleteRequest req
+    ) {
+        return ResponseEntity.ok(lotDeleteService.deleteLot(id, principal, req));
+    }
+
     
     @PatchMapping("/by-lote/{lote}/correct")
     public ResponseEntity<CorrectionResponse> correctByLote(
@@ -117,31 +163,6 @@ public class AdminLotsController {
         LotOperationalGate.requireActive(q);
         var result = correctionService.correct(q, principal, req);
         return ResponseEntity.ok(toCorrectionResponse(result));
-    }
-
-    
-    @PatchMapping("/by-lote/{lote}/correct-status")
-    public ResponseEntity<StatusCorrectionResponse> correctStatusByLote(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable String lote,
-            @RequestBody AdminStatusCorrectionService.StatusCorrectionRequest req
-    ) {
-        QrLabel q = resolveLabel(lote);
-        var result = statusCorrectionService.correct(q, principal, req);
-        return ResponseEntity.ok(toStatusCorrectionResponse(result));
-    }
-
-    @PatchMapping("/{id}/correct-status")
-    public ResponseEntity<StatusCorrectionResponse> correctStatusById(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable UUID id,
-            @RequestBody AdminStatusCorrectionService.StatusCorrectionRequest req
-    ) {
-        QrLabel q = qrLabelRepository.findById(id).orElseThrow(() ->
-                new ResponseStatusException(NOT_FOUND, "Lote no encontrado"));
-        LotOperationalGate.requireActive(q);
-        var result = statusCorrectionService.correct(q, principal, req);
-        return ResponseEntity.ok(toStatusCorrectionResponse(result));
     }
 
     private QrLabel resolveLabel(String raw) {
@@ -174,21 +195,6 @@ public class AdminLotsController {
         );
     }
 
-    private StatusCorrectionResponse toStatusCorrectionResponse(
-            AdminStatusCorrectionService.StatusCorrectionResult result
-    ) {
-        QrLabel q = result.label();
-        return new StatusCorrectionResponse(
-                q.getId().toString(),
-                q.getLote(),
-                WorkflowStatus.normalize(q.getStatus()),
-                result.from(),
-                result.to(),
-                result.motivo(),
-                AdminStatusCorrectionService.allowedTargets(q.getStatus())
-        );
-    }
-
     private LotAdminDto toDto(QrLabel q) {
         String admin = AdminLotStatus.normalize(q.getAdminStatus());
         return new LotAdminDto(
@@ -199,7 +205,9 @@ public class AdminLotsController {
                 admin,
                 AdminLotStatus.display(admin),
                 q.getStatus(),
-                q.getCreatedAt() != null ? q.getCreatedAt().toString() : null
+                q.getCreatedAt() != null ? q.getCreatedAt().toString() : null,
+                q.isReprintRequired(),
+                q.getReprintRequiredAt() != null ? q.getReprintRequiredAt().toString() : null
         );
     }
 
@@ -212,7 +220,9 @@ public class AdminLotsController {
             String adminStatusDisplay,
             
             String workflowStatus,
-            String createdAt
+            String createdAt,
+            boolean reprintRequired,
+            String reprintRequiredAt
     ) {}
 
     public record AdminStatusRequest(String adminStatus) {}
@@ -222,16 +232,5 @@ public class AdminLotsController {
             String lote,
             LabelDto.LabelView label,
             List<Map<String, String>> changes
-    ) {}
-
-    public record StatusCorrectionResponse(
-            String id,
-            String lote,
-            
-            String status,
-            String from,
-            String to,
-            String motivo,
-            List<String> allowedNext
     ) {}
 }

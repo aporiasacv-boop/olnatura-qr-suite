@@ -1,0 +1,11 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventDimBiEntities(inventDimId,InventLocationId,wMSLocationId,inventBatchId)",
+    "value":  [
+                  {
+                      "inventDimId":  "#00000001500B0EF8",
+                      "InventLocationId":  "MPS",
+                      "wMSLocationId":  "Disponible",
+                      "inventBatchId":  "260720-MPS0006641"
+                  }
+              ]
+}

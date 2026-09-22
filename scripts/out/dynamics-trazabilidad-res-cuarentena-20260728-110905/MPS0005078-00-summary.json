@@ -1,0 +1,177 @@
+﻿{
+    "suffix":  "MPS0005078",
+    "batchNumber":  "240412-MPS0005078",
+    "itemNumber":  "200523451100",
+    "batchDispositionCode":  "Aprobado",
+    "inventLocations":  [
+                            "MPS",
+                            "RES"
+                        ],
+    "operationalStatus":  "RECHAZADO",
+    "operationalRule":  "Almacen RES",
+    "operationalWarehouse":  "RES",
+    "expectedStatus":  "RECHAZADO",
+    "expectedWarehouse":  "RES",
+    "matchExpected":  true,
+    "qualityOrderCount":  1,
+    "qualityOrders":  [
+                          {
+                              "@odata.etag":  "W/\"JzIxMzY1NzgzMDIsNTYzNzU5MzEyOCc=\"",
+                              "QualityOrderNumber":  "OCL0011866",
+                              "ItemBatchNumber":  "240412-MPS0005078",
+                              "ItemNumber":  "200523451100",
+                              "QualityOrderStatus":  "Pass",
+                              "ValidatedDateTime":  "2024-04-23T01:23:03Z",
+                              "ValidatingPersonnelNumber":  "3776",
+                              "PassedBatchDispositionCode":  "Aprobado",
+                              "FailedBatchDispositionCode":  "Rechazado",
+                              "WarehouseId":  "MPS",
+                              "WarehouseLocationId":  "Disponible",
+                              "QMSAssignedToPersonnelNumber":  ""
+                          }
+                      ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#000000015007D5A2",
+                           "InventLocationId":  "MPS",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#000000015007DF71",
+                           "InventLocationId":  "MPS",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  ""
+                       },
+                       {
+                           "inventDimId":  "#000000015007F6DB",
+                           "InventLocationId":  "MPS",
+                           "wMSLocationId":  "",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#000000015008321E",
+                           "InventLocationId":  "",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#000000015009E9C1",
+                           "InventLocationId":  "RES",
+                           "wMSLocationId":  "General",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#000000015009F26A",
+                           "InventLocationId":  "RES",
+                           "wMSLocationId":  "",
+                           "InventSiteId":  "OLNATURA"
+                       }
+                   ],
+    "movements":  [
+                      {
+                          "inventDimId":  "#000000015009E9C1",
+                          "InventLocationId":  "RES",
+                          "InventSiteId":  "OLNATURA",
+                          "wMSLocationId":  "General",
+                          "inventTransRowCount":  1,
+                          "definitive":  {
+                                             "DatePhysical":  "2025-10-08T12:00:00Z",
+                                             "DateFinancial":  "2025-10-08T12:00:00Z",
+                                             "DateInvent":  "1900-01-01T12:00:00Z",
+                                             "DateStatus":  "2025-10-08T12:00:00Z",
+                                             "DateClosed":  "2025-10-31T12:00:00Z",
+                                             "StatusIssue":  "None",
+                                             "StatusReceipt":  "Purchased",
+                                             "Qty":  15890,
+                                             "Voucher":  "DTI0004844",
+                                             "InventTransOrigin":  5637989161,
+                                             "PackingSlipId":  "",
+                                             "InvoiceId":  "",
+                                             "ReceiptId":  "",
+                                             "TransChildType":  "None",
+                                             "TransChildRefId":  "",
+                                             "RecordId":  5638442349,
+                                             "inventDimId":  "#000000015009E9C1",
+                                             "CreatedDateTime":  null,
+                                             "ModifiedDateTime":  null,
+                                             "SysModifiedBy":  null,
+                                             "CreatedBy":  null,
+                                             "ModifiedBy":  null,
+                                             "ReferenceId":  null,
+                                             "ReferenceCategory":  null,
+                                             "ReferenceType":  null,
+                                             "InventTransType":  null
+                                         },
+                          "allRows":  [
+                                          {
+                                              "DatePhysical":  "2025-10-08T12:00:00Z",
+                                              "DateFinancial":  "2025-10-08T12:00:00Z",
+                                              "StatusIssue":  "None",
+                                              "StatusReceipt":  "Purchased",
+                                              "Qty":  15890,
+                                              "Voucher":  "DTI0004844",
+                                              "InventTransOrigin":  5637989161,
+                                              "RecordId":  5638442349
+                                          }
+                                      ],
+                          "inventDimAudit":  {
+                                                 "SysModifiedBy":  "victor.duarte",
+                                                 "SysCreatedBy":  null,
+                                                 "SysCreatedDateTime":  "2025-10-08T22:37:12Z",
+                                                 "SysModifiedDateTime":  "2025-10-08T22:37:12Z",
+                                                 "createdEqualsModified":  true,
+                                                 "datePhysicalDayAlignsWithSysCreated":  true
+                                             }
+                      },
+                      {
+                          "inventDimId":  "#000000015009F26A",
+                          "InventLocationId":  "RES",
+                          "InventSiteId":  "OLNATURA",
+                          "wMSLocationId":  "",
+                          "inventTransRowCount":  0,
+                          "definitive":  null,
+                          "allRows":  [
+
+                                      ],
+                          "inventDimAudit":  {
+                                                 "SysModifiedBy":  "ivan.martinez",
+                                                 "SysCreatedBy":  null,
+                                                 "SysCreatedDateTime":  "2025-10-14T21:11:14Z",
+                                                 "SysModifiedDateTime":  "2025-10-14T21:11:14Z",
+                                                 "createdEqualsModified":  true,
+                                                 "datePhysicalDayAlignsWithSysCreated":  false
+                                             }
+                      }
+                  ],
+    "comparativeRow":  {
+                           "lote":  "240412-MPS0005078",
+                           "suffix":  "MPS0005078",
+                           "estadoOperativo":  "RECHAZADO",
+                           "regla":  "Almacen RES",
+                           "almacen":  "RES",
+                           "inventDimId":  "#000000015009E9C1",
+                           "inventSiteId":  "OLNATURA",
+                           "wMSLocationId":  "General",
+                           "datePhysical":  "2025-10-08T12:00:00Z",
+                           "dateFinancial":  "2025-10-08T12:00:00Z",
+                           "statusReceipt":  "Purchased",
+                           "statusIssue":  "None",
+                           "qty":  15890,
+                           "inventTransOrigin":  5637989161,
+                           "voucher":  "DTI0004844",
+                           "sysModifiedBy":  "victor.duarte",
+                           "sysCreatedBy":  null,
+                           "sysCreatedDateTime":  "2025-10-08T22:37:12Z",
+                           "sysModifiedDateTime":  "2025-10-08T22:37:12Z",
+                           "createdEqualsModified":  true,
+                           "dateAlignsWithDimCreate":  true,
+                           "campoFechaRecomendado":  "InventTransCDSEntities.DatePhysical",
+                           "campoCuentaRecomendado":  "InventDimBiEntities.SysModifiedBy",
+                           "confianza":  "Alta",
+                           "expected":  "RECHAZADO",
+                           "expectedWh":  "RES",
+                           "matchExpected":  true,
+                           "inventTransMissingAuditFields":  true
+                       }
+}

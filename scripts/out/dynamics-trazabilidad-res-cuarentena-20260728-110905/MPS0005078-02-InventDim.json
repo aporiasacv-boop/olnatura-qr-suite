@@ -1,0 +1,47 @@
+﻿{
+    "@odata.context":  "https://olnatura-produccion.operations.dynamics.com/data/$metadata#InventDimBiEntities(inventDimId,inventBatchId,InventLocationId,wMSLocationId,InventSiteId)",
+    "value":  [
+                  {
+                      "inventDimId":  "#000000015007D5A2",
+                      "inventBatchId":  "240412-MPS0005078",
+                      "InventLocationId":  "MPS",
+                      "wMSLocationId":  "Disponible",
+                      "InventSiteId":  "OLNATURA"
+                  },
+                  {
+                      "inventDimId":  "#000000015007DF71",
+                      "inventBatchId":  "240412-MPS0005078",
+                      "InventLocationId":  "MPS",
+                      "wMSLocationId":  "Disponible",
+                      "InventSiteId":  ""
+                  },
+                  {
+                      "inventDimId":  "#000000015007F6DB",
+                      "inventBatchId":  "240412-MPS0005078",
+                      "InventLocationId":  "MPS",
+                      "wMSLocationId":  "",
+                      "InventSiteId":  "OLNATURA"
+                  },
+                  {
+                      "inventDimId":  "#000000015008321E",
+                      "inventBatchId":  "240412-MPS0005078",
+                      "InventLocationId":  "",
+                      "wMSLocationId":  "Disponible",
+                      "InventSiteId":  "OLNATURA"
+                  },
+                  {
+                      "inventDimId":  "#000000015009E9C1",
+                      "inventBatchId":  "240412-MPS0005078",
+                      "InventLocationId":  "RES",
+                      "wMSLocationId":  "General",
+                      "InventSiteId":  "OLNATURA"
+                  },
+                  {
+                      "inventDimId":  "#000000015009F26A",
+                      "inventBatchId":  "240412-MPS0005078",
+                      "InventLocationId":  "RES",
+                      "wMSLocationId":  "",
+                      "InventSiteId":  "OLNATURA"
+                  }
+              ]
+}

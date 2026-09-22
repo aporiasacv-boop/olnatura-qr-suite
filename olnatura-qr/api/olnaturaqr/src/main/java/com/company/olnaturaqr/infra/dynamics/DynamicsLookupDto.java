@@ -9,6 +9,7 @@ public record DynamicsLookupDto(
         String lote,
         String caducidad,
         Double cantidadAlmacen,
+        Double cantidadRecibida,
         
         String unidadInventario,
         

@@ -122,7 +122,7 @@ export default function AuditDetailCell({
   if (entries.length === 0) return <span style={{ color: brand.muted }}>—</span>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 160 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0, maxWidth: "100%" }}>
       {shouldCollapse && !expanded ? (
         <>
           {summary ? (

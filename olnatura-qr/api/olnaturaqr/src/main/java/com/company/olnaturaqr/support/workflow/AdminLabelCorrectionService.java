@@ -179,12 +179,18 @@ public class AdminLabelCorrectionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay cambios para aplicar");
         }
 
+        List<String> changedFields = changes.stream().map(FieldChange::field).toList();
+        if (LabelReprintGate.touchesPrintedFields(changedFields)) {
+            LabelReprintGate.markRequired(label);
+        }
+
         QrLabel saved = qrLabelRepository.save(label);
 
         Map<String, Object> md = new LinkedHashMap<>();
         md.put("labelId", saved.getId().toString());
         md.put("motivo", motivo);
         md.put("rol", "ADMIN");
+        md.put("reprintRequired", saved.isReprintRequired());
         List<Map<String, String>> changeMaps = new ArrayList<>();
         for (FieldChange c : changes) {
             Map<String, String> row = new LinkedHashMap<>();

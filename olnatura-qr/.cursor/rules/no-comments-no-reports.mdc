@@ -1,0 +1,12 @@
+---
+description: No escribir comentarios en código ni generar reportes salvo pedido explícito
+alwaysApply: true
+---
+
+# Sin comentarios ni reportes no solicitados
+
+- No agregues comentarios en el código (`//`, `/* */`, JSDoc, Javadoc).
+- No dejes comentarios explicativos, de sección, TODO o de historial de cambios.
+- No modifiques comentarios en archivos SQL / migraciones Flyway salvo instrucción explícita.
+- No generes reportes, documentos `.md` de cierre, ni archivos de notas del proyecto a menos que el usuario lo pida explícitamente.
+- Si hace falta clarificar algo, hazlo en la respuesta al usuario, no dentro del código.

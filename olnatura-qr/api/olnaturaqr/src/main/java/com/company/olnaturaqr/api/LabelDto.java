@@ -19,7 +19,10 @@ public class LabelDto {
             int envaseNum,
             int envaseTotal,
             String documentCode,
-            String cantidadPorEnvase
+            String cantidadPorEnvase,
+            Boolean restosEnabled,
+            String cantidadResto,
+            java.util.List<String> restosCantidades
     ) {}
 
     public record LabelView(
@@ -35,9 +38,14 @@ public class LabelDto {
             int envaseNum,
             int envaseTotal,
             String cantidadPorEnvase,
+            boolean restosEnabled,
+            String cantidadResto,
+            java.util.List<String> restosCantidades,
             String status,
             String documentCode,
-            Instant createdAt
+            Instant createdAt,
+            boolean reprintRequired,
+            Instant reprintRequiredAt
     ) {
         public static LabelView from(QrLabel q) {
             return new LabelView(
@@ -53,9 +61,14 @@ public class LabelDto {
                     q.getEnvaseNum(),
                     q.getEnvaseTotal(),
                     q.getCantidadPorEnvase(),
+                    q.isRestosEnabled(),
+                    q.getCantidadResto(),
+                    com.company.olnaturaqr.support.label.EnvaseRestos.listOf(q),
                     q.getStatus(),
                     q.getDocumentCode(),
-                    q.getCreatedAt()
+                    q.getCreatedAt(),
+                    q.isReprintRequired(),
+                    q.getReprintRequiredAt()
             );
         }
     }

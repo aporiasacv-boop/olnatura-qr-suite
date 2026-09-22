@@ -3,18 +3,25 @@
 const ACTION_LABELS: Record<string, string> = {
   PRINT_LABEL: "Impresión de etiquetas",
   GENERATE_LABEL: "Generación de etiquetas",
-  SCAN_QR: "Escaneo de código QR",
-  SCAN: "Escaneo de código QR",
+  SCAN_QR: "Consulta QR",
+  SCAN: "Consulta QR",
   LOGIN_SUCCESS: "Inicio de sesión",
   LOGOUT: "Cierre de sesión",
   EXPORT_AUDIT_PDF: "Exportación de auditoría (PDF)",
   EXPORT_AUDIT_CSV: "Exportación de auditoría (CSV)",
+  EXPORT_USERS_PDF: "Exportación de usuarios (PDF)",
   EXPORT_EXECUTIVE_DASHBOARD: "Exportación de dashboard ejecutivo",
   ADD_LOTE_COMMENT: "Comentario agregado al lote",
   ADMIN_CORRECT_LABEL: "Corrección administrativa",
   ADMIN_CORRECT_STATUS: "Corrección administrativa de estado",
+  ADMIN_ALIGN_LABELS_DYNAMICS: "Alineación masiva con Dynamics",
+  ADMIN_ALIGN_LABEL_DYNAMICS: "Alineación de lote con Dynamics",
+  SYNC_OPERATIONAL_STATUS_DYNAMICS: "Sincronización de estado operativo (Dynamics)",
+  PURGE_OPERATIONAL_DATA_V2: "Vaciado operativo de BD",
+  PURGE_LOTS: "Eliminación de lotes",
   CHANGE_STATUS: "Cambio de estado",
   CHANGE_LOT_ADMIN_STATUS: "Cambio de estado administrativo del lote",
+  ELIMINAR_LOTE: "Eliminar lote",
   APPROVE_USER: "Aprobación de usuario",
   REJECT_USER: "Rechazo de usuario",
   ACCESS_REQUEST: "Solicitud de acceso",
@@ -22,6 +29,7 @@ const ACTION_LABELS: Record<string, string> = {
   APPROVE_MATERIAL: "Aprobación de material",
   REJECT_MATERIAL: "Rechazo de material",
   UPDATE_USER: "Actualización de usuario",
+  RESET_USER_PASSWORD: "Restablecimiento de contraseña",
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -30,6 +38,7 @@ const ROLE_LABELS: Record<string, string> = {
   INSPECCION: "Inspección",
   ALMACEN: "Almacén",
   PRODUCCION: "Producción",
+  VALIDACION: "Validación",
 };
 
 const UUID_PATTERN =
@@ -87,6 +96,18 @@ export function formatUsernameForDisplay(username: string | null | undefined): s
   return trimmed;
 }
 
+export function formatSessionDisplayName(username: string | null | undefined): string {
+  if (!username || !username.trim()) return "—";
+  const trimmed = username.trim();
+  if (looksLikeUuid(trimmed) || looksLikeEmail(trimmed)) return trimmed;
+
+  return trimmed
+    .split(/[.\s_]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
 
 export function resolveUserDisplay(
   actorDisplay?: string | null,
@@ -102,10 +123,16 @@ export function resolveUserDisplay(
   return "—";
 }
 
-export const AUDIT_ACTION_FILTER_OPTIONS = [
-  { value: "", label: "Todas" },
-  ...Object.entries(ACTION_LABELS).map(([value, label]) => ({ value, label })),
-];
+export const AUDIT_ACTION_FILTER_OPTIONS = (() => {
+  const seen = new Set<string>();
+  const options: { value: string; label: string }[] = [{ value: "", label: "Todas" }];
+  for (const [value, label] of Object.entries(ACTION_LABELS)) {
+    if (seen.has(label)) continue;
+    seen.add(label);
+    options.push({ value, label });
+  }
+  return options;
+})();
 
 export function allAuditActionTranslations(): Record<string, string> {
   return { ...ACTION_LABELS };

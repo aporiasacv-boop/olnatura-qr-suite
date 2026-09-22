@@ -8,10 +8,9 @@ import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.repository.UserRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
 import com.company.olnaturaqr.support.pdf.AuditPdfService;
+import com.company.olnaturaqr.support.presentation.AuditDetailFormatter;
 import com.company.olnaturaqr.support.qr.LoteExtractor;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lowagie.text.DocumentException;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -26,6 +25,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,28 +45,28 @@ public class AuditController {
     private static final java.util.Set<String> CLIENT_ALLOWED_ACTIONS = java.util.Set.of(
             "GENERATE_LABEL"
     );
+    private static final byte[] UTF8_BOM = new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+    private static final DateTimeFormatter CSV_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter CSV_TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final AuditService auditService;
     private final AuditEventRepository auditEventRepository;
     private final QrLabelRepository qrLabelRepository;
     private final UserRepository userRepository;
     private final AuditPdfService auditPdfService;
-    private final ObjectMapper objectMapper;
 
     public AuditController(
             AuditService auditService,
             AuditEventRepository auditEventRepository,
             QrLabelRepository qrLabelRepository,
             UserRepository userRepository,
-            AuditPdfService auditPdfService,
-            ObjectMapper objectMapper
+            AuditPdfService auditPdfService
     ) {
         this.auditService = auditService;
         this.auditEventRepository = auditEventRepository;
         this.qrLabelRepository = qrLabelRepository;
         this.userRepository = userRepository;
         this.auditPdfService = auditPdfService;
-        this.objectMapper = objectMapper;
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -93,7 +94,7 @@ public class AuditController {
         return ResponseEntity.ok(new AuditLogResponse(e.getId().toString(), "ok"));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION')")
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION','VALIDACION')")
     @GetMapping("/{lote}/pdf")
     public ResponseEntity<byte[]> downloadPdf(
             @AuthenticationPrincipal AuthPrincipal principal,
@@ -126,7 +127,7 @@ public class AuditController {
                 .body(pdf);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION')")
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION','VALIDACION')")
     @GetMapping
     public ResponseEntity<Page<AuditEventView>> list(
             @RequestParam(defaultValue = "0") int page,
@@ -142,7 +143,7 @@ public class AuditController {
         return ResponseEntity.ok(raw.map(e -> AuditEventView.from(e, actorsById.get(e.getActorId()))));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION')")
+    @PreAuthorize("hasAnyRole('ADMIN','ALMACEN','PRODUCCION','CALIDAD','INSPECCION','VALIDACION')")
     @GetMapping(value = "/export", produces = "text/csv")
     public ResponseEntity<byte[]> exportCsv(
             @AuthenticationPrincipal AuthPrincipal principal,
@@ -154,8 +155,10 @@ public class AuditController {
     ) {
         List<AuditEvent> events = auditService.listForExport(actionType, lote, actor, from, to);
         Map<UUID, User> actorsById = loadActors(events);
-        String csv = toCsv(events, actorsById);
-        byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
+        byte[] body = toCsv(events, actorsById).getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = new byte[UTF8_BOM.length + body.length];
+        System.arraycopy(UTF8_BOM, 0, bytes, 0, UTF8_BOM.length);
+        System.arraycopy(body, 0, bytes, UTF8_BOM.length, body.length);
 
         Map<String, Object> meta = new HashMap<>();
         meta.put("exportType", "CSV");
@@ -172,6 +175,7 @@ public class AuditController {
         return ResponseEntity.ok()
                 .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
                 .body(bytes);
     }
 
@@ -189,32 +193,31 @@ public class AuditController {
 
     private String toCsv(List<AuditEvent> events, Map<UUID, User> actorsById) {
         StringBuilder sb = new StringBuilder();
-        sb.append("createdAt,accion,usuario,rol,lote,metadata\n");
+        sb.append("Fecha;Hora;Acción;Usuario;Rol;Lote;Detalle\n");
         for (AuditEvent e : events) {
             AuditEventView view = AuditEventView.from(e, actorsById.get(e.getActorId()));
-            sb.append(csv(e.getCreatedAt() != null ? e.getCreatedAt().toString() : "")).append(',');
-            sb.append(csv(view.actionTypeDisplay())).append(',');
-            sb.append(csv(view.actorDisplay())).append(',');
-            sb.append(csv(view.actorRoleDisplay())).append(',');
-            sb.append(csv(e.getLote())).append(',');
-            sb.append(csv(metadataJson(e.getMetadata()))).append('\n');
+            String fecha = "";
+            String hora = "";
+            if (e.getCreatedAt() != null) {
+                ZonedDateTime z = e.getCreatedAt().atZone(AuditService.ZONE);
+                fecha = CSV_DATE.format(z);
+                hora = CSV_TIME.format(z);
+            }
+            sb.append(csv(fecha)).append(';');
+            sb.append(csv(hora)).append(';');
+            sb.append(csv(view.actionTypeDisplay())).append(';');
+            sb.append(csv(view.actorDisplay())).append(';');
+            sb.append(csv(view.actorRoleDisplay())).append(';');
+            sb.append(csv(e.getLote())).append(';');
+            sb.append(csv(AuditDetailFormatter.format(e.getMetadata()))).append('\n');
         }
         return sb.toString();
-    }
-
-    private String metadataJson(Map<String, Object> metadata) {
-        if (metadata == null || metadata.isEmpty()) return "";
-        try {
-            return objectMapper.writeValueAsString(metadata);
-        } catch (JsonProcessingException ex) {
-            return String.valueOf(metadata);
-        }
     }
 
     private static String csv(String raw) {
         if (raw == null) return "";
         String s = raw.replace("\"", "\"\"");
-        if (s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")) {
+        if (s.contains(";") || s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")) {
             return "\"" + s + "\"";
         }
         return s;

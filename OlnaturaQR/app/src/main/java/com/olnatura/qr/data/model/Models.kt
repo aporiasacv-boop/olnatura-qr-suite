@@ -14,7 +14,8 @@ data class RequestAccessResponse(val requestId: String, val status: String)
 data class MeResponse(
     val id: String,
     val username: String,
-    val roles: List<String>
+    val roles: List<String>,
+    val canCreateLoteComments: Boolean = false
 )
 
 data class QrResponse(
@@ -23,16 +24,22 @@ data class QrResponse(
 )
 
 data class LabelDto(
+    val id: String? = null,
     val tipoMaterial: String?,
     val nombre: String?,
     val codigo: String?,
     val lote: String?,
+    val publicToken: String? = null,
     val fechaEntrada: String?,
     val caducidad: String?,
     val reanalisis: String?,
     val envaseNum: Int?,
     val envaseTotal: Int?,
-    val cantidadPorEnvase: String? = null
+    val cantidadPorEnvase: String? = null,
+    val restosEnabled: Boolean = false,
+    val cantidadResto: String? = null,
+    val restosCantidades: List<String> = emptyList(),
+    val reprintRequired: Boolean = false
 )
 
 data class DynamicDto(
@@ -41,6 +48,7 @@ data class DynamicDto(
     val lote: String? = null,
     val caducidad: String? = null,
     val cantidadAlmacen: Double? = null,
+    val cantidadRecibida: Double? = null,
     
     val unidadInventario: String? = null,
     
@@ -94,6 +102,26 @@ data class CreateLoteCommentRequest(
     val comment: String
 )
 
+data class CreateProblemReportRequest(
+    val kind: String,
+    val lote: String? = null,
+    val reason: String,
+    val comment: String? = null
+)
+
+data class ProblemReportResponse(
+    val id: String?,
+    val kind: String?,
+    val lote: String?,
+    val reason: String?,
+    val comment: String?,
+    val reporterUsername: String?,
+    val status: String?,
+    val createdAt: String?,
+    val resolvedAt: String?,
+    val resolvedByUsername: String?
+)
+
 data class AdminCorrectLabelRequest(
     val motivo: String,
     val tipoMaterial: String? = null,
@@ -123,6 +151,14 @@ data class AdminCorrectStatusResponse(
     val status: String?,
     val from: String?,
     val to: String?
+)
+
+data class AdminConfirmReprintResponse(
+    val labelId: String? = null,
+    val lote: String? = null,
+    val outcome: String? = null,
+    val message: String? = null,
+    val reprintRequired: Boolean = false
 )
 
 data class LoginResponse(

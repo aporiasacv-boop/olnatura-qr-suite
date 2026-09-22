@@ -6,6 +6,7 @@ import com.company.olnaturaqr.support.workflow.OperationalStatusResolver;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * TEMPORAL — arma el panel de evidencia a partir de datos ya resueltos.
@@ -22,14 +23,20 @@ final class OperationalStatusValidationExplainer {
         boolean hasRem = warehouses.stream().anyMatch(w -> "REM".equals(norm(w)));
         boolean hasRes = warehouses.stream().anyMatch(w -> "RES".equals(norm(w)));
         boolean hasCuarentenaWh = warehouses.stream().anyMatch(w -> "CUARENTENA".equals(norm(w)));
+        boolean hasOperable = warehouses.stream().anyMatch(w ->
+                Set.of("MEM", "MES", "MPS", "MPM").contains(norm(w)));
 
         String qo = blankToNull(dto.qualityOrderStatus());
         String disposition = firstNonBlank(dto.batchDispositionCode(), dto.passedBatchDispositionCode());
         String rule = blankToNull(dto.operationalStatusRule());
+        boolean partialRule = OperationalStatusResolver.RULE_WAREHOUSE_PARTIAL.equalsIgnoreCase(rule);
 
-        // Evidencia de almacenes especiales (como en los ejemplos de validación).
         lines.add(line(hasRem, hasRem ? "Warehouse REM encontrado" : "Warehouse REM"));
         lines.add(line(hasRes, hasRes ? "Warehouse RES encontrado" : "Warehouse RES"));
+        if (partialRule) {
+            lines.add(line(true, "Almacén disponible + REM/RES con QualityOrder liberada → APROBADO"));
+        }
+        lines.add(line(hasOperable, hasOperable ? "Almacén operable (MEM/MES/MPS/MPM) presente" : "Almacén operable"));
 
         for (String wh : warehouses) {
             String n = norm(wh);

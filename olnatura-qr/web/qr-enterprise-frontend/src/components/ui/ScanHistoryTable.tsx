@@ -32,7 +32,7 @@ export default function ScanHistoryTable({ events }: { events: Record<string, un
       <Table
         aria-label={LABELS.scanHistory}
         className={TABLE_DATA_CLASS}
-        style={{ ...TABLE_FIXED_STYLE, minWidth: 720 }}
+        style={TABLE_FIXED_STYLE}
       >
         <TableHeader>
           <TableRow>
@@ -59,8 +59,8 @@ export default function ScanHistoryTable({ events }: { events: Record<string, un
             const accion = translateAuditAction("SCAN_QR");
             return (
               <TableRow key={String(ev?.id ?? idx)} className="table-hover-row">
-                <TableCell style={{ whiteSpace: "nowrap" }}>{date}</TableCell>
-                <TableCell style={{ whiteSpace: "nowrap" }}>{time}</TableCell>
+                <TableCell style={TRUNCATE_CELL} title={cellTitle(date)}>{date}</TableCell>
+                <TableCell style={TRUNCATE_CELL} title={cellTitle(time)}>{time}</TableCell>
                 <TableCell style={TRUNCATE_CELL_PRIORITY} title={cellTitle(usuario)}>
                   {usuario !== "—" ? usuario : LABELS.noData}
                 </TableCell>

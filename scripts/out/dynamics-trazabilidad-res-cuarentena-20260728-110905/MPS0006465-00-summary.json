@@ -1,0 +1,78 @@
+﻿{
+    "suffix":  "MPS0006465",
+    "batchNumber":  "260410-MPS0006465",
+    "itemNumber":  "201823100800",
+    "batchDispositionCode":  "",
+    "inventLocations":  [
+                            "MPS"
+                        ],
+    "operationalStatus":  "APROBADO",
+    "operationalRule":  "BatchDispositionCode",
+    "operationalWarehouse":  "MPS",
+    "expectedStatus":  "CUARENTENA",
+    "expectedWarehouse":  "CUARENTENA",
+    "matchExpected":  false,
+    "qualityOrderCount":  0,
+    "qualityOrders":  [
+
+                      ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#00000001500AB1A8",
+                           "InventLocationId":  "MPS",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       }
+                   ],
+    "movements":  [
+                      {
+                          "inventDimId":  "#00000001500AB1A8",
+                          "InventLocationId":  "MPS",
+                          "InventSiteId":  "OLNATURA",
+                          "wMSLocationId":  "Disponible",
+                          "inventTransRowCount":  0,
+                          "definitive":  null,
+                          "allRows":  [
+
+                                      ],
+                          "inventDimAudit":  {
+                                                 "SysModifiedBy":  "marco.anguiano",
+                                                 "SysCreatedBy":  null,
+                                                 "SysCreatedDateTime":  "2026-04-10T13:38:43Z",
+                                                 "SysModifiedDateTime":  "2026-04-10T13:38:43Z",
+                                                 "createdEqualsModified":  true,
+                                                 "datePhysicalDayAlignsWithSysCreated":  false
+                                             }
+                      }
+                  ],
+    "comparativeRow":  {
+                           "lote":  "260410-MPS0006465",
+                           "suffix":  "MPS0006465",
+                           "estadoOperativo":  "APROBADO",
+                           "regla":  "BatchDispositionCode",
+                           "almacen":  "MPS",
+                           "inventDimId":  "#00000001500AB1A8",
+                           "inventSiteId":  "OLNATURA",
+                           "wMSLocationId":  "Disponible",
+                           "datePhysical":  null,
+                           "dateFinancial":  null,
+                           "statusReceipt":  null,
+                           "statusIssue":  null,
+                           "qty":  null,
+                           "inventTransOrigin":  null,
+                           "voucher":  null,
+                           "sysModifiedBy":  "marco.anguiano",
+                           "sysCreatedBy":  null,
+                           "sysCreatedDateTime":  "2026-04-10T13:38:43Z",
+                           "sysModifiedDateTime":  "2026-04-10T13:38:43Z",
+                           "createdEqualsModified":  true,
+                           "dateAlignsWithDimCreate":  false,
+                           "campoFechaRecomendado":  "InventTransCDSEntities.DatePhysical",
+                           "campoCuentaRecomendado":  "InventDimBiEntities.SysModifiedBy",
+                           "confianza":  "Baja",
+                           "expected":  "CUARENTENA",
+                           "expectedWh":  "CUARENTENA",
+                           "matchExpected":  false,
+                           "inventTransMissingAuditFields":  true
+                       }
+}

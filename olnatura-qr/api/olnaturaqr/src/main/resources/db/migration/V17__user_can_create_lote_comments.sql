@@ -1,0 +1,2 @@
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS can_create_lote_comments BOOLEAN NOT NULL DEFAULT FALSE;

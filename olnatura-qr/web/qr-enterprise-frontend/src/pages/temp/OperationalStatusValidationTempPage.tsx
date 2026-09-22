@@ -1,9 +1,12 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  Accordion,
+  AccordionHeader,
+  AccordionItem,
+  AccordionPanel,
   Button,
   Text,
   Textarea,
-  Tooltip,
   makeStyles,
   shorthands,
 } from "@fluentui/react-components";
@@ -13,14 +16,14 @@ import ErrorState from "../../components/ui/ErrorState";
 import LoadingState from "../../components/ui/LoadingState";
 import LoteAutocomplete from "../../components/ui/LoteAutocomplete";
 import ScanHistoryTable from "../../components/ui/ScanHistoryTable";
-import StatusTag, { normalizeOperationalStatus } from "../../components/ui/StatusTag";
+import { normalizeOperationalStatus } from "../../components/ui/StatusTag";
 import { CopyField, PlainField } from "../../components/ui/DataFields";
 import {
   LabelPreviewPanel,
-  PlatformInfoPanel,
+  PlatformFieldsBlock,
 } from "../../components/consulta/LotePlatformPanels";
 import { api, ApiError } from "../../api/client";
-import type { LoteComment, QrResponse, Role, ScanEvent } from "../../api/types";
+import type { LoteComment, QrResponse, ScanEvent } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
 import { useToasts } from "../../components/ui/toasts";
 import { brand } from "../../styles/brand";
@@ -28,7 +31,6 @@ import { formatDateDDMMYYYY } from "../../utils/dateFormat";
 import {
   formatDateTime,
   formatLastSyncedAt,
-  fuenteDisplay,
   LABELS,
 } from "../../utils/displayLabels";
 import { displayUserIdentity } from "../../utils/auditActionTranslator";
@@ -45,6 +47,7 @@ type ValidationResponse = {
   nombre: string | null;
   caducidad: string | null;
   cantidadAlmacen: number | null;
+  cantidadRecibida: number | null;
   unidadInventario: string | null;
   fechaEntrada: string | null;
   almacen: string | null;
@@ -63,12 +66,7 @@ type ValidationResponse = {
   reasons: ReasonLine[];
 };
 
-const COMMENT_ROLES: Role[] = ["ADMIN", "ALMACEN", "CALIDAD", "INSPECCION"];
 const COMMENT_MAX = 200;
-
-function canUseComments(hasRole: (r: Role) => boolean): boolean {
-  return COMMENT_ROLES.some((r) => hasRole(r));
-}
 
 function roleDisplay(role: string | null | undefined): string {
   const v = (role ?? "").trim().toUpperCase();
@@ -77,6 +75,7 @@ function roleDisplay(role: string | null | undefined): string {
   if (v === "ALMACEN") return "ALMACÉN";
   if (v === "ADMIN") return "ADMINISTRADOR";
   if (v === "PRODUCCION") return "PRODUCCIÓN";
+  if (v === "VALIDACION") return "VALIDACIÓN";
   return v || "—";
 }
 
@@ -99,7 +98,7 @@ function statusVisual(status: string): {
   border: string;
 } {
   const s = (status ?? "").trim().toUpperCase();
-  if (s === "APROBADO") {
+  if (s === "APROBADO" || s === "PARCIAL") {
     return { emoji: "🟢", label: "APROBADO", bg: "#EAF6EE", fg: "#1B5E35", border: "#B7DFC4" };
   }
   if (s === "RECHAZADO") {
@@ -114,8 +113,8 @@ function statusVisual(status: string): {
 const useStyles = makeStyles({
   wrap: {
     display: "grid",
-    gap: "20px",
-    maxWidth: "960px",
+    gap: "16px",
+    maxWidth: "1100px",
   },
   title: {
     fontSize: "20px",
@@ -141,7 +140,7 @@ const useStyles = makeStyles({
   },
   section: {
     display: "grid",
-    gap: "12px",
+    gap: "10px",
   },
   sectionHeader: {
     display: "grid",
@@ -155,20 +154,16 @@ const useStyles = makeStyles({
     color: brand.text,
     margin: 0,
   },
-  sectionHint: {
-    fontSize: "12px",
-    color: brand.muted,
-  },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-    ...shorthands.gap("12px"),
+    gridTemplateColumns: "1fr",
+    ...shorthands.gap("14px"),
   },
   statusHero: {
-    ...shorthands.padding("18px", "16px"),
-    borderRadius: "12px",
+    ...shorthands.padding("12px", "14px"),
+    borderRadius: "10px",
     textAlign: "center",
-    fontSize: "28px",
+    fontSize: "22px",
     fontWeight: 800,
     letterSpacing: "0.02em",
   },
@@ -183,44 +178,111 @@ const useStyles = makeStyles({
     fontSize: "14px",
     fontFamily: "Consolas, 'Courier New', monospace",
   },
-  techBanner: {
-    ...shorthands.padding("10px", "12px"),
-    borderRadius: "8px",
-    backgroundColor: "#FFF4E5",
-    ...shorthands.border("1px", "solid", "#F0D9A8"),
-    color: "#7A5A12",
-    fontSize: "12px",
-    lineHeight: 1.4,
-  },
   commentList: { display: "grid", gap: "12px", marginTop: "12px" },
-  commentCard: {
-    ...shorthands.border("1px", "solid", brand.border),
-    ...shorthands.borderRadius("10px"),
-    ...shorthands.padding("12px"),
-    backgroundColor: brand.surface ?? "#fff",
-  },
   commentMeta: { color: brand.muted, fontSize: "12px" },
   commentRole: { fontWeight: 700, letterSpacing: "0.02em", marginTop: "4px" },
   commentAuthor: { fontWeight: 600, marginTop: "2px" },
   commentBody: { marginTop: "8px", whiteSpace: "pre-wrap", wordBreak: "break-word" },
   commentForm: { display: "grid", gap: "10px", marginTop: "16px" },
+  accordion: {
+    display: "grid",
+    gap: "12px",
+  },
+  accordionItem: {
+    ...shorthands.border("1px", "solid", "#D5DCCF"),
+    ...shorthands.borderRadius("12px"),
+    backgroundColor: "#E6EBE3",
+    overflow: "hidden",
+  },
+  commentAccordionItem: {
+    ...shorthands.border("1px", "solid", "#D5DCCF"),
+    ...shorthands.borderRadius("10px"),
+    backgroundColor: "#E8EDF0",
+    overflow: "hidden",
+  },
+  infoSplit: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    ...shorthands.gap("14px"),
+    marginTop: "12px",
+    alignItems: "start",
+    "@media (max-width: 860px)": {
+      gridTemplateColumns: "1fr",
+    },
+  },
+  rightStack: {
+    display: "grid",
+    gap: "14px",
+    alignContent: "start",
+  },
+  infoPanel: {
+    display: "grid",
+    gap: "14px",
+    alignContent: "start",
+    backgroundColor: "#E6EBE3",
+    ...shorthands.borderRadius("12px"),
+    ...shorthands.padding("16px", "18px"),
+    ...shorthands.border("1px", "solid", "#D5DCCF"),
+  },
+  infoGroupTitle: {
+    fontSize: "13px",
+    fontWeight: 700,
+    letterSpacing: "0.03em",
+    textTransform: "uppercase",
+    color: "#3F4A54",
+    margin: 0,
+    paddingBottom: "4px",
+    borderBottom: "1px solid #D0D7C8",
+  },
+  syncRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    flexWrap: "wrap",
+    alignItems: "center",
+    marginTop: "10px",
+    marginBottom: "2px",
+  },
+  mismatchBanner: {
+    ...shorthands.padding("12px", "14px"),
+    ...shorthands.borderRadius("10px"),
+    backgroundColor: brand.warningBg,
+    color: brand.warningFg,
+    border: `1px solid ${brand.borderStrong}`,
+    marginTop: "10px",
+    display: "grid",
+    gap: "6px",
+  },
+  mismatchTitle: {
+    fontSize: "14px",
+    fontWeight: 700,
+    margin: 0,
+  },
+  mismatchHint: {
+    fontSize: "12px",
+    margin: 0,
+    opacity: 0.92,
+  },
+  mismatchList: {
+    margin: 0,
+    paddingLeft: "18px",
+    display: "grid",
+    gap: "4px",
+    fontSize: "13px",
+  },
+  techGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    ...shorthands.gap("8px"),
+  },
 });
 
-function Section({
-  title,
-  hint,
-  children,
-}: {
-  title: string;
-  hint?: string;
-  children: ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   const s = useStyles();
   return (
     <section className={s.section} aria-label={title}>
       <header className={s.sectionHeader}>
         <h2 className={s.sectionTitle}>{title}</h2>
-        {hint ? <Text className={s.sectionHint}>{hint}</Text> : null}
       </header>
       {children}
     </section>
@@ -230,8 +292,9 @@ function Section({
 export default function OperationalStatusValidationTempPage() {
   const s = useStyles();
   const { push } = useToasts();
-  const { hasRole } = useAuth();
-  const commentsAllowed = canUseComments(hasRole);
+  const { me, can, hasRole } = useAuth();
+  const canViewComments = can("CONSULTA_LOTE");
+  const canCreateComments = !!me?.canCreateLoteComments;
 
   const [lote, setLote] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "ok">("idle");
@@ -241,6 +304,7 @@ export default function OperationalStatusValidationTempPage() {
   const [platform, setPlatform] = useState<QrResponse | null>(null);
   const [platformLoading, setPlatformLoading] = useState(false);
   const [syncBusy, setSyncBusy] = useState(false);
+  const [reprintBusy, setReprintBusy] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
   const [scans, setScans] = useState<ScanEvent[] | null>(null);
@@ -271,8 +335,47 @@ export default function OperationalStatusValidationTempPage() {
   const isOperativoAprobado =
     !!data && normalizeOperationalStatus(data.operationalStatus) === "APROBADO";
 
+  const reprintRequired = !!platform?.label?.reprintRequired;
+  const platformLabelId = String(platform?.label?.id ?? "").trim();
+  const isAdmin = hasRole("ADMIN");
+
+  async function confirmPhysicalReprint() {
+    if (!platformLabelId || reprintBusy || !isAdmin) return;
+    const ok = window.confirm(
+      "¿Confirmas que ya reimprimiste y reemplazaste las etiquetas físicas de este lote?"
+    );
+    if (!ok) return;
+    setReprintBusy(true);
+    try {
+      await api(`/admin/lots/${platformLabelId}/confirm-reprint`, {
+        method: "POST",
+        toast: false,
+      });
+      setPlatform((prev) =>
+        prev?.label
+          ? { ...prev, label: { ...prev.label, reprintRequired: false } }
+          : prev
+      );
+      push({
+        intent: "success",
+        title: "Reimpresión confirmada",
+        message: "La etiqueta física se considera actualizada.",
+      });
+    } catch (e) {
+      const ae = e as ApiError;
+      push({
+        intent: "error",
+        title: "No se pudo confirmar",
+        message: ae?.message ?? "Intenta de nuevo.",
+        error: ae,
+      });
+    } finally {
+      setReprintBusy(false);
+    }
+  }
+
   async function loadComments(loteKey: string) {
-    if (!commentsAllowed || !loteKey) {
+    if (!canViewComments || !loteKey) {
       setComments(null);
       return;
     }
@@ -426,7 +529,7 @@ export default function OperationalStatusValidationTempPage() {
 
   async function submitComment() {
     const text = commentDraft.trim();
-    if (!commentLoteKey || !text || commentBusy || !commentsAllowed) return;
+    if (!commentLoteKey || !text || commentBusy || !canCreateComments) return;
     if (text.length > COMMENT_MAX) {
       push({
         intent: "error",
@@ -482,15 +585,15 @@ export default function OperationalStatusValidationTempPage() {
   };
 
   const visual = data ? statusVisual(data.operationalStatus) : null;
-  const qty =
-    data?.cantidadAlmacen != null
-      ? `${formatNumber(data.cantidadAlmacen)}${data.unidadInventario ? ` ${data.unidadInventario}` : ""}`
+  const qtyRecibida =
+    data?.cantidadRecibida != null
+      ? `${formatNumber(data.cantidadRecibida)}${data.unidadInventario ? ` ${data.unidadInventario}` : ""}`
       : "—";
-  const fuenteDisplayLabel = fuenteDisplay(data?.fuente);
-  const statusSourceDisplay =
-    dash(data?.statusSource) !== "—"
-      ? dash(data?.statusSource)
-      : "Dynamics 365 Finance & Operations";
+  const fechaAprobacionDisplay = (() => {
+    const raw = String(data?.fechaLiberacion ?? "").trim();
+    if (!raw) return "—";
+    return formatLastSyncedAt(raw) || formatMaybeDate(raw);
+  })();
 
   return (
     <div className={s.wrap}>
@@ -540,204 +643,210 @@ export default function OperationalStatusValidationTempPage() {
 
       {status === "ok" && data && visual ? (
         <>
-          <Section
-            title="Información de Dynamics"
-            hint="Datos obtenidos directamente desde Dynamics."
-          >
-            <AppCard>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  flexWrap: "wrap",
-                  alignItems: "flex-start",
-                  marginBottom: 12,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <Text weight="semibold">{LABELS.dynamicState}</Text>
-                  <StatusTag status={data.operationalStatus} />
-                </div>
-                <Tooltip content={LABELS.syncDynamicsHint} relationship="description">
-                  <Button
-                    appearance="secondary"
-                    size="small"
-                    disabled={syncBusy}
-                    onClick={() => void syncWithDynamics()}
-                  >
-                    {syncBusy ? LABELS.syncDynamicsBusy : LABELS.syncDynamics}
-                  </Button>
-                </Tooltip>
-              </div>
+          <Section title="Información">
+            <div
+              className={s.statusHero}
+              style={{
+                backgroundColor: visual.bg,
+                color: visual.fg,
+                border: `1px solid ${visual.border}`,
+              }}
+            >
+              {visual.emoji} {visual.label}
+            </div>
 
-              <div style={{ display: "grid", gap: 2, marginBottom: 12 }}>
+            {reprintRequired ? (
+              <div className={s.mismatchBanner} role="status">
+                <p className={s.mismatchTitle}>Etiqueta física desactualizada</p>
+                <p className={s.mismatchHint}>
+                  Los datos en sistema ya coinciden con Dynamics, pero la etiqueta impresa puede
+                  seguir mostrando información anterior. Reimprime, reemplaza las físicas y
+                  confirma.
+                </p>
+                {isAdmin && platformLabelId ? (
+                  <div>
+                    <Button
+                      appearance="secondary"
+                      size="small"
+                      disabled={reprintBusy}
+                      onClick={() => void confirmPhysicalReprint()}
+                    >
+                      {reprintBusy ? "Confirmando…" : "Confirmar reimpresión física"}
+                    </Button>
+                  </div>
+                ) : (
+                  <p className={s.mismatchHint}>
+                    Un administrador debe confirmar la reimpresión en Lotes.
+                  </p>
+                )}
+              </div>
+            ) : null}
+
+            <div className={s.syncRow}>
+              <div style={{ display: "grid", gap: 2 }}>
                 <Text style={{ fontSize: 12, color: brand.muted }}>{LABELS.lastSyncedAt}</Text>
                 <Text style={{ fontSize: 13, fontWeight: 600 }}>{lastSyncedDisplay}</Text>
-                <Text style={{ fontSize: 12, color: brand.muted }}>
-                  {LABELS.statusSource}: {statusSourceDisplay}
-                </Text>
               </div>
+              <Button
+                appearance="secondary"
+                size="small"
+                disabled={syncBusy}
+                onClick={() => void syncWithDynamics()}
+              >
+                {syncBusy ? LABELS.syncDynamicsBusy : LABELS.syncDynamics}
+              </Button>
+            </div>
 
-              <div className={s.grid}>
-                <CopyField
-                  label="Lote"
-                  value={dash(data.lote)}
-                  onCopy={handleCopy}
-                  boxed={false}
-                />
-                <CopyField
-                  label="Código / Producto"
-                  value={dash(data.codigo)}
-                  onCopy={handleCopy}
-                  boxed={false}
-                />
-                <PlainField label="Nombre" value={dash(data.nombre)} />
-                <PlainField label={LABELS.almacen} value={dash(data.almacen)} />
-                <PlainField label={LABELS.ubicacion} value={dash(data.ubicacion)} />
-                <PlainField label="Caducidad" value={formatMaybeDate(data.caducidad)} />
-                <PlainField label="Fecha entrada" value={formatMaybeDate(data.fechaEntrada)} />
-                <PlainField label={LABELS.cantidad} value={qty} />
-                {isOperativoAprobado ? (
-                  <>
+            <div className={s.infoSplit}>
+              <div className={s.infoPanel}>
+                <h3 className={s.infoGroupTitle}>Dynamics</h3>
+                <div className={s.grid}>
+                  <CopyField
+                    label="Lote"
+                    value={dash(data.lote)}
+                    onCopy={handleCopy}
+                    boxed={false}
+                  />
+                  <CopyField
+                    label="Código / Producto"
+                    value={dash(data.codigo)}
+                    onCopy={handleCopy}
+                    boxed={false}
+                  />
+                  <PlainField label="Nombre" value={dash(data.nombre)} boxed={false} />
+                  <PlainField label={LABELS.almacen} value={dash(data.almacen)} boxed={false} />
+                  <PlainField
+                    label="Fecha de vencimiento"
+                    value={formatMaybeDate(data.caducidad)}
+                    boxed={false}
+                  />
+                  <PlainField
+                    label="Fecha entrada"
+                    value={formatMaybeDate(data.fechaEntrada)}
+                    boxed={false}
+                  />
+                  <PlainField
+                    label={LABELS.cantidadRecibida}
+                    value={qtyRecibida}
+                    boxed={false}
+                  />
+                  {isOperativoAprobado ? (
                     <PlainField
-                      label={LABELS.fechaLiberacion}
-                      value={formatMaybeDate(data.fechaLiberacion)}
+                      label="Fecha y hora de aprobación"
+                      value={fechaAprobacionDisplay}
+                      boxed={false}
                     />
-                    <PlainField label={LABELS.liberadoPor} value={dash(data.liberadoPor)} />
-                  </>
-                ) : null}
-                <PlainField label={LABELS.fuente} value={fuenteDisplayLabel} />
-                <PlainField
-                  label="Warehouses encontrados"
-                  value={
-                    data.warehouses && data.warehouses.length > 0
-                      ? data.warehouses.join(", ")
-                      : "—"
-                  }
-                />
-                <PlainField
-                  label={LABELS.qualityOrderStatus}
-                  value={dash(data.qualityOrderStatus)}
-                />
-                <PlainField
-                  label={LABELS.batchDispositionCode}
-                  value={dash(data.batchDispositionCode)}
-                />
-                <PlainField
-                  label={LABELS.passedBatchDispositionCode}
-                  value={dash(data.passedBatchDispositionCode)}
-                />
-                <PlainField label={LABELS.statusDynamics} value={dash(data.statusDynamics)} />
-                <PlainField
-                  label={LABELS.operationalStatusRule}
-                  value={dash(data.operationalStatusRule)}
-                />
-              </div>
-            </AppCard>
-          </Section>
-
-          <Section
-            title="Información de la plataforma"
-            hint="Datos propios de Olnatura QR (etiqueta, workflow interno, token QR)."
-          >
-            <PlatformInfoPanel
-              platform={platform}
-              platformLoading={platformLoading}
-              hasRole={hasRole}
-              onToast={push}
-            />
-          </Section>
-
-          <Section title="Comentarios" hint="Bitácora del lote. Independiente de si hay etiqueta registrada.">
-            <AppCard>
-              <Text style={{ display: "block", color: brand.muted, fontSize: 13 }}>
-                Los comentarios no se pueden editar ni eliminar. Máx. {COMMENT_MAX} caracteres.
-              </Text>
-
-              {!commentsAllowed ? (
-                <div style={{ marginTop: 16 }}>
-                  <EmptyState title="Tu rol no tiene acceso a la bitácora de comentarios." />
+                  ) : null}
                 </div>
-              ) : (
-                <>
-                  {sortedComments === null ? (
-                    <div className={s.commentList}>
-                      <LoadingState label="Cargando comentarios…" />
-                    </div>
-                  ) : sortedComments.length === 0 ? (
-                    <div style={{ marginTop: 16 }}>
-                      <EmptyState
-                        title={LABELS.commentsEmpty}
-                        hint="Sé el primero en agregar un comentario a este lote."
-                      />
-                    </div>
-                  ) : (
-                    <div className={s.commentList}>
-                      {sortedComments.map((c) => {
-                        const when = formatDateTime(c.createdAt);
-                        return (
-                          <div key={c.id} className={s.commentCard}>
-                            <div className={s.commentMeta}>{`${when.date} ${when.time}`}</div>
-                            <div className={s.commentAuthor}>
-                              {displayUserIdentity(c.displayName, c.username)}
-                            </div>
-                            <div className={s.commentRole}>{roleDisplay(c.role)}</div>
-                            <div className={s.commentBody}>{`"${c.comment}"`}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+              </div>
 
-                  <div className={s.commentForm}>
-                    <Textarea
-                      textarea={{
-                        ref: commentTextareaRef,
-                        id: "consulta-lote-comment-draft",
-                      }}
-                      value={commentDraft}
-                      onChange={(_, d) => setCommentDraft(d.value.slice(0, COMMENT_MAX))}
-                      placeholder={LABELS.commentsPlaceholder}
-                      rows={4}
-                      resize="vertical"
-                      maxLength={COMMENT_MAX}
-                    />
-                    <Text style={{ color: brand.muted, fontSize: 12 }}>
-                      {commentDraft.length}/{COMMENT_MAX}
+              <div className={s.rightStack}>
+                <div className={s.infoPanel}>
+                  <h3 className={s.infoGroupTitle}>Comentarios</h3>
+                  {!canViewComments ? (
+                    <EmptyState title="Sin acceso a comentarios" />
+                  ) : (
+                    <>
+                      {sortedComments === null ? (
+                        <LoadingState label="Cargando comentarios…" />
+                      ) : sortedComments.length === 0 ? (
+                        <EmptyState title={LABELS.commentsEmpty} />
+                      ) : (
+                        <Accordion collapsible className={s.accordion} defaultOpenItems={[]}>
+                          {sortedComments.map((c) => {
+                            const when = formatDateTime(c.createdAt);
+                            const who = displayUserIdentity(c.displayName, c.username);
+                            return (
+                              <AccordionItem
+                                key={c.id}
+                                value={String(c.id)}
+                                className={s.commentAccordionItem}
+                              >
+                                <AccordionHeader
+                                  size="small"
+                                  button={{ style: { fontWeight: 600, fontSize: 13 } }}
+                                >
+                                  {`${when.date} ${when.time} · ${who}`}
+                                </AccordionHeader>
+                                <AccordionPanel>
+                                  <div className={s.commentRole}>{roleDisplay(c.role)}</div>
+                                  <div className={s.commentBody}>{`"${c.comment}"`}</div>
+                                </AccordionPanel>
+                              </AccordionItem>
+                            );
+                          })}
+                        </Accordion>
+                      )}
+
+                      {canCreateComments ? (
+                        <div className={s.commentForm}>
+                          <Textarea
+                            textarea={{
+                              ref: commentTextareaRef,
+                              id: "consulta-lote-comment-draft",
+                            }}
+                            value={commentDraft}
+                            onChange={(_, d) => setCommentDraft(d.value.slice(0, COMMENT_MAX))}
+                            placeholder={LABELS.commentsPlaceholder}
+                            rows={3}
+                            resize="vertical"
+                            maxLength={COMMENT_MAX}
+                          />
+                          <Text style={{ color: brand.muted, fontSize: 12 }}>
+                            {commentDraft.length}/{COMMENT_MAX}
+                          </Text>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <Button
+                              appearance="secondary"
+                              onClick={() => commentTextareaRef.current?.focus()}
+                            >
+                              {LABELS.commentsAdd}
+                            </Button>
+                            <Button
+                              appearance="primary"
+                              disabled={!commentDraft.trim() || commentBusy}
+                              onClick={() => void submitComment()}
+                            >
+                              {commentBusy ? "…" : LABELS.commentsSave}
+                            </Button>
+                            <Button
+                              appearance="secondary"
+                              disabled={commentBusy || !commentDraft}
+                              onClick={() => setCommentDraft("")}
+                            >
+                              {LABELS.commentsCancel}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Text style={{ color: brand.muted, fontSize: 12, marginTop: 8 }}>
+                          Solo usuarios autorizados por el administrador pueden agregar comentarios.
+                        </Text>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className={s.infoPanel}>
+                  <h3 className={s.infoGroupTitle}>Olnatura QR</h3>
+                  {!platformLoading && !platform?.label ? (
+                    <Text weight="semibold" style={{ color: "#7A5A12" }}>
+                      No se ha generado etiqueta para este lote
                     </Text>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <Button
-                        appearance="secondary"
-                        onClick={() => commentTextareaRef.current?.focus()}
-                      >
-                        {LABELS.commentsAdd}
-                      </Button>
-                      <Button
-                        appearance="primary"
-                        disabled={!commentDraft.trim() || commentBusy}
-                        onClick={() => void submitComment()}
-                      >
-                        {commentBusy ? "…" : LABELS.commentsSave}
-                      </Button>
-                      <Button
-                        appearance="secondary"
-                        disabled={commentBusy || !commentDraft}
-                        onClick={() => setCommentDraft("")}
-                      >
-                        {LABELS.commentsCancel}
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </AppCard>
+                  ) : (
+                    <PlatformFieldsBlock
+                      platform={platform}
+                      platformLoading={platformLoading}
+                      hasRole={hasRole}
+                      onToast={push}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
           </Section>
 
-          <Section
-            title="Vista previa de etiqueta"
-            hint="Vista previa y acciones según tu rol. Solo Admin y Almacén pueden descargar PDF e imprimir."
-          >
+          <Section title="Vista previa">
             <LabelPreviewPanel
               platform={platform}
               platformLoading={platformLoading}
@@ -746,65 +855,92 @@ export default function OperationalStatusValidationTempPage() {
             />
           </Section>
 
-          <Section title={LABELS.scanHistory} hint="Eventos de escaneo registrados para este lote.">
-            <AppCard>
-              {scans === null ? (
-                <LoadingState label="Cargando historial…" />
-              ) : scans.length === 0 ? (
-                <EmptyState title={LABELS.noScans} />
-              ) : (
-                <ScanHistoryTable events={scans} />
-              )}
-            </AppCard>
-          </Section>
+          <Section title={isAdmin ? "Escaneos y validación" : "Escaneos"}>
+            <Accordion collapsible className={s.accordion} defaultOpenItems={[]}>
+              <AccordionItem value="escaneos" className={s.accordionItem}>
+                <AccordionHeader
+                  size="large"
+                  button={{ style: { fontWeight: 700, fontSize: 16 } }}
+                >
+                  {LABELS.scanHistory}
+                </AccordionHeader>
+                <AccordionPanel>
+                  {scans === null ? (
+                    <LoadingState label="Cargando historial…" />
+                  ) : scans.length === 0 ? (
+                    <EmptyState title={LABELS.noScans} />
+                  ) : (
+                    <ScanHistoryTable events={scans} />
+                  )}
+                </AccordionPanel>
+              </AccordionItem>
 
-          <Section
-            title="Panel técnico de validación"
-            hint="Herramienta de contraste del OperationalStatusResolver."
-          >
-            <div className={s.techBanner}>
-              Panel técnico temporal. Permite verificar que el Estado Operativo calculado
-              coincide con Dynamics. No forma parte del producto final.
-            </div>
-            <AppCard>
-              <Text weight="semibold" style={{ display: "block", marginBottom: 8 }}>
-                Resultado del OperationalStatusResolver
-              </Text>
-              <div
-                className={s.statusHero}
-                style={{
-                  backgroundColor: visual.bg,
-                  color: visual.fg,
-                  border: `1px solid ${visual.border}`,
-                }}
-              >
-                {visual.emoji} {visual.label}
-              </div>
-              <Text style={{ display: "block", marginTop: 10, fontSize: 12, color: brand.muted }}>
-                Regla: {dash(data.operationalStatusRule)} · Fuente: {dash(data.statusSource)}
-              </Text>
-            </AppCard>
-            <AppCard>
-              <Text weight="semibold" style={{ display: "block", marginBottom: 6 }}>
-                Detalle de consulta
-              </Text>
-              <Text style={{ display: "block", marginBottom: 12, color: brand.muted, fontSize: 13 }}>
-                Estado calculado:{" "}
-                <strong style={{ color: brand.text }}>{visual.label}</strong>
-              </Text>
-              <Text style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Razones:</Text>
-              <ul className={s.reasonList}>
-                {(data.reasons ?? []).map((r, i) => (
-                  <li
-                    key={`${r.text}-${i}`}
-                    className={s.reasonItem}
-                    style={{ color: r.matched ? "#1B5E35" : brand.muted }}
-                  >
-                    {r.matched ? "✓" : "✗"} {r.text}
-                  </li>
-                ))}
-              </ul>
-            </AppCard>
+              {isAdmin ? (
+              <AccordionItem value="validacion-tecnica" className={s.accordionItem}>
+                <AccordionHeader
+                  size="large"
+                  button={{ style: { fontWeight: 700, fontSize: 16 } }}
+                >
+                  Validación técnica
+                </AccordionHeader>
+                <AccordionPanel>
+                  <div style={{ display: "grid", gap: 14, padding: "4px 2px 8px" }}>
+                    <Text weight="semibold" style={{ display: "block" }}>
+                      Detalle
+                    </Text>
+                    <Text
+                      style={{
+                        display: "block",
+                        color: brand.muted,
+                        fontSize: 13,
+                      }}
+                    >
+                      Estado: <strong style={{ color: brand.text }}>{visual.label}</strong>
+                    </Text>
+                    <div className={s.techGrid}>
+                      <PlainField
+                        label={LABELS.qualityOrderStatus}
+                        value={dash(data.qualityOrderStatus)}
+                        boxed={false}
+                      />
+                      <PlainField
+                        label={LABELS.batchDispositionCode}
+                        value={dash(data.batchDispositionCode)}
+                        boxed={false}
+                      />
+                      <PlainField
+                        label={LABELS.passedBatchDispositionCode}
+                        value={dash(data.passedBatchDispositionCode)}
+                        boxed={false}
+                      />
+                      <PlainField
+                        label={LABELS.statusDynamics}
+                        value={dash(data.statusDynamics)}
+                        boxed={false}
+                      />
+                      <PlainField
+                        label={LABELS.operationalStatusRule}
+                        value={dash(data.operationalStatusRule)}
+                        boxed={false}
+                      />
+                    </div>
+                    <Text style={{ display: "block", fontWeight: 600 }}>Razones:</Text>
+                    <ul className={s.reasonList}>
+                      {(data.reasons ?? []).map((r, i) => (
+                        <li
+                          key={`${r.text}-${i}`}
+                          className={s.reasonItem}
+                          style={{ color: r.matched ? "#1B5E35" : brand.muted }}
+                        >
+                          {r.matched ? "✓" : "✗"} {r.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </AccordionPanel>
+              </AccordionItem>
+              ) : null}
+            </Accordion>
           </Section>
         </>
       ) : null}

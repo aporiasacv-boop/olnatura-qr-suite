@@ -104,13 +104,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const has = (...r: string[]) => r.some((x) => roles.includes(x));
       if (perm === "ADMIN") return has("ADMIN");
       if (perm === "HOME") return has("ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION");
-      if (perm === "SCAN" || perm === "CONSULTA_LOTE") {
+      if (perm === "CONSULTA_LOTE") {
+        return has("ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION", "VALIDACION");
+      }
+      if (perm === "SCAN") {
         return has("ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION");
       }
       if (perm === "REGISTER_LABEL") return has("ADMIN", "ALMACEN");
       if (perm === "GENERATE_LABEL") return has("ADMIN", "ALMACEN");
       if (perm === "AUDIT") {
-        return has("ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION");
+        return has("ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION", "VALIDACION");
       }
       return false;
     },

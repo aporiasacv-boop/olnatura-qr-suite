@@ -59,9 +59,8 @@ fun StatusBanner(
 fun statusColors(status: String?): Pair<Color, Color> {
     val s = (status ?: "").trim().uppercase()
     return when {
-        s in listOf("APROBADO", "LIBERADO", "VERIFICADO") -> OlnSuccessBg to OlnSuccessText
+        s in listOf("APROBADO", "LIBERADO", "VERIFICADO", "PARCIAL") -> OlnSuccessBg to OlnSuccessText
         s in listOf("RECHAZADO") -> Color(0xFFFEE2E2) to Color(0xFF991B1B)
-        // CUARENTENA, DESCONOCIDO, PENDIENTE y vacío → cuarentena visual
         else -> Color(0xFFFEF3C7) to Color(0xFF92400E)
     }
 }
@@ -70,10 +69,9 @@ fun operationalStatusLabel(status: String?): String {
     
     val s = (status ?: "").trim().uppercase()
     return when (s) {
-        "APROBADO" -> "🟢 Aprobado"
+        "APROBADO", "PARCIAL" -> "🟢 Aprobado"
         "CUARENTENA" -> "🟡 Cuarentena"
         "RECHAZADO" -> "🔴 Rechazado"
-        // DESCONOCIDO / vacío: presentación de negocio = Cuarentena
         else -> "🟡 Cuarentena"
     }
 }

@@ -53,6 +53,13 @@ public final class MaterialType {
         };
     }
 
+    public static String labelHeaderTitle(String raw) {
+        if (MATERIA_PRIMA.equals(normalize(raw))) {
+            return "MATERIA PRIMA";
+        }
+        return "MATERIAL DE ACONDICIONADO";
+    }
+
     public static boolean requiresCalidad(String raw) {
         String n = normalize(raw);
         return MATERIA_PRIMA.equals(n) || EMPAQUE_PRIMARIO.equals(n);

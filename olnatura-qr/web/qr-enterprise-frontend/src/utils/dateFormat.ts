@@ -26,6 +26,27 @@ export function formatDateDDMMYYYY(isoOrLocal: string | null | undefined): strin
   return `${day}/${month}/${year}`;
 }
 
+const MESES_ETIQUETA = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+
+export function formatDateLabelDDMMMYY(isoOrLocal: string | null | undefined): string {
+  if (!isoOrLocal || typeof isoOrLocal !== "string") return "";
+  const trimmed = isoOrLocal.trim();
+  if (!trimmed) return "";
+  const iso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const day = iso[3];
+    const mon = MESES_ETIQUETA[Number(iso[2]) - 1] ?? "";
+    const year = iso[1].slice(-2);
+    return `${day}/${mon}/${year}`;
+  }
+  const r = parseFlexibleDMY(trimmed);
+  if (!r) return "";
+  const day = String(r.d).padStart(2, "0");
+  const mon = MESES_ETIQUETA[r.m - 1] ?? "";
+  const year = String(r.y).slice(-2);
+  return `${day}/${mon}/${year}`;
+}
+
 export function parseDDMMYYYYToISO(input: string | null | undefined): string {
   if (!input || typeof input !== "string") return "";
   const r = parseFlexibleDMY(input.trim());

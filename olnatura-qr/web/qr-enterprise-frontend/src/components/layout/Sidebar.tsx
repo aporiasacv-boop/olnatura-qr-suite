@@ -80,7 +80,7 @@ export default function Sidebar() {
   return (
     <div className={s.root}>
       <div className={s.brandBlock}>
-        <BrandLogo size={44} title="Sistema Olnatura" subtitle="QR Suite" />
+        <BrandLogo size={44} title="Olnatura QR" />
       </div>
 
       <nav className={s.nav}>
@@ -129,11 +129,17 @@ export default function Sidebar() {
                 <NavLink to="/admin/approval" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
                   Aprobar usuarios
                 </NavLink>
+                <NavLink to="/admin/problem-reports" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+                  Reportes de problemas
+                </NavLink>
                 <NavLink to="/admin/users" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
                   Usuarios
                 </NavLink>
                 <NavLink to="/admin/lots" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
                   Lotes
+                </NavLink>
+                <NavLink to="/admin/db" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+                  Administración de BD
                 </NavLink>
               </>
             )}

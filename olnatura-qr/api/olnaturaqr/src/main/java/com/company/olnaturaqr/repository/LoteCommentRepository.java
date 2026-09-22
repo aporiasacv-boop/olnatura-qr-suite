@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface LoteCommentRepository extends JpaRepository<LoteComment, UUID> {
     List<LoteComment> findByLoteOrderByCreatedAtAsc(String lote);
+
+    void deleteByLote(String lote);
 }

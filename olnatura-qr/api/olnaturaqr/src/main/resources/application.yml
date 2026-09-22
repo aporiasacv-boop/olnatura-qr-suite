@@ -30,6 +30,8 @@ app:
     token-url: ${APP_DYNAMICS_TOKEN_URL:}
     connect-timeout: ${APP_DYNAMICS_CONNECT_TIMEOUT:3s}
     read-timeout: ${APP_DYNAMICS_READ_TIMEOUT:10s}
+    # Al arrancar, alinea qr_labels.status con el Estado Operativo calculado desde Dynamics.
+    sync-operational-status-on-startup: ${APP_DYNAMICS_SYNC_OPERATIONAL_STATUS_ON_STARTUP:true}
 
   diagnostics:
     dir: ${APP_DIAGNOSTICS_DIR:diagnostics}

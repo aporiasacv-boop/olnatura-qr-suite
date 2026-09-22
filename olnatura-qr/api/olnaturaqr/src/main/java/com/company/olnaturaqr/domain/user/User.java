@@ -24,6 +24,9 @@ public class User {
   @Column(nullable = false)
   private boolean enabled = false;
 
+  @Column(name = "can_create_lote_comments", nullable = false)
+  private boolean canCreateLoteComments = false;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
 
@@ -65,6 +68,14 @@ public class User {
 
   public void setEnabled(boolean enabled) {
     this.enabled = enabled;
+  }
+
+  public boolean isCanCreateLoteComments() {
+    return canCreateLoteComments;
+  }
+
+  public void setCanCreateLoteComments(boolean canCreateLoteComments) {
+    this.canCreateLoteComments = canCreateLoteComments;
   }
 
   public Instant getCreatedAt() {

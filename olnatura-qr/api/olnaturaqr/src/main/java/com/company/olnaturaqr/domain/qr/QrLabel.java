@@ -46,6 +46,15 @@ public class QrLabel {
     @Column(name = "cantidad_por_envase", length = 120)
     private String cantidadPorEnvase;
 
+    @Column(name = "restos_enabled", nullable = false)
+    private boolean restosEnabled = false;
+
+    @Column(name = "cantidad_resto", length = 120)
+    private String cantidadResto;
+
+    @Column(name = "restos_cantidades", length = 500)
+    private String restosCantidadesJson;
+
     @Column(name = "status", nullable = false, length = 40)
     private String status;
 
@@ -67,6 +76,12 @@ public class QrLabel {
 
     @Column(name = "document_code", length = 60)
     private String documentCode;
+
+    @Column(name = "reprint_required", nullable = false)
+    private boolean reprintRequired = false;
+
+    @Column(name = "reprint_required_at")
+    private Instant reprintRequiredAt;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -106,6 +121,15 @@ public class QrLabel {
     public String getCantidadPorEnvase() { return cantidadPorEnvase; }
     public void setCantidadPorEnvase(String cantidadPorEnvase) { this.cantidadPorEnvase = cantidadPorEnvase; }
 
+    public boolean isRestosEnabled() { return restosEnabled; }
+    public void setRestosEnabled(boolean restosEnabled) { this.restosEnabled = restosEnabled; }
+
+    public String getCantidadResto() { return cantidadResto; }
+    public void setCantidadResto(String cantidadResto) { this.cantidadResto = cantidadResto; }
+
+    public String getRestosCantidadesJson() { return restosCantidadesJson; }
+    public void setRestosCantidadesJson(String restosCantidadesJson) { this.restosCantidadesJson = restosCantidadesJson; }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
@@ -126,6 +150,12 @@ public class QrLabel {
 
     public String getDocumentCode() { return documentCode; }
     public void setDocumentCode(String documentCode) { this.documentCode = documentCode; }
+
+    public boolean isReprintRequired() { return reprintRequired; }
+    public void setReprintRequired(boolean reprintRequired) { this.reprintRequired = reprintRequired; }
+
+    public Instant getReprintRequiredAt() { return reprintRequiredAt; }
+    public void setReprintRequiredAt(Instant reprintRequiredAt) { this.reprintRequiredAt = reprintRequiredAt; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

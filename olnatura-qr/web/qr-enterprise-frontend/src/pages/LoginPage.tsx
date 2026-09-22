@@ -110,8 +110,8 @@ export default function LoginPage() {
         <div className={s.header}>
           <BrandLogo
             size={52}
-            title="Sistema Olnatura"
-            subtitle="Plataforma de trazabilidad QR"
+            title="Olnatura QR"
+            subtitle="Plataforma de trazabilidad"
           />
         </div>
 
@@ -161,6 +161,9 @@ export default function LoginPage() {
             Crear usuario
           </Button>
 
+          <div className={s.meta}>
+            Si olvidaste la contraseña, pide a un administrador que la restablezca en Usuarios.
+          </div>
           <div className={s.meta}>© 2026 OLNATURA. Todos los derechos reservados.</div>
         </form>
       </div>

@@ -10,6 +10,9 @@ const useStyles = makeStyles({
     boxShadow: "0 1px 3px rgba(74, 92, 40, 0.05)",
     ...shorthands.border("1px", "solid", brand.border),
     ...shorthands.padding("16px"),
+    maxWidth: "100%",
+    minWidth: 0,
+    overflowX: "hidden",
     transition: "box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease",
   },
   clickable: {

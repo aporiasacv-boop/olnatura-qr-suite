@@ -1,6 +1,7 @@
 import { Button, makeStyles, Text } from "@fluentui/react-components";
 import { useAuth } from "../../auth/AuthContext";
 import { brand } from "../../styles/brand";
+import { formatSessionDisplayName, translateRole } from "../../utils/auditActionTranslator";
 
 const useStyles = makeStyles({
   root: {
@@ -31,15 +32,21 @@ const useStyles = makeStyles({
 export default function Topbar() {
   const s = useStyles();
   const { state, logout } = useAuth();
-  const username = state.status === "authenticated" ? state.user.username : "";
-  const roles = state.status === "authenticated" ? state.user.roles.join(", ") : "";
+  const displayName =
+    state.status === "authenticated"
+      ? formatSessionDisplayName(state.user.username)
+      : "";
+  const roles =
+    state.status === "authenticated"
+      ? state.user.roles.map((r) => translateRole(r)).join(", ")
+      : "";
 
   return (
     <header className={s.root}>
-      <Text className={s.title}>Sistema Olnatura</Text>
+      <Text className={s.title}>Olnatura QR</Text>
       <div className={s.right}>
         <div>
-          <div><Text weight="semibold">{username}</Text></div>
+          <div><Text weight="semibold">{displayName}</Text></div>
           <div className={s.meta}>{roles}</div>
         </div>
         <Button appearance="secondary" onClick={() => void logout()}>

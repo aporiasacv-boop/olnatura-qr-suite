@@ -13,6 +13,7 @@ public record OperationalStatusValidationResponse(
         String nombre,
         String caducidad,
         Double cantidadAlmacen,
+        Double cantidadRecibida,
         String unidadInventario,
         String fechaEntrada,
         String almacen,

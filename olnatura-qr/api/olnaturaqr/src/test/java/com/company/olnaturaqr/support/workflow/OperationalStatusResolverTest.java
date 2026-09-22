@@ -13,37 +13,69 @@ class OperationalStatusResolverTest {
     private static final String SENTINEL_1900 = "1900-01-01T00:00:00Z";
 
     @Test
-    void remWinsEvenWithPassAndValidated() {
+    void remWithOperableAndPassIsAprobadoWhenExperimentEnabled() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                OperationalStatusResolver.ENABLE_PARTIAL_STATE_EXPERIMENT,
+                "Regla operable+REM/RES desactivada");
         var r = OperationalStatusResolver.resolve(
                 List.of("MPM", "REM"), "MPM", "Aprobado", "Pass", VALIDATED, true);
-        assertEquals("RECHAZADO", r.status());
-        assertEquals("Almacén REM", r.ruleApplied());
+        assertEquals("APROBADO", r.status());
+        assertEquals("Almacén disponible + REM/RES", r.ruleApplied());
         assertEquals("REM", r.warehouseApplied());
     }
 
     @Test
-    void resRejectedEvenWithPassAndValidated() {
+    void resWithOperableAndPassIsAprobadoWhenExperimentEnabled() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                OperationalStatusResolver.ENABLE_PARTIAL_STATE_EXPERIMENT,
+                "Regla operable+REM/RES desactivada");
         var r = OperationalStatusResolver.resolve(
                 List.of("MPS", "RES"), "MPS", "Aprobado", "Pass", VALIDATED, true);
-        assertEquals("RECHAZADO", r.status());
-        assertEquals("Almacén RES", r.ruleApplied());
+        assertEquals("APROBADO", r.status());
+        assertEquals("Almacén disponible + REM/RES", r.ruleApplied());
         assertEquals("RES", r.warehouseApplied());
     }
 
     @Test
-    void remRejected() {
+    void memRemPassLike3612FamilyIsAprobadoWhenExperimentEnabled() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                OperationalStatusResolver.ENABLE_PARTIAL_STATE_EXPERIMENT,
+                "Regla operable+REM/RES desactivada");
         var r = OperationalStatusResolver.resolve(
                 List.of("MEM", "REM"), "MEM", null, "Pass", VALIDATED, true);
+        assertEquals("APROBADO", r.status());
+        assertEquals("Almacén disponible + REM/RES", r.ruleApplied());
+    }
+
+    @Test
+    void operablePlusRejectRuleFlagDefaultsToEnabledInThisBranch() {
+        org.junit.jupiter.api.Assertions.assertTrue(
+                OperationalStatusResolver.ENABLE_PARTIAL_STATE_EXPERIMENT,
+                "La regla operable+REM/RES debe estar ON");
+    }
+
+    @Test
+    void remAloneIsRechazado() {
+        var r = OperationalStatusResolver.resolve(
+                List.of("REM"), "REM", null, "Pass", VALIDATED, true);
         assertEquals("RECHAZADO", r.status());
         assertEquals("Almacén REM", r.ruleApplied());
     }
 
     @Test
-    void resRejected() {
+    void resAloneIsRechazado() {
         var r = OperationalStatusResolver.resolve(
-                List.of("MPS", "RES"), "MPS", null, "Pass", VALIDATED, true);
+                List.of("RES"), "RES", null, "Pass", VALIDATED, true);
         assertEquals("RECHAZADO", r.status());
         assertEquals("Almacén RES", r.ruleApplied());
+    }
+
+    @Test
+    void remWithOperableButOpenIsRechazado() {
+        var r = OperationalStatusResolver.resolve(
+                List.of("MEM", "REM"), "MEM", null, "Open", SENTINEL_1900, true);
+        assertEquals("RECHAZADO", r.status());
+        assertEquals("Almacén REM", r.ruleApplied());
     }
 
     @Test
@@ -127,9 +159,18 @@ class OperationalStatusResolverTest {
     }
 
     @Test
-    void warehouseOnlyWithoutQualityIsDesconocido() {
+    void warehouseOnlyWithoutQualityIsCuarentena() {
         var r = OperationalStatusResolver.resolve(List.of("MPS"), "MPS", null, null, null, true);
-        assertEquals("DESCONOCIDO", r.status());
+        assertEquals("CUARENTENA", r.status());
+        assertEquals("Almacén operable sin QualityOrder", r.ruleApplied());
+    }
+
+    @Test
+    void memWithoutQualityOrderIsCuarentena() {
+        var r = OperationalStatusResolver.resolve(List.of("MEM"), "MEM", null, null, null, true);
+        assertEquals("CUARENTENA", r.status());
+        assertEquals("Almacén operable sin QualityOrder", r.ruleApplied());
+        assertEquals("MEM", r.warehouseApplied());
     }
 
     @Test
@@ -157,7 +198,8 @@ class OperationalStatusResolverTest {
     @Test
     void legacyFourArgOverloadDelegatesWithoutQualityStatus() {
         var r = OperationalStatusResolver.resolve(List.of("MPS"), "MPS", null, true);
-        assertEquals("DESCONOCIDO", r.status());
+        assertEquals("CUARENTENA", r.status());
+        assertEquals("Almacén operable sin QualityOrder", r.ruleApplied());
     }
 
     @Test

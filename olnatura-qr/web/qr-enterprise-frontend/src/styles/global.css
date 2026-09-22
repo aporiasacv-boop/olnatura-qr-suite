@@ -30,6 +30,7 @@
 
 html {
   height: 100%;
+  overflow-x: hidden;
   overflow-y: scroll;
   scrollbar-gutter: stable;
 }
@@ -38,6 +39,7 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: var(--font-body);
@@ -144,7 +146,22 @@ img {
 
 .app-card,
 .fui-Card {
+  max-width: 100%;
+  min-width: 0;
   transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.app-data-table {
+  width: 100% !important;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+.app-data-table .fui-Dropdown,
+.app-data-table .fui-Dropdown__button,
+.app-data-table .fui-Button {
+  min-width: 0 !important;
+  max-width: 100%;
 }
 
 .app-card:hover:not(.app-card--interactive) {
@@ -172,9 +189,13 @@ img {
 
 .app-data-table th,
 .app-data-table td {
-  padding: 10px 14px;
+  padding: 8px 10px;
   box-sizing: border-box;
   vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow: visible;
 }
 
 .app-data-table thead th {

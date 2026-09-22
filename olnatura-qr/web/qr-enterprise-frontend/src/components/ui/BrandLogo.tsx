@@ -39,8 +39,8 @@ type BrandLogoProps = {
 
 export default function BrandLogo({
   size = 40,
-  title = "Sistema Olnatura",
-  subtitle = "QR Suite",
+  title = "Olnatura QR",
+  subtitle = null,
   showText = true,
 }: BrandLogoProps) {
   const s = useStyles();

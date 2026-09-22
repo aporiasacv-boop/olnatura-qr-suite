@@ -1,0 +1,6 @@
+﻿{
+    "error":  "Error en el servidor remoto: (400) Solicitud incorrecta.",
+    "body":  "",
+    "status":  400,
+    "uri":  "https://olnatura-produccion.operations.dynamics.com/data/QualityOrderHeaders?$filter=endswith(ItemBatchNumber%2C\u0027MES0004513\u0027)\u0026$top=10"
+}

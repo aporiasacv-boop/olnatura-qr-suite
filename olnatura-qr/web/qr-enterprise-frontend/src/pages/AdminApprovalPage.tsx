@@ -27,7 +27,7 @@ import {
 } from "../utils/tablePresentation";
 
 const useStyles = makeStyles({
-  wrap: { display: "grid", gap: "16px" },
+  wrap: { display: "grid", gap: "16px", minWidth: 0, maxWidth: "100%" },
   headerRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -64,16 +64,18 @@ const useStyles = makeStyles({
   },
   userPrimary: {
     fontWeight: 600,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
+    wordBreak: "break-word",
+    lineHeight: 1.35,
   },
   userSecondary: {
     fontSize: "12px",
     color: brand.muted,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
+    wordBreak: "break-word",
+    lineHeight: 1.35,
   },
 });
 
@@ -211,7 +213,7 @@ export default function AdminApprovalPage() {
             <Table
               aria-label="Solicitudes de acceso"
               className={TABLE_DATA_CLASS}
-              style={{ ...TABLE_FIXED_STYLE, minWidth: 720 }}
+              style={TABLE_FIXED_STYLE}
             >
               <TableHeader>
                 <TableRow>

@@ -1,9 +1,10 @@
-export type Role = "ADMIN" | "ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION" | string;
+export type Role = "ADMIN" | "ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION" | "VALIDACION" | string;
 
 export type Me = {
   id: string | number;
   username: string;
   roles: Role[];
+  canCreateLoteComments?: boolean;
 };
 
 export type LoginRequest = {
@@ -15,7 +16,7 @@ export type RequestAccessPayload = {
   username: string;
   email: string;
   password: string;
-  roleRequested: "ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION";
+  roleRequested: "ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION" | "VALIDACION";
 };
 
 export type RequestAccessResponse = {
@@ -30,6 +31,19 @@ export type AccessRequestItem = {
   role: string;
   enabled: boolean;
   createdAt: string;
+};
+
+export type ProblemReportItem = {
+  id: string;
+  kind: string;
+  lote?: string | null;
+  reason: string;
+  comment?: string | null;
+  reporterUsername?: string | null;
+  status: string;
+  createdAt?: string | null;
+  resolvedAt?: string | null;
+  resolvedByUsername?: string | null;
 };
 
 export type ScanEvent = Record<string, any>;
@@ -51,6 +65,7 @@ export type DynamicsLookupResponse = {
   lote: string;
   caducidad: string | null;
   cantidadAlmacen: number | null;
+  cantidadRecibida?: number | null;
   unidadInventario?: string | null;
   fechaEntrada?: string | null;
   statusDynamics: string | null;

@@ -1,15 +1,19 @@
 package com.company.olnaturaqr.api;
 
 import com.company.olnaturaqr.domain.qr.QrLabel;
+import com.company.olnaturaqr.infra.dynamics.DynamicsLookupService;
 import com.company.olnaturaqr.repository.QrLabelRepository;
 import com.company.olnaturaqr.support.audit.AuditService;
 import com.company.olnaturaqr.support.security.AuthPrincipal;
 import com.company.olnaturaqr.support.util.SpanishFlexibleDateParser;
 import com.company.olnaturaqr.support.workflow.AdminLotStatus;
-import com.company.olnaturaqr.support.workflow.ApprovalService;
 import com.company.olnaturaqr.support.workflow.LotOperationalGate;
 import com.company.olnaturaqr.support.workflow.MaterialType;
+import com.company.olnaturaqr.support.workflow.OperationalStatusSyncService;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
+import com.company.olnaturaqr.support.label.EnvaseRestos;
+import com.company.olnaturaqr.support.label.LabelDocumentCode;
+import com.company.olnaturaqr.support.label.LabelPrintDates;
 import com.company.olnaturaqr.support.zpl.ZplTextNormalizer;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
@@ -25,8 +29,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.*;
@@ -36,17 +38,23 @@ import static org.springframework.http.HttpStatus.*;
 public class LabelController {
 
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT);
     private static final Charset ZPL_OUT_CHARSET = StandardCharsets.ISO_8859_1;
 
     private final QrLabelRepository repo;
     private final AuditService auditService;
-    private final ApprovalService approvalService;
+    private final DynamicsLookupService dynamicsLookupService;
+    private final OperationalStatusSyncService operationalStatusSyncService;
 
-    public LabelController(QrLabelRepository repo, AuditService auditService, ApprovalService approvalService) {
+    public LabelController(
+            QrLabelRepository repo,
+            AuditService auditService,
+            DynamicsLookupService dynamicsLookupService,
+            OperationalStatusSyncService operationalStatusSyncService
+    ) {
         this.repo = repo;
         this.auditService = auditService;
-        this.approvalService = approvalService;
+        this.dynamicsLookupService = dynamicsLookupService;
+        this.operationalStatusSyncService = operationalStatusSyncService;
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','ALMACEN')")
@@ -85,6 +93,12 @@ public class LabelController {
         q.setEnvaseTotal(req.envaseTotal());
         String cpe = req.cantidadPorEnvase() != null ? req.cantidadPorEnvase().trim() : "";
         q.setCantidadPorEnvase(cpe.isEmpty() ? null : cpe);
+        EnvaseRestos.apply(
+                q,
+                resolveRestosCantidades(req),
+                q.getCantidadPorEnvase(),
+                req.envaseTotal()
+        );
         q.setDocumentCode(
                 req.documentCode() != null && !req.documentCode().isBlank() ? req.documentCode().trim() : null);
 
@@ -100,6 +114,21 @@ public class LabelController {
             throw new ResponseStatusException(CONFLICT, "Ya existe una etiqueta con ese lote: " + lote);
         }
 
+        try {
+            dynamicsLookupService.lookupByBatchNumber(lote).ifPresent(d ->
+                    operationalStatusSyncService.applyDynamicsStatus(
+                            saved,
+                            d.operationalStatus(),
+                            OperationalStatusSyncService.REASON_LABEL_CREATE,
+                            null
+                    )
+            );
+        } catch (Exception ex) {
+            // La etiqueta ya existe; el estado quedará en CUARENTENA hasta la próxima sync/consulta.
+            org.slf4j.LoggerFactory.getLogger(LabelController.class)
+                    .warn("No se pudo sincronizar estado operativo al crear lote={} err={}", lote, ex.toString());
+        }
+
         String qrUrl = ServletUriComponentsBuilder
                 .fromCurrentContextPath()
                 .path("/qr/{id}")
@@ -112,80 +141,6 @@ public class LabelController {
                 qrUrl,
                 saved.getPublicToken(),
                 LabelDto.LabelView.from(saved)));
-    }
-
-    
-    @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
-    @PostMapping("/by-lote/{lote}/approve")
-    public ResponseEntity<LabelDto.StatusResponse> approveByLote(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable String lote,
-            @RequestBody(required = false) LabelDto.DecisionRequest body
-    ) {
-        QrLabel q = resolveLabel(lote == null ? "" : lote.trim());
-        String motivo = body != null ? body.motivo() : null;
-        QrLabel saved = approvalService.approve(q, principal, motivo);
-        return ResponseEntity.ok(new LabelDto.StatusResponse(saved.getId(), saved.getStatus()));
-    }
-
-    
-    @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
-    @PostMapping("/by-lote/{lote}/reject")
-    public ResponseEntity<LabelDto.StatusResponse> rejectByLote(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable String lote,
-            @RequestBody(required = false) LabelDto.DecisionRequest body
-    ) {
-        QrLabel q = resolveLabel(lote == null ? "" : lote.trim());
-        String motivo = body != null ? body.motivo() : null;
-        QrLabel saved = approvalService.reject(q, principal, motivo);
-        return ResponseEntity.ok(new LabelDto.StatusResponse(saved.getId(), saved.getStatus()));
-    }
-
-    
-    @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<LabelDto.StatusResponse> updateStatus(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable UUID id,
-            @RequestBody LabelDto.StatusRequest req) {
-        if (req == null || isBlank(req.status())) {
-            throw new ResponseStatusException(BAD_REQUEST, "status es requerido");
-        }
-        String st = WorkflowStatus.normalize(req.status());
-        QrLabel q = repo.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Etiqueta no encontrada: " + id));
-        QrLabel saved;
-        if (WorkflowStatus.APROBADO.equals(st)) {
-            saved = approvalService.approve(q, principal, req.motivo());
-        } else if (WorkflowStatus.RECHAZADO.equals(st)) {
-            saved = approvalService.reject(q, principal, req.motivo());
-        } else {
-            throw new ResponseStatusException(BAD_REQUEST, "Usa APROBADO o RECHAZADO");
-        }
-        return ResponseEntity.ok(new LabelDto.StatusResponse(saved.getId(), saved.getStatus()));
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','CALIDAD','INSPECCION')")
-    @PatchMapping("/by-lote/{lote}/status")
-    public ResponseEntity<LabelDto.StatusResponse> updateStatusByLote(
-            @AuthenticationPrincipal AuthPrincipal principal,
-            @PathVariable String lote,
-            @RequestBody LabelDto.StatusRequest req) {
-        if (req == null || isBlank(req.status())) {
-            throw new ResponseStatusException(BAD_REQUEST, "status es requerido");
-        }
-        String st = WorkflowStatus.normalize(req.status());
-        QrLabel q = resolveLabel(lote == null ? "" : lote.trim());
-        QrLabel saved;
-        if (WorkflowStatus.APROBADO.equals(st)) {
-            saved = approvalService.approve(q, principal, req.motivo());
-        } else if (WorkflowStatus.RECHAZADO.equals(st)) {
-            saved = approvalService.reject(q, principal, req.motivo());
-        } else {
-            throw new ResponseStatusException(BAD_REQUEST, "Usa APROBADO o RECHAZADO");
-        }
-        return ResponseEntity.ok(new LabelDto.StatusResponse(saved.getId(), saved.getStatus()));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -212,12 +167,9 @@ public class LabelController {
         int printFrom = bounds[1];
         int printTo = bounds[2];
 
-        
-        String cantidadStr = resolveCantidadForZpl(q);
-
         StringBuilder zplAll = new StringBuilder();
         for (int seq = printFrom; seq <= printTo; seq++) {
-            zplAll.append(buildSingleZpl(q, seq, envaseTotal, null, cantidadStr));
+            zplAll.append(buildSingleZpl(q, seq, envaseTotal, null, EnvaseRestos.cantidadForEnvase(q, seq)));
         }
 
         String safeLote = loteSafe(q.getLote());
@@ -268,12 +220,9 @@ public class LabelController {
         int printFrom = bounds[1];
         int printTo = bounds[2];
 
-        
-        String cantidadStr = resolveCantidadForZpl(q);
-
         StringBuilder zplAll = new StringBuilder();
         for (int seq = printFrom; seq <= printTo; seq++) {
-            zplAll.append(buildSingleZpl(q, seq, envaseTotal, qrBase64, cantidadStr));
+            zplAll.append(buildSingleZpl(q, seq, envaseTotal, qrBase64, EnvaseRestos.cantidadForEnvase(q, seq)));
         }
 
         String safeLote = loteSafe(q.getLote());
@@ -334,10 +283,14 @@ public class LabelController {
         return new int[]{registeredTotal, printFrom, printTo};
     }
 
-    
-    private String resolveCantidadForZpl(QrLabel q) {
-        String manualQty = safe(q.getCantidadPorEnvase());
-        return manualQty.isEmpty() ? "N/A" : manualQty;
+    private static java.util.List<String> resolveRestosCantidades(LabelDto.CreateRequest req) {
+        if (req.restosCantidades() != null && !req.restosCantidades().isEmpty()) {
+            return req.restosCantidades();
+        }
+        if (Boolean.TRUE.equals(req.restosEnabled()) && req.cantidadResto() != null && !req.cantidadResto().isBlank()) {
+            return java.util.List.of(req.cantidadResto().trim());
+        }
+        return java.util.List.of();
     }
 
     private String loteSafe(String lote) {
@@ -348,27 +301,29 @@ public class LabelController {
         
         String lote = ZplTextNormalizer.normalize(q.getLote());
         String qrPayload = "OLNQR:1:" + ZplTextNormalizer.normalize(safe(q.getPublicToken()));
-        String nombre = ZplTextNormalizer.normalize(q.getNombre());
+        String nombre = ZplTextNormalizer.normalize(
+                "Nombre: " + (q.getNombre() == null || q.getNombre().isBlank() ? "N/A" : q.getNombre().trim()));
         String codigo = ZplTextNormalizer.normalize(q.getCodigo());
         String fechaStr = ZplTextNormalizer.normalize(formatDate(q.getFechaEntrada()));
-        String caducidadStr = ZplTextNormalizer.normalize(formatDate(q.getCaducidad()));
-        String reanalisisStr = ZplTextNormalizer.normalize(
-                q.getReanalisis() != null ? formatDate(q.getReanalisis()) : "N/A");
-        String documentCode = ZplTextNormalizer.normalize(orEmpty(q.getDocumentCode(), "AL-001-E02/04"));
+        boolean hasCaducidad = q.getCaducidad() != null;
+        boolean hasReanalisis = q.getReanalisis() != null;
+        String caducidadStr = hasCaducidad ? ZplTextNormalizer.normalize(formatDate(q.getCaducidad())) : "";
+        String reanalisisStr = hasReanalisis ? ZplTextNormalizer.normalize(formatDate(q.getReanalisis())) : "";
+        String documentCode = ZplTextNormalizer.normalize(LabelDocumentCode.resolve(q.getDocumentCode()));
         String cantidadNorm = ZplTextNormalizer.normalize(cantidadStr);
         String envaseDisplay = ZplTextNormalizer.normalize(
                 String.format("%02d", envaseNum) + " de " + String.format("%02d", envaseTotal));
-        String envaseTotalStr = ZplTextNormalizer.normalize(String.valueOf(envaseTotal));
+        String totalEnvasesStr = ZplTextNormalizer.normalize(String.valueOf(envaseTotal));
 
-        String title = ZplTextNormalizer.normalize("MATERIAL DE ACONDICIONADO");
-        String lblFecha = ZplTextNormalizer.normalize("Fecha");
-        String lblCodigo = ZplTextNormalizer.normalize("Codigo");
-        String lblLote = ZplTextNormalizer.normalize("Lote");
-        String lblCaducidad = ZplTextNormalizer.normalize("Caducidad");
-        String lblReanalisis = ZplTextNormalizer.normalize("Reanalisis");
-        String lblCantidad = ZplTextNormalizer.normalize("Cantidad por envase");
-        String lblEnvases = ZplTextNormalizer.normalize("No. de envases");
-        String lblCantTotal = ZplTextNormalizer.normalize("Cantidad total");
+        String title = ZplTextNormalizer.normalize(MaterialType.labelHeaderTitle(q.getTipoMaterial()));
+        String lblFecha = ZplTextNormalizer.normalize("Fecha:");
+        String lblCodigo = ZplTextNormalizer.normalize("Codigo:");
+        String lblLote = ZplTextNormalizer.normalize("Lote:");
+        String lblCaducidad = ZplTextNormalizer.normalize("Fecha de Caducidad:");
+        String lblReanalisis = ZplTextNormalizer.normalize("Fecha de Reanalisis:");
+        String lblCantidad = ZplTextNormalizer.normalize("Cantidad por envase:");
+        String lblEnvases = ZplTextNormalizer.normalize("No. de envases:");
+        String lblCantTotal = ZplTextNormalizer.normalize("Total de envases:");
         String footer = ZplTextNormalizer.normalize(documentCode
                 + " Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgacion y/o reproduccion total o parcial. "
                 + "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACION.");
@@ -402,7 +357,7 @@ public class LabelController {
                 +
                 "\n" +
                 "^FO125,36^ADN,18,10" + fdField(title) + "\n" +
-                "^FO130,86^ADN,18,10" + fdField(nombre) + "\n" +
+                "^FO130,76^ADN,18,10^FB620,2,1,L,0" + fdField(nombre) + "\n" +
                 "\n" +
                 "^FO28,128^ADN,14,8" + fdField(lblFecha) + "\n" +
                 "^FO28,150^ADN,18,10" + fdField(fechaStr) + "\n" +
@@ -422,8 +377,8 @@ public class LabelController {
                 "\n" +
                 "^FO28,410^ADN,14,8" + fdField(lblEnvases) + "\n" +
                 "^FO28,438^ADN,20,10" + fdField(envaseDisplay) + "\n" +
-                "^FO208,410^ADN,14,8" + fdField(lblCantTotal) + "\n" +
-                "^FO260,438^ADN,20,10" + fdField(envaseTotalStr) + "\n" +
+                "^FO208,402^ADN,11,6^FB164,2,1,L,0" + fdField(lblCantTotal) + "\n" +
+                "^FO220,448^ADN,18,10" + fdField(totalEnvasesStr) + "\n" +
                 "\n" +
                 "^FO25,503^ADN,7,4^FB748,4,1,L,0" + fdField(footer) + "\n" +
                 "\n" +
@@ -457,7 +412,7 @@ public class LabelController {
     }
 
     private String formatDate(LocalDate d) {
-        return d != null ? d.format(DATE_FMT) : "N/A";
+        return d != null ? LabelPrintDates.formatDdMmmYy(d) : "N/A";
     }
 
     private String qrBlock(String qrImageBase64, String qrPayload) {

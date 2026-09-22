@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { makeStyles, shorthands } from "@fluentui/react-components";
 import { useAuth } from "../auth/AuthContext";
 import AppCard from "../components/ui/AppCard";
@@ -33,6 +33,10 @@ export default function DashboardPage() {
   const s = useStyles();
   const nav = useNavigate();
   const { can, hasRole } = useAuth();
+
+  if (can("CONSULTA_LOTE") && !can("HOME") && !hasRole("ADMIN")) {
+    return <Navigate to="/consulta-lote" replace />;
+  }
 
   return (
     <div className={s.page}>

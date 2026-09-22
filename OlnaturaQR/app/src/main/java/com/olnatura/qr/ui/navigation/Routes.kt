@@ -8,9 +8,4 @@ sealed class Route(val path: String) {
     data object Result : Route("result/{lote}") {
         fun create(lote: String) = "result/$lote"
     }
-    data object Report : Route("report/{lote}") {
-        fun create(lote: String) = "report/$lote"
-    }
-    
-    data object ReportAccess : Route("report-access")
 }

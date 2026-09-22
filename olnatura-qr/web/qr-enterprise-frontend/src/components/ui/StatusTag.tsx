@@ -1,6 +1,5 @@
 import { makeStyles, shorthands } from "@fluentui/react-components";
 
-
 const useStyles = makeStyles({
   tag: {
     ...shorthands.padding("4px", "10px"),
@@ -33,15 +32,18 @@ const useStyles = makeStyles({
   },
 });
 
-export type OperationalStatusKind = "APROBADO" | "CUARENTENA" | "RECHAZADO" | "DESCONOCIDO";
+export type OperationalStatusKind =
+  | "APROBADO"
+  | "CUARENTENA"
+  | "RECHAZADO"
+  | "DESCONOCIDO";
 
 export function normalizeOperationalStatus(status: string | null | undefined): OperationalStatusKind {
   const raw = (status ?? "").trim().toUpperCase();
-  if (raw === "APROBADO") return "APROBADO";
+  if (raw === "APROBADO" || raw === "PARCIAL") return "APROBADO";
   if (raw === "RECHAZADO") return "RECHAZADO";
   if (raw === "CUARENTENA") return "CUARENTENA";
-  // DESCONOCIDO / vacío / otros: en UI de negocio se presenta como CUARENTENA
-  return "CUARENTENA";
+  return "DESCONOCIDO";
 }
 
 export function operationalStatusDisplayLabel(status: string | null | undefined): string {
@@ -49,7 +51,7 @@ export function operationalStatusDisplayLabel(status: string | null | undefined)
   if (n === "APROBADO") return "Aprobado";
   if (n === "CUARENTENA") return "Cuarentena";
   if (n === "RECHAZADO") return "Rechazado";
-  return "Cuarentena";
+  return "Desconocido";
 }
 
 export function operationalStatusEmoji(status: string | null | undefined): string {
@@ -57,7 +59,7 @@ export function operationalStatusEmoji(status: string | null | undefined): strin
   if (n === "APROBADO") return "🟢";
   if (n === "CUARENTENA") return "🟡";
   if (n === "RECHAZADO") return "🔴";
-  return "🟡";
+  return "⚪";
 }
 
 export default function StatusTag({ status }: { status: string }) {

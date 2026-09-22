@@ -33,7 +33,7 @@ import {
 } from "../utils/tablePresentation";
 
 const useStyles = makeStyles({
-  wrap: { display: "grid", gap: "20px" },
+  wrap: { display: "grid", gap: "20px", minWidth: 0, maxWidth: "100%" },
   title: { fontSize: "20px", fontWeight: 600, color: brand.text, margin: 0 },
   headerRow: {
     display: "flex",
@@ -291,7 +291,7 @@ export default function AdminAuditPage() {
             <Table
               aria-label={LABELS.auditLog}
               className={TABLE_DATA_CLASS}
-              style={{ ...TABLE_FIXED_STYLE, minWidth: 1180 }}
+              style={TABLE_FIXED_STYLE}
             >
               <TableHeader>
                 <TableRow>

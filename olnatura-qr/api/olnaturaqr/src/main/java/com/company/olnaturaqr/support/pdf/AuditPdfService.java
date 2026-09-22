@@ -3,6 +3,8 @@ package com.company.olnaturaqr.support.pdf;
 import com.company.olnaturaqr.api.AuditEventView;
 import com.company.olnaturaqr.domain.audit.AuditEvent;
 import com.company.olnaturaqr.domain.user.User;
+import com.company.olnaturaqr.support.audit.AuditService;
+import com.company.olnaturaqr.support.presentation.AuditDetailFormatter;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Font;
@@ -27,9 +29,10 @@ import java.util.UUID;
 @Service
 public class AuditPdfService {
 
+    private static final ZoneId ZONE = AuditService.ZONE;
     private static final DateTimeFormatter FMT = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd HH:mm:ss")
-            .withZone(ZoneId.systemDefault());
+            .ofPattern("dd/MM/yyyy HH:mm:ss")
+            .withZone(ZONE);
 
     public byte[] generate(
             String lote,
@@ -104,20 +107,10 @@ public class AuditPdfService {
 
     private String formatDetails(AuditEvent e) {
         if (e.getMetadata() != null && !e.getMetadata().isEmpty()) {
-            return formatMetadata(e.getMetadata());
+            String formatted = AuditDetailFormatter.format(e.getMetadata());
+            return formatted == null || formatted.isBlank() ? "—" : formatted;
         }
         return "—";
-    }
-
-    private String formatMetadata(Map<String, Object> meta) {
-        if (meta == null || meta.isEmpty()) return "—";
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, Object> en : meta.entrySet()) {
-            if ("deviceId".equalsIgnoreCase(en.getKey())) continue;
-            if (sb.length() > 0) sb.append(", ");
-            sb.append(en.getKey()).append("=").append(en.getValue());
-        }
-        return sb.length() > 0 ? sb.toString() : "—";
     }
 
     private static String safe(String s) {

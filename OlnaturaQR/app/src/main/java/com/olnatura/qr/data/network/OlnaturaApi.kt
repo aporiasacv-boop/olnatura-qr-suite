@@ -18,6 +18,9 @@ interface OlnaturaApi {
     @POST("api/v1/auth/request-access")
     suspend fun requestAccess(@Body body: RequestAccessRequest): Response<RequestAccessResponse>
 
+    @POST("api/v1/reports")
+    suspend fun createProblemReport(@Body body: CreateProblemReportRequest): Response<ProblemReportResponse>
+
     @GET("api/v1/qr/{lote}")
     suspend fun getQr(@Path("lote") lote: String): QrResponse
 
@@ -54,4 +57,7 @@ interface OlnaturaApi {
         @Path("lote") lote: String,
         @Body body: AdminCorrectStatusRequest
     ): AdminCorrectStatusResponse
+
+    @POST("api/v1/admin/lots/{id}/confirm-reprint")
+    suspend fun confirmReprint(@Path("id") id: String): AdminConfirmReprintResponse
 }

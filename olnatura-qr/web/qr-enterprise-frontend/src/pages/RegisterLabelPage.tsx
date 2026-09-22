@@ -1,14 +1,5 @@
 import { useMemo, useRef, useState, type CSSProperties } from "react";
-import {
-  Text,
-  Input,
-  Button,
-  Radio,
-  RadioGroup,
-  Dropdown,
-  Option,
-  Link,
-} from "@fluentui/react-components";
+import { Text, Input, Button, Radio, RadioGroup, Dropdown, Option, Link } from "@fluentui/react-components";
 import AppCard from "../components/ui/AppCard";
 import { brand } from "../styles/brand";
 import { useAuth } from "../auth/AuthContext";
@@ -28,6 +19,15 @@ import {
   materialCategoryDisplay,
   type DynamicsSiteFamily,
 } from "../utils/dynamicsMaterialMap";
+import {
+  MAX_CANTIDADES_MENORES,
+  cantidadForEnvase,
+  cantidadTotalOf,
+  cantidadesMenoresOk,
+  envaseDistribution,
+  parseCantidad,
+} from "../utils/envaseRestos";
+import { resolveLabelDocumentCode } from "../utils/labelDocumentCode";
 
 const QR_PREFIX = "OLNQR:1:";
 const ENVASE_INICIO = 1;
@@ -46,6 +46,7 @@ type FormState = {
   envaseNum: string;
   envaseTotal: string;
   cantidadPorEnvase: string;
+  cantidadesMenores: string[];
 };
 
 
@@ -79,6 +80,7 @@ export default function RegisterLabelPage() {
     envaseNum: "1",
     envaseTotal: "",
     cantidadPorEnvase: "",
+    cantidadesMenores: [],
   });
 
   const [busy, setBusy] = useState(false);
@@ -111,7 +113,9 @@ export default function RegisterLabelPage() {
           tipoMaterial === "EMPAQUE_SECUNDARIO";
   
   const tipoMaterialNeedsAttention = canQr && !tipoMaterialOk;
-  const canRegister = canQr && loteOk && fechaEntradaOk && envaseOk && tipoMaterialOk && !busy;
+  const stdQty = parseCantidad(form.cantidadPorEnvase);
+  const menoresOk = cantidadesMenoresOk(form.cantidadesMenores, form.cantidadPorEnvase, envaseTotal);
+  const canRegister = canQr && loteOk && fechaEntradaOk && envaseOk && tipoMaterialOk && menoresOk && !busy;
 
   const caducidadDisplay = form.fechaTipo === "CADUCIDAD" ? form.fechaValor : "";
   const reanalisisDisplay = form.fechaTipo === "REANALISIS" ? form.fechaValor : "";
@@ -244,6 +248,28 @@ export default function RegisterLabelPage() {
       setErr("Reanálisis: revisa la fecha.");
       return;
     }
+      const menores = form.cantidadesMenores.map((v) => v.trim()).filter((v) => v.length > 0);
+      if (menores.length > 0) {
+        if (menores.length > MAX_CANTIDADES_MENORES) {
+          setErr("Máximo 4 etiquetas de resto.");
+          return;
+        }
+        if (envaseTotal < menores.length) {
+          setErr("La cantidad total de envases debe cubrir cada etiqueta de resto.");
+          return;
+        }
+        if (stdQty == null) {
+          setErr("Cantidad por envase debe ser numérica y mayor a 0.");
+          return;
+        }
+        for (let i = 0; i < menores.length; i++) {
+          const q = parseCantidad(menores[i]);
+          if (q == null || q <= 0 || q >= stdQty) {
+            setErr(`La etiqueta de resto ${i + 1} debe ser mayor a 0 y menor a la cantidad por envase.`);
+            return;
+          }
+        }
+      }
 
     try {
       setBusy(true);
@@ -264,6 +290,8 @@ export default function RegisterLabelPage() {
         envaseNum: ENVASE_INICIO,
         envaseTotal,
         cantidadPorEnvase: cpe.length > 0 ? cpe : null,
+        restosEnabled: menores.length > 0,
+        restosCantidades: menores,
       };
       const res = await api<CreateResponse>("/label", { method: "POST", body });
       setCreateResp(res);
@@ -536,7 +564,20 @@ export default function RegisterLabelPage() {
           label="Cantidad total de envases"
           placeholder="Ej. 30"
           value={form.envaseTotal}
-          onChange={(v) => setForm((s) => ({ ...s, envaseTotal: v, envaseNum: "1" }))}
+          onChange={(v) =>
+            setForm((s) => {
+              const n = Number.parseInt(v, 10);
+              const maxMenores = Number.isFinite(n)
+                ? Math.min(MAX_CANTIDADES_MENORES, Math.max(0, n))
+                : MAX_CANTIDADES_MENORES;
+              return {
+                ...s,
+                envaseTotal: v,
+                envaseNum: "1",
+                cantidadesMenores: s.cantidadesMenores.slice(0, maxMenores),
+              };
+            })
+          }
           requiredPending
           isFilled={envaseTotal >= 1}
         />
@@ -548,6 +589,58 @@ export default function RegisterLabelPage() {
           requiredPending
           isFilled={form.cantidadPorEnvase.trim().length > 0}
         />
+        {form.cantidadesMenores.map((qty, idx) => (
+          <div key={idx} style={{ display: "grid", gap: 6 }}>
+            <Field
+              label={`Etiqueta de resto ${idx + 1}`}
+              placeholder="Ej. 5"
+              value={qty}
+              onChange={(v) =>
+                setForm((s) => {
+                  const next = [...s.cantidadesMenores];
+                  next[idx] = v;
+                  return { ...s, cantidadesMenores: next };
+                })
+              }
+              requiredPending
+              isFilled={parseCantidad(qty) != null && stdQty != null && parseCantidad(qty)! < stdQty}
+            />
+            <Button
+              appearance="transparent"
+              type="button"
+              onClick={() =>
+                setForm((s) => ({
+                  ...s,
+                  cantidadesMenores: s.cantidadesMenores.filter((_, i) => i !== idx),
+                }))
+              }
+            >
+              Quitar
+            </Button>
+          </div>
+        ))}
+        <Button
+          appearance="secondary"
+          type="button"
+          disabled={
+            form.cantidadesMenores.length >=
+            Math.min(MAX_CANTIDADES_MENORES, Math.max(envaseTotal, 0))
+          }
+          onClick={() =>
+            setForm((s) => {
+              const max = Math.min(MAX_CANTIDADES_MENORES, Math.max(envaseTotal, 0));
+              if (s.cantidadesMenores.length >= max) return s;
+              return { ...s, cantidadesMenores: [...s.cantidadesMenores, ""] };
+            })
+          }
+        >
+          Agregar resto
+        </Button>
+        {envaseTotal >= 1 && form.cantidadPorEnvase.trim() && form.cantidadesMenores.some((v) => v.trim()) ? (
+          <Text size={200} style={{ color: brand.text }}>
+            {envaseDistribution(envaseTotal, form.cantidadPorEnvase, form.cantidadesMenores)}
+          </Text>
+        ) : null}
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", paddingTop: 4 }}>
           <Button
@@ -631,12 +724,25 @@ export default function RegisterLabelPage() {
                     fecha={form.fechaEntrada}
                     caducidad={caducidadDisplay}
                     reanalisis={reanalisisDisplay}
-                    cantidad={form.cantidadPorEnvase.trim() || "N/A"}
-                    envaseNum="1"
+                    cantidad={cantidadForEnvase(
+                      {
+                        restosCantidades: form.cantidadesMenores,
+                        envaseTotal,
+                        cantidadPorEnvase: form.cantidadPorEnvase,
+                      },
+                      form.cantidadesMenores.some((v) => v.trim()) ? Math.max(envaseTotal, 1) : 1
+                    )}
+                    envaseNum={form.cantidadesMenores.some((v) => v.trim()) ? Math.max(envaseTotal, 1) : "1"}
                     envaseTotal={form.envaseTotal || "—"}
+                    cantidadTotal={cantidadTotalOf({
+                      restosCantidades: form.cantidadesMenores,
+                      envaseTotal,
+                      cantidadPorEnvase: form.cantidadPorEnvase,
+                    })}
                     qrData={qrDataUrl}
                     logoUrl={`${import.meta.env.BASE_URL}logo-olnatura.png`}
-                    documentCode={createResp?.label?.documentCode ?? "AL-001-E02/04"}
+                    documentCode={resolveLabelDocumentCode(createResp?.label?.documentCode)}
+                    tipoMaterial={form.tipoMaterial.trim() || null}
                   />
                 </div>
               </div>

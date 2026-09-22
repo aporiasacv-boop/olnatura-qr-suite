@@ -12,6 +12,8 @@ import AdminAuditPage from "../pages/AdminAuditPage";
 import AdminMetricsPage from "../pages/AdminMetricsPage";
 import AdminUsersPage from "../pages/AdminUsersPage";
 import AdminLotsPage from "../pages/AdminLotsPage";
+import AdminDbPage from "../pages/AdminDbPage";
+import AdminProblemReportsPage from "../pages/AdminProblemReportsPage";
 
 import ScanHistoryPage from "../pages/ScanHistoryPage";
 import RegisterLabelPage from "../pages/RegisterLabelPage";
@@ -73,7 +75,7 @@ export const router = createBrowserRouter([
       {
         path: "consulta-lote",
         element: (
-          <RequireRole anyOf={["ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION"]}>
+          <RequireRole anyOf={["ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION", "VALIDACION"]}>
             <OperationalStatusValidationTempPage />
           </RequireRole>
         ),
@@ -116,9 +118,25 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "admin/db",
+        element: (
+          <RequireAdmin>
+            <AdminDbPage />
+          </RequireAdmin>
+        ),
+      },
+      {
+        path: "admin/problem-reports",
+        element: (
+          <RequireAdmin>
+            <AdminProblemReportsPage />
+          </RequireAdmin>
+        ),
+      },
+      {
         path: "admin/audit",
         element: (
-          <RequireRole anyOf={["ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION"]}>
+          <RequireRole anyOf={["ADMIN", "ALMACEN", "PRODUCCION", "CALIDAD", "INSPECCION", "VALIDACION"]}>
             <AdminAuditPage />
           </RequireRole>
         ),

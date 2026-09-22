@@ -1,0 +1,152 @@
+﻿{
+    "suffix":  "MPS0005089",
+    "batchNumber":  "240419-MPS0005089",
+    "itemNumber":  "200923431100",
+    "batchDispositionCode":  "Aprobado",
+    "inventLocations":  [
+                            "MPS",
+                            "RES"
+                        ],
+    "operationalStatus":  "RECHAZADO",
+    "operationalRule":  "Almacen RES",
+    "operationalWarehouse":  "RES",
+    "expectedStatus":  "RECHAZADO",
+    "expectedWarehouse":  "RES",
+    "matchExpected":  true,
+    "qualityOrderCount":  1,
+    "qualityOrders":  [
+                          {
+                              "@odata.etag":  "W/\"JzIxMzg4NjAwOTgsNTYzNzU5NTM0MCc=\"",
+                              "QualityOrderNumber":  "OCL0011895",
+                              "ItemBatchNumber":  "240419-MPS0005089",
+                              "ItemNumber":  "200923431100",
+                              "QualityOrderStatus":  "Pass",
+                              "ValidatedDateTime":  "2024-04-25T00:01:18Z",
+                              "ValidatingPersonnelNumber":  "3776",
+                              "PassedBatchDispositionCode":  "Aprobado",
+                              "FailedBatchDispositionCode":  "Rechazado",
+                              "WarehouseId":  "MPS",
+                              "WarehouseLocationId":  "Disponible",
+                              "QMSAssignedToPersonnelNumber":  ""
+                          }
+                      ],
+    "inventDims":  [
+                       {
+                           "inventDimId":  "#000000015007E2FA",
+                           "InventLocationId":  "MPS",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#000000015007EBAC",
+                           "InventLocationId":  "MPS",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  ""
+                       },
+                       {
+                           "inventDimId":  "#000000015007FA9B",
+                           "InventLocationId":  "MPS",
+                           "wMSLocationId":  "",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#0000000150083244",
+                           "InventLocationId":  "",
+                           "wMSLocationId":  "Disponible",
+                           "InventSiteId":  "OLNATURA"
+                       },
+                       {
+                           "inventDimId":  "#00000001500B0CDB",
+                           "InventLocationId":  "RES",
+                           "wMSLocationId":  "General",
+                           "InventSiteId":  "OLNATURA"
+                       }
+                   ],
+    "movements":  [
+                      {
+                          "inventDimId":  "#00000001500B0CDB",
+                          "InventLocationId":  "RES",
+                          "InventSiteId":  "OLNATURA",
+                          "wMSLocationId":  "General",
+                          "inventTransRowCount":  1,
+                          "definitive":  {
+                                             "DatePhysical":  "2026-07-27T12:00:00Z",
+                                             "DateFinancial":  "2026-07-27T12:00:00Z",
+                                             "DateInvent":  "1900-01-01T12:00:00Z",
+                                             "DateStatus":  "2026-07-27T12:00:00Z",
+                                             "DateClosed":  "1900-01-01T12:00:00Z",
+                                             "StatusIssue":  "None",
+                                             "StatusReceipt":  "Purchased",
+                                             "Qty":  199274,
+                                             "Voucher":  "DTI0006270",
+                                             "InventTransOrigin":  5638090657,
+                                             "PackingSlipId":  "",
+                                             "InvoiceId":  "",
+                                             "ReceiptId":  "",
+                                             "TransChildType":  "None",
+                                             "TransChildRefId":  "",
+                                             "RecordId":  5638618207,
+                                             "inventDimId":  "#00000001500B0CDB",
+                                             "CreatedDateTime":  null,
+                                             "ModifiedDateTime":  null,
+                                             "SysModifiedBy":  null,
+                                             "CreatedBy":  null,
+                                             "ModifiedBy":  null,
+                                             "ReferenceId":  null,
+                                             "ReferenceCategory":  null,
+                                             "ReferenceType":  null,
+                                             "InventTransType":  null
+                                         },
+                          "allRows":  [
+                                          {
+                                              "DatePhysical":  "2026-07-27T12:00:00Z",
+                                              "DateFinancial":  "2026-07-27T12:00:00Z",
+                                              "StatusIssue":  "None",
+                                              "StatusReceipt":  "Purchased",
+                                              "Qty":  199274,
+                                              "Voucher":  "DTI0006270",
+                                              "InventTransOrigin":  5638090657,
+                                              "RecordId":  5638618207
+                                          }
+                                      ],
+                          "inventDimAudit":  {
+                                                 "SysModifiedBy":  "marco.anguiano",
+                                                 "SysCreatedBy":  null,
+                                                 "SysCreatedDateTime":  "2026-07-27T21:41:15Z",
+                                                 "SysModifiedDateTime":  "2026-07-27T21:41:15Z",
+                                                 "createdEqualsModified":  true,
+                                                 "datePhysicalDayAlignsWithSysCreated":  true
+                                             }
+                      }
+                  ],
+    "comparativeRow":  {
+                           "lote":  "240419-MPS0005089",
+                           "suffix":  "MPS0005089",
+                           "estadoOperativo":  "RECHAZADO",
+                           "regla":  "Almacen RES",
+                           "almacen":  "RES",
+                           "inventDimId":  "#00000001500B0CDB",
+                           "inventSiteId":  "OLNATURA",
+                           "wMSLocationId":  "General",
+                           "datePhysical":  "2026-07-27T12:00:00Z",
+                           "dateFinancial":  "2026-07-27T12:00:00Z",
+                           "statusReceipt":  "Purchased",
+                           "statusIssue":  "None",
+                           "qty":  199274,
+                           "inventTransOrigin":  5638090657,
+                           "voucher":  "DTI0006270",
+                           "sysModifiedBy":  "marco.anguiano",
+                           "sysCreatedBy":  null,
+                           "sysCreatedDateTime":  "2026-07-27T21:41:15Z",
+                           "sysModifiedDateTime":  "2026-07-27T21:41:15Z",
+                           "createdEqualsModified":  true,
+                           "dateAlignsWithDimCreate":  true,
+                           "campoFechaRecomendado":  "InventTransCDSEntities.DatePhysical",
+                           "campoCuentaRecomendado":  "InventDimBiEntities.SysModifiedBy",
+                           "confianza":  "Alta",
+                           "expected":  "RECHAZADO",
+                           "expectedWh":  "RES",
+                           "matchExpected":  true,
+                           "inventTransMissingAuditFields":  true
+                       }
+}

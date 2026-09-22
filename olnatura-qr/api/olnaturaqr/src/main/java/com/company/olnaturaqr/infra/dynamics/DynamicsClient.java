@@ -39,7 +39,8 @@ public interface DynamicsClient {
 
     
     record BatchEntryDateRecord(
-            String datePhysical
+            String datePhysical,
+            Double receivedQuantity
     ) {}
 
     

@@ -66,7 +66,7 @@ type OperationalMetrics = {
 };
 
 const useStyles = makeStyles({
-  wrap: { display: "grid", gap: "28px" },
+  wrap: { display: "grid", gap: "28px", minWidth: 0, maxWidth: "100%" },
   headerRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -414,7 +414,7 @@ export default function AdminMetricsPage() {
           <div style={TABLE_SCROLL_WRAP}>
             <Table
               className={TABLE_DATA_CLASS}
-              style={{ ...TABLE_FIXED_STYLE, minWidth: 1180 }}
+              style={TABLE_FIXED_STYLE}
             >
               <TableHeader>
                 <TableRow>

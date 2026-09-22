@@ -115,14 +115,18 @@ public ResponseEntity<UserDto.LoginResponse> login(
    
     @GetMapping("/me")
     public ResponseEntity<?> me(@AuthenticationPrincipal AuthPrincipal principal) {
-        if (principal == null) {
+        if (principal == null || principal.id() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+
+        User user = userRepository.findById(principal.id()).orElse(null);
+        boolean canCreateLoteComments = user != null && user.isCanCreateLoteComments();
 
         return ResponseEntity.ok(new MeResponse(
                 principal.id().toString(),
                 principal.username(),
-                principal.roles()
+                principal.roles(),
+                canCreateLoteComments
         ));
     }
 
@@ -148,16 +152,19 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
     }
 
     if (!roleName.equals("ALMACEN") && !roleName.equals("INSPECCION")
-            && !roleName.equals("PRODUCCION") && !roleName.equals("CALIDAD")) {
+            && !roleName.equals("PRODUCCION") && !roleName.equals("CALIDAD")
+            && !roleName.equals("VALIDACION")) {
         return ResponseEntity.badRequest().body(new ErrorResponse(
-                "Rol inválido. Usa ALMACEN, PRODUCCION, CALIDAD o INSPECCION."));
+                "Rol inválido. Usa ALMACEN, PRODUCCION, CALIDAD, INSPECCION o VALIDACION."));
     }
 
     if (userRepository.existsByUsernameIgnoreCase(username)) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Username ya existe"));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(
+                "Ese usuario ya existe. Si olvidaste la contraseña, un administrador puede restablecerla en Usuarios."));
     }
     if (userRepository.existsByEmailIgnoreCase(email)) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Email ya existe"));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(
+                "Ese correo ya está registrado. Si olvidaste la contraseña, un administrador puede restablecerla en Usuarios."));
     }
 
     Role role = roleRepository.findByName(roleName)
@@ -193,7 +200,8 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
     public record MeResponse(
             String id,
             String username,
-            List<String> roles
+            List<String> roles,
+            boolean canCreateLoteComments
     ) {}
 
     public record ErrorResponse(String message) {}

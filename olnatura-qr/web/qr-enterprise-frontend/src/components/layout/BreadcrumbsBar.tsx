@@ -24,6 +24,7 @@ function labelFor(seg: string) {
   if (seg === "metrics") return LABELS.metrics;
   if (seg === "users") return "Usuarios";
   if (seg === "lots") return "Lotes";
+  if (seg === "db") return "Administración de BD";
   return seg;
 }
 

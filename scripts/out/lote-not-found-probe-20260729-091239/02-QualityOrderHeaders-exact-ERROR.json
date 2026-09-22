@@ -1,0 +1,5 @@
+﻿{
+    "error":  "No se puede enlazar el parámetro \u0027Uri\u0027. No se puede convertir el valor \"https://olnatura-produccion.operations.dynamics.com`$filter=ItemBatchNumber%20eq%20\u0027260722-MES0004513\u0027\u0026`$top=5\" al tipo \"System.Uri\". Error: \"URI no válido: no se puede analizar el nombre de host.\"",
+    "status":  0,
+    "uri":  "https://olnatura-produccion.operations.dynamics.com`$filter=ItemBatchNumber%20eq%20\u0027260722-MES0004513\u0027\u0026`$top=5"
+}

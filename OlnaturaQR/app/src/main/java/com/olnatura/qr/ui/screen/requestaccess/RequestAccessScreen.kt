@@ -28,7 +28,8 @@ fun RequestAccessScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp)
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(horizontal = 18.dp, vertical = 24.dp)
                     .verticalScroll(rememberScrollState())
             ) {
             Text("Solicitar acceso", style = MaterialTheme.typography.headlineSmall)
@@ -63,9 +64,15 @@ fun RequestAccessScreen(
                 value = s.username,
                 onValueChange = vm::setUsername,
                 label = { Text("Usuario") },
+                placeholder = { Text("Ej. Irene Duarte") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp)
+            )
+            Text(
+                "Primer nombre + Primer apellido",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
             )
             Spacer(Modifier.height(12.dp))
 
@@ -152,6 +159,13 @@ fun RequestAccessScreen(
                         selected = s.role == "INSPECCION",
                         onClick = { vm.setRole("INSPECCION") },
                         label = { Text("INSPECCIÓN") }
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = s.role == "VALIDACION",
+                        onClick = { vm.setRole("VALIDACION") },
+                        label = { Text("VALIDACIÓN") }
                     )
                 }
             }

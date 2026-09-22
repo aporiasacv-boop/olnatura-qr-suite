@@ -4,6 +4,17 @@ export function canDownloadLabelPdf(hasRole: (r: Role) => boolean): boolean {
   return hasRole("ADMIN") || hasRole("ALMACEN");
 }
 
+export function canDownloadAuditPdf(hasRole: (r: Role) => boolean): boolean {
+  return (
+    hasRole("ADMIN") ||
+    hasRole("ALMACEN") ||
+    hasRole("PRODUCCION") ||
+    hasRole("CALIDAD") ||
+    hasRole("INSPECCION") ||
+    hasRole("VALIDACION")
+  );
+}
+
 export function canPrintLabel(hasRole: (r: Role) => boolean): boolean {
   return hasRole("ADMIN") || hasRole("ALMACEN");
 }

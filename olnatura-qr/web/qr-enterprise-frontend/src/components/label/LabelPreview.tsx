@@ -1,6 +1,7 @@
-
-
-import { formatDateDDMMYYYY } from "../../utils/dateFormat";
+import type { CSSProperties, ReactNode } from "react";
+import { formatDateLabelDDMMMYY } from "../../utils/dateFormat";
+import { resolveLabelDocumentCode } from "../../utils/labelDocumentCode";
+import { labelHeaderTitle } from "../../utils/labelHeaderTitle";
 
 export type LabelPreviewProps = {
   materialName: string;
@@ -13,9 +14,10 @@ export type LabelPreviewProps = {
   envaseNum: number | string;
   envaseTotal: number | string;
   qrData: string | null;
- 
   logoUrl?: string;
   documentCode?: string;
+  tipoMaterial?: string | null;
+  cantidadTotal?: string;
 };
 
 const LABEL_WIDTH = 800;
@@ -23,22 +25,79 @@ const LABEL_HEIGHT = 600;
 const BORDER = "2px solid #000";
 const FONT = "Arial, Helvetica, sans-serif";
 
-const smallLabelStyle: React.CSSProperties = {
-  fontSize: 16,
-  fontWeight: 700,
-  marginBottom: 8,
-};
-
-const valueStyle: React.CSSProperties = {
-  fontSize: 24,
-  fontWeight: 700,
-  lineHeight: 1.15,
-  wordBreak: "break-word",
-};
-
 const DEFAULT_LOGO = "/logo-olnatura.png";
 const FOOTER_COMPLIANCE =
   "Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgacion y/o reproduccion total o parcial. Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACION.";
+
+function pad2(v: number | string): string {
+  const n = Number(String(v ?? "").trim());
+  if (!Number.isFinite(n) || n < 0) return String(v ?? "").trim() || "00";
+  return String(Math.trunc(n)).padStart(2, "0");
+}
+
+function Cell({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: CSSProperties;
+}) {
+  return (
+    <div
+      style={{
+        boxSizing: "border-box",
+        borderRight: BORDER,
+        borderBottom: BORDER,
+        padding: "6px 10px",
+        minHeight: 0,
+        overflow: "hidden",
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  valueSize = 20,
+  labelSize = 13,
+}: {
+  label: string;
+  value: string;
+  valueSize?: number;
+  labelSize?: number;
+}) {
+  const heading = label.endsWith(":") ? label : `${label}:`;
+  return (
+    <>
+      <div
+        style={{
+          fontSize: labelSize,
+          fontWeight: 700,
+          lineHeight: 1.15,
+          marginBottom: 4,
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+        }}
+      >
+        {heading}
+      </div>
+      <div
+        style={{
+          fontSize: valueSize,
+          fontWeight: 700,
+          lineHeight: 1.1,
+          wordBreak: "break-word",
+        }}
+      >
+        {value}
+      </div>
+    </>
+  );
+}
 
 export default function LabelPreview({
   materialName,
@@ -52,18 +111,25 @@ export default function LabelPreview({
   envaseTotal,
   qrData,
   logoUrl = DEFAULT_LOGO,
-  documentCode = "AL-001-E02/04",
+  documentCode,
+  tipoMaterial,
 }: LabelPreviewProps) {
-  const fechaFmt = formatDateDDMMYYYY(fecha) || "N/A";
-  const caducidadFmt = formatDateDDMMYYYY(caducidad) || "N/A";
-  const reanalisisFmt = formatDateDDMMYYYY(reanalisis) || "N/A";
+  const fechaFmt = formatDateLabelDDMMMYY(fecha) || "N/A";
+  const caducidadFmt = formatDateLabelDDMMMYY(caducidad);
+  const reanalisisFmt = formatDateLabelDDMMMYY(reanalisis);
 
   const nombreStr = String(materialName ?? "").trim() || "N/A";
   const codigoStr = String(codigo ?? "").trim() || "N/A";
   const loteStr = String(lote ?? "").trim() || "N/A";
   const cantidadStr = String(cantidad ?? "").trim() || "N/A";
-  const envaseNumStr = String(envaseNum ?? "").trim() || "0";
-  const envaseTotalStr = String(envaseTotal ?? "").trim() || "0";
+  const envaseNumStr = pad2(envaseNum);
+  const envaseTotalStr = pad2(envaseTotal);
+  const envaseDisplay = `${envaseNumStr} de ${envaseTotalStr}`;
+  const totalEnvasesStr = String(envaseTotal ?? "").trim() || "0";
+  const documentCodeResolved = resolveLabelDocumentCode(documentCode);
+  const headerTitle = labelHeaderTitle(tipoMaterial);
+  const nombreFont =
+    nombreStr.length > 80 ? 14 : nombreStr.length > 40 ? 16 : 18;
 
   return (
     <div
@@ -78,66 +144,99 @@ export default function LabelPreview({
         color: "#000",
         overflow: "hidden",
         display: "grid",
-        gridTemplateColumns: "520px 280px",
-        gridTemplateRows: "90px 85px 130px 125px 120px 50px",
+        gridTemplateColumns: "90px 1fr 1fr 1fr 400px",
+        gridTemplateRows: "50px 50px 65px 70px 70px 70px 90px 95px",
       }}
     >
-      <div
+      <Cell
         style={{
-          gridColumn: "1 / 3",
-          gridRow: 1,
-          borderBottom: BORDER,
+          gridColumn: "1 / 2",
+          gridRow: "1 / 3",
           display: "flex",
-          alignItems: "stretch",
-          minHeight: 0,
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 8,
+          borderBottom: BORDER,
+        }}
+      >
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt="Logo"
+            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+          />
+        ) : null}
+      </Cell>
+
+      <Cell
+        style={{
+          gridColumn: "2 / 6",
+          gridRow: 1,
+          display: "flex",
+          alignItems: "center",
+          padding: "0 14px",
+          borderRight: "none",
+        }}
+      >
+        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: 0.4 }}>
+          {headerTitle}
+        </div>
+      </Cell>
+
+      <Cell
+        style={{
+          gridColumn: "2 / 6",
+          gridRow: 2,
+          display: "flex",
+          alignItems: "center",
+          padding: "2px 14px",
+          borderRight: "none",
         }}
       >
         <div
           style={{
-            width: 90,
-            minWidth: 90,
-            borderRight: BORDER,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 8,
-            boxSizing: "border-box",
+            fontSize: nombreFont,
+            fontWeight: 700,
+            lineHeight: 1.15,
+            width: "100%",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
           }}
         >
-          {logoUrl && (
-            <img
-              src={logoUrl}
-              alt="Logo"
-              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-            />
-          )}
+          {`Nombre: ${nombreStr}`}
         </div>
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "0 14px",
-          }}
-        >
-          <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: 0.5 }}>MATERIAL DE ACONDICIONADO</div>
-          <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{nombreStr}</div>
-        </div>
-      </div>
+      </Cell>
 
-      <div
+      <Cell style={{ gridColumn: "1 / 2", gridRow: 3 }}>
+        <Field label="Fecha:" value={fechaFmt} valueSize={16} />
+      </Cell>
+      <Cell style={{ gridColumn: "2 / 4", gridRow: 3 }}>
+        <Field label="Código:" value={codigoStr} valueSize={16} />
+      </Cell>
+      <Cell style={{ gridColumn: "4 / 6", gridRow: 3, borderRight: "none" }}>
+        <Field label="Lote:" value={loteStr} valueSize={15} />
+      </Cell>
+
+      <Cell style={{ gridColumn: "1 / 4", gridRow: 4 }}>
+        <Field label="Fecha de Caducidad:" value={caducidadFmt} />
+      </Cell>
+      <Cell style={{ gridColumn: "1 / 4", gridRow: 5 }}>
+        <Field label="Fecha de Reanálisis:" value={reanalisisFmt} />
+      </Cell>
+      <Cell style={{ gridColumn: "1 / 4", gridRow: 6 }}>
+        <Field label="Cantidad por envase:" value={cantidadStr} />
+      </Cell>
+
+      <Cell
         style={{
-          gridColumn: "2 / 3",
-          gridRow: "2 / 5",
-          borderLeft: BORDER,
-          borderBottom: BORDER,
+          gridColumn: "4 / 6",
+          gridRow: "4 / 8",
+          borderRight: "none",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: 12,
-          boxSizing: "border-box",
-          background: "#fff",
+          padding: 10,
         }}
       >
         {qrData ? (
@@ -145,8 +244,8 @@ export default function LabelPreview({
             src={qrData}
             alt="QR"
             style={{
-              width: 220,
-              height: 220,
+              width: 260,
+              height: 260,
               objectFit: "contain",
               display: "block",
             }}
@@ -154,164 +253,42 @@ export default function LabelPreview({
         ) : (
           <div
             style={{
-              width: 220,
-              height: 220,
+              width: 260,
+              height: 260,
               border: BORDER,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: 700,
             }}
           >
             QR
           </div>
         )}
-      </div>
+      </Cell>
 
-      <div
+      <Cell style={{ gridColumn: "1 / 3", gridRow: 7 }}>
+        <Field label="No. de envases:" value={envaseDisplay} valueSize={22} />
+      </Cell>
+      <Cell style={{ gridColumn: "3 / 4", gridRow: 7, padding: "6px 8px" }}>
+        <Field label="Total de envases:" value={totalEnvasesStr} valueSize={22} labelSize={11} />
+      </Cell>
+
+      <Cell
         style={{
-          gridColumn: "1 / 2",
-          gridRow: 2,
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          borderBottom: BORDER,
-          minHeight: 0,
+          gridColumn: "1 / 6",
+          gridRow: 8,
+          borderRight: "none",
+          borderBottom: "none",
+          padding: "10px 12px",
+          fontSize: 11,
+          lineHeight: 1.35,
+          fontWeight: 500,
         }}
       >
-        <div
-          style={{
-            padding: "10px 12px",
-            borderRight: BORDER,
-            boxSizing: "border-box",
-          }}
-        >
-          <div style={smallLabelStyle}>Fecha:</div>
-          <div style={{ ...valueStyle, fontSize: 18 }}>{fechaFmt}</div>
-        </div>
-
-        <div
-          style={{
-            padding: "10px 12px",
-            borderRight: BORDER,
-            boxSizing: "border-box",
-          }}
-        >
-          <div style={smallLabelStyle}>Código:</div>
-          <div style={{ ...valueStyle, fontSize: 18 }}>{codigoStr}</div>
-        </div>
-
-        <div
-          style={{
-            padding: "10px 12px",
-            boxSizing: "border-box",
-          }}
-        >
-          <div style={smallLabelStyle}>Lote:</div>
-          <div style={{ ...valueStyle, fontSize: 16 }}>{loteStr}</div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          gridColumn: "1 / 2",
-          gridRow: 3,
-          borderBottom: BORDER,
-          padding: "12px 16px",
-          boxSizing: "border-box",
-          display: "grid",
-          gridTemplateColumns: "180px 1fr",
-          rowGap: 14,
-          alignContent: "start",
-          minHeight: 0,
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ fontSize: 20, fontWeight: 700 }}>Caducidad:</div>
-        <div style={{ fontSize: 24, fontWeight: 700 }}>{caducidadFmt}</div>
-
-        <div style={{ fontSize: 20, fontWeight: 700 }}>Reanálisis:</div>
-        <div style={{ fontSize: 24, fontWeight: 700 }}>{reanalisisFmt}</div>
-
-        <div style={{ fontSize: 20, fontWeight: 700 }}>Cantidad por envase:</div>
-        <div style={{ fontSize: 24, fontWeight: 700 }}>{cantidadStr}</div>
-      </div>
-
-      <div
-        style={{
-          gridColumn: "1 / 3",
-          gridRow: 5,
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          minHeight: 0,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            borderRight: BORDER,
-            padding: "8px 14px 10px",
-            boxSizing: "border-box",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-start",
-            gap: 10,
-            minHeight: 0,
-          }}
-        >
-          <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, flexShrink: 0 }}>
-            No. de envases
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              flexShrink: 0,
-              lineHeight: 1,
-            }}
-          >
-            <span style={{ fontSize: 46, fontWeight: 700, lineHeight: 1 }}>{envaseNumStr}</span>
-            <span style={{ fontSize: 22, fontWeight: 700, lineHeight: 1 }}>de</span>
-            <span style={{ fontSize: 46, fontWeight: 700, lineHeight: 1 }}>{envaseTotalStr}</span>
-          </div>
-        </div>
-
-        <div
-          style={{
-            padding: "8px 14px 10px",
-            boxSizing: "border-box",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-start",
-            gap: 10,
-            minHeight: 0,
-          }}
-        >
-          <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, flexShrink: 0 }}>
-            Cantidad total
-          </div>
-          <div style={{ fontSize: 52, fontWeight: 700, lineHeight: 1, flexShrink: 0 }}>
-            {envaseTotalStr}
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          gridColumn: "1 / 3",
-          gridRow: 6,
-          borderTop: BORDER,
-          padding: "10px 14px",
-          fontSize: 12,
-          lineHeight: 1.4,
-          boxSizing: "border-box",
-          minHeight: 0,
-          overflow: "hidden",
-        }}
-      >
-        {documentCode} {FOOTER_COMPLIANCE}
-      </div>
+        {documentCodeResolved} {FOOTER_COMPLIANCE}
+      </Cell>
     </div>
   );
 }

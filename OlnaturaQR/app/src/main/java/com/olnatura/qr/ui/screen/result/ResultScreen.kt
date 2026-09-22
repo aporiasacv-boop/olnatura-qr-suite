@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -25,13 +26,16 @@ import com.olnatura.qr.ui.components.StatusBanner
 import com.olnatura.qr.ui.components.TabletContent
 import com.olnatura.qr.ui.components.operationalStatusLabel
 import com.olnatura.qr.ui.components.statusColors
-import com.olnatura.qr.ui.share.SharePayload
 import com.olnatura.qr.ui.theme.OlnCard
 import com.olnatura.qr.ui.theme.OlnCream
 import com.olnatura.qr.ui.theme.OlnGreen
 import com.olnatura.qr.ui.theme.OlnTextMuted
 import java.text.NumberFormat
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -39,8 +43,6 @@ import java.util.Locale
 fun ResultScreen(
     vm: ResultViewModel,
     lote: String,
-    onReport: (String) -> Unit,
-    onShare: (SharePayload) -> Unit,
     onGoToLogin: () -> Unit,
     onBack: (() -> Unit)? = null
 ) {
@@ -52,8 +54,7 @@ fun ResultScreen(
 
     Scaffold(
         topBar = { OlnTopBar(title = "Datos de consulta", onBack = onBack) },
-        containerColor = OlnCream,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        containerColor = OlnCream
     ) { padding ->
         Surface(
             color = OlnCream,
@@ -90,20 +91,22 @@ fun ResultScreen(
                                 state.qr != null -> SuccessContent(
                                     lote = lote,
                                     qr = state.qr!!,
-                                    todayCount = state.todayCount,
                                     syncing = state.syncing,
                                     syncError = state.syncError,
-                                    commentsAllowed = state.commentsAllowed,
+                                    isAdmin = state.isAdmin,
+                                    reprintBusy = state.reprintBusy,
+                                    reprintError = state.reprintError,
+                                    commentsVisible = state.commentsVisible,
+                                    canCreateComments = state.canCreateComments,
                                     comments = state.comments,
                                     commentDraft = state.commentDraft,
                                     commentBusy = state.commentBusy,
                                     commentError = state.commentError,
                                     onSyncDynamics = vm::syncWithDynamics,
                                     onDismissSyncError = vm::clearSyncError,
+                                    onConfirmReprint = vm::confirmPhysicalReprint,
                                     onCommentDraft = vm::onCommentDraft,
-                                    onSubmitComment = vm::submitComment,
-                                    onReport = onReport,
-                                    onShare = onShare
+                                    onSubmitComment = vm::submitComment
                                 )
                             }
                         }
@@ -169,28 +172,29 @@ private fun ErrorContent(message: String, onRetry: () -> Unit) {
 private fun SuccessContent(
     lote: String,
     qr: com.olnatura.qr.data.model.QrResponse,
-    todayCount: Int,
     syncing: Boolean,
     syncError: String?,
-    commentsAllowed: Boolean,
+    isAdmin: Boolean,
+    reprintBusy: Boolean,
+    reprintError: String?,
+    commentsVisible: Boolean,
+    canCreateComments: Boolean,
     comments: List<LoteCommentResponse>,
     commentDraft: String,
     commentBusy: Boolean,
     commentError: String?,
     onSyncDynamics: () -> Unit,
     onDismissSyncError: () -> Unit,
+    onConfirmReprint: () -> Unit,
     onCommentDraft: (String) -> Unit,
-    onSubmitComment: () -> Unit,
-    onReport: (String) -> Unit,
-    onShare: (SharePayload) -> Unit
+    onSubmitComment: () -> Unit
 ) {
     val label = qr.label
     val dynamic = qr.dynamic
     val status = dynamic?.status ?: "DESCONOCIDO"
-    val statusSource = dynamic?.statusSource?.takeIf { it.isNotBlank() }
-        ?: "Dynamics 365 Finance & Operations"
     val lastSyncedDisplay = formatLastSyncedAt(dynamic?.lastSyncedAt)
     val (bgColor, textColor) = statusColors(status)
+    val reprintRequired = label.reprintRequired
 
     fun str(v: String?) = v?.takeIf { it.isNotBlank() } ?: "—"
     fun dateDdMmYyyy(v: String?): String {
@@ -208,69 +212,112 @@ private fun SuccessContent(
     val numberFmt = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-MX"))
     val inventoryUnit = dynamic?.unidadInventario?.takeIf { it.isNotBlank() }
         ?: dynamic?.uom?.takeIf { it.isNotBlank() }
-    val cantidadText = when {
-        dynamic?.cantidadAlmacen != null -> {
-            val qty = numberFmt.format(dynamic.cantidadAlmacen)
+    val cantidadRecibidaText =
+        if (dynamic?.cantidadRecibida != null) {
+            val qty = numberFmt.format(dynamic.cantidadRecibida)
             if (inventoryUnit != null) "$qty $inventoryUnit" else qty
+        } else {
+            "—"
         }
-        dynamic?.cantidad != null -> {
-            val qty = numberFmt.format(dynamic.cantidad)
-            if (inventoryUnit != null) "$qty $inventoryUnit" else qty
-        }
-        else -> "—"
-    }
 
-    val loteValue = str(label?.lote).ifBlank { lote }
-    val fechaEntradaRaw = dynamic?.fechaEntrada?.takeIf { it.isNotBlank() } ?: label?.fechaEntrada
-    val payload = SharePayload(
-        lote = loteValue,
-        status = status,
-        nombre = str(label?.nombre),
-        codigo = str(label?.codigo),
-        ubicacion = str(dynamic?.ubicacion),
-        almacen = str(dynamic?.almacen),
-        inventario = cantidadText,
-        statusDynamics = str(dynamic?.statusDynamics),
-        fechaEntrada = dateDdMmYyyy(fechaEntradaRaw),
-        caducidad = dateDdMmYyyy(label?.caducidad),
-        escaneadoHoy = "V: $todayCount"
-    )
+    val loteValue = str(dynamic?.lote).ifBlank { lote }
+    val nombreValue = str(dynamic?.nombre)
+    val codigoValue = str(dynamic?.codigo)
+    val fechaEntradaRaw = dynamic?.fechaEntrada
+    val caducidadRaw = dynamic?.caducidad
+    val tipoFechaQr = tipoFechaEtiqueta(label.caducidad, label.reanalisis)
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = OlnCard),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            LabelValueRow("Nombre", payload.nombre)
-            LabelValueRow("Lote", payload.lote)
-            LabelValueRow("Código", payload.codigo)
-            LabelValueRow("Escaneado hoy", payload.escaneadoHoy)
-            LabelValueRow("Ubicación", payload.ubicacion)
-            LabelValueRow("Almacén", payload.almacen)
-            LabelValueRow(
-                label = "Inventario disponible",
-                value = cantidadText,
-                caption = if (cantidadText != "—") "Actualizado al momento del escaneo" else null
-            )
-            LabelValueRow(
-                "Cantidad por envase",
-                label?.cantidadPorEnvase?.trim()?.takeIf { it.isNotEmpty() }?.let { raw ->
-                    raw.toDoubleOrNull()?.let { numberFmt.format(it) } ?: raw
-                } ?: "—"
-            )
-            LabelValueRow("Estado Dynamics", payload.statusDynamics)
-            LabelValueRow("Fecha de entrada", payload.fechaEntrada)
-            LabelValueRow("Fecha de caducidad", payload.caducidad, showDivider = false)
-        }
-    }
-
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(8.dp))
     StatusBanner(
         text = operationalStatusLabel(status),
         bgColor = bgColor,
         textColor = textColor,
         modifier = Modifier.fillMaxWidth()
     )
+    if (reprintRequired) {
+        Spacer(Modifier.height(10.dp))
+        WarningCard(
+            title = "Etiqueta física desactualizada",
+            body = "Los datos en sistema pueden estar correctos, pero la etiqueta impresa puede seguir mostrando información anterior. Reimprime y reemplaza las físicas.",
+            lines = emptyList()
+        )
+        if (isAdmin) {
+            Spacer(Modifier.height(8.dp))
+            PillButton(
+                text = if (reprintBusy) "Confirmando…" else "Confirmar reimpresión física",
+                onClick = onConfirmReprint,
+                containerColor = OlnGreen,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !reprintBusy
+            )
+        } else {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Un administrador debe confirmar la reimpresión.",
+                fontSize = 13.sp,
+                color = OlnTextMuted
+            )
+        }
+        if (reprintError != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = reprintError,
+                fontSize = 13.sp,
+                color = androidx.compose.ui.graphics.Color(0xFFB00020)
+            )
+        }
+    }
+
+    Spacer(Modifier.height(12.dp))
+    Card(
+        colors = CardDefaults.cardColors(containerColor = OlnCard),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LabelValueRow("Lote", loteValue)
+            LabelValueRow("Código", codigoValue)
+            LabelValueRow("Nombre", nombreValue)
+            LabelValueRow("Almacén", str(dynamic?.almacen))
+            FechaVencimientoRow(
+                dateText = dateDdMmYyyy(caducidadRaw),
+                tipoQr = tipoFechaQr
+            )
+            LabelValueRow("Fecha de entrada", dateDdMmYyyy(fechaEntradaRaw))
+            LabelValueRow("Cantidad recibida", cantidadRecibidaText)
+            run {
+                val menores = label.restosCantidades
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                    .ifEmpty {
+                        if (label.restosEnabled) {
+                            listOfNotNull(label.cantidadResto?.trim()?.takeIf { it.isNotEmpty() })
+                        } else {
+                            emptyList()
+                        }
+                    }
+                if (menores.isNotEmpty()) {
+                    LabelValueRow("Cantidad por envase", str(label.cantidadPorEnvase))
+                    val total = label.envaseTotal ?: menores.size
+                    val first = total - menores.size + 1
+                    menores.forEachIndexed { index, qty ->
+                        LabelValueRow("Envase ${first + index}", qty)
+                    }
+                }
+            }
+            val statusNorm = status.trim().uppercase(Locale.ROOT)
+            if (statusNorm == "APROBADO" || statusNorm == "PARCIAL") {
+                val liberacionAt = dynamic?.fechaLiberacion?.takeIf { it.isNotBlank() }
+                LabelValueRow(
+                    "Fecha y hora de aprobación",
+                    if (liberacionAt != null) {
+                        formatInstantMexico(liberacionAt)
+                    } else "—",
+                    showDivider = false
+                )
+            }
+        }
+    }
+
     Spacer(Modifier.height(8.dp))
     PillButton(
         text = if (syncing) "Sincronizando…" else "Sincronizar con Dynamics",
@@ -290,33 +337,6 @@ private fun SuccessContent(
         fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold
     )
-    Text(
-        text = "Fuente: $statusSource",
-        fontSize = 12.sp,
-        color = OlnTextMuted
-    )
-    if (status.equals("APROBADO", ignoreCase = true)) {
-        Spacer(Modifier.height(10.dp))
-        val liberacionAt = dynamic?.fechaLiberacion?.takeIf { it.isNotBlank() }
-        val liberadoPor = dynamic?.liberadoPor?.takeIf { it.isNotBlank() }
-        LabelValueRow(
-            "Fecha y hora de liberación",
-            if (liberacionAt != null) {
-                try {
-                    val instant = java.time.Instant.parse(liberacionAt)
-                    val z = java.time.ZonedDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
-                    z.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
-                } catch (_: Exception) {
-                    liberacionAt
-                }
-            } else "—"
-        )
-        LabelValueRow(
-            "Liberado por (núm. personal Dynamics)",
-            liberadoPor ?: "—",
-            showDivider = false
-        )
-    }
     if (syncError != null) {
         Spacer(Modifier.height(6.dp))
         Text(
@@ -329,26 +349,11 @@ private fun SuccessContent(
         }
     }
 
-    Spacer(Modifier.height(18.dp))
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        PillButton(
-            text = "Compartir",
-            onClick = { onShare(payload) },
-            containerColor = OlnGreen,
-            modifier = Modifier.weight(1f)
-        )
-        PillButton(
-            text = "Reportar",
-            onClick = { onReport(lote) },
-            containerColor = OlnGreen,
-            modifier = Modifier.weight(1f)
-        )
-    }
-
-    if (commentsAllowed) {
+    if (commentsVisible) {
         Spacer(Modifier.height(22.dp))
         CommentsSection(
             comments = comments,
+            canCreateComments = canCreateComments,
             commentDraft = commentDraft,
             commentBusy = commentBusy,
             commentError = commentError,
@@ -359,8 +364,73 @@ private fun SuccessContent(
 }
 
 @Composable
+private fun FechaVencimientoRow(
+    dateText: String,
+    tipoQr: String?
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Fecha de vencimiento",
+                color = OlnTextMuted,
+                modifier = Modifier.weight(1f)
+            )
+            if (!tipoQr.isNullOrBlank()) {
+                Surface(
+                    color = OlnCream,
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text(
+                        tipoQr,
+                        color = OlnGreen,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+        Text(dateText)
+        HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
+    }
+}
+
+@Composable
+private fun WarningCard(
+    title: String,
+    body: String,
+    lines: List<String>
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFFF0DFB8)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(title, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF8A3B0A))
+            Text(body, fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFF8A3B0A))
+            lines.forEach { line ->
+                Text("• $line", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFF8A3B0A))
+            }
+        }
+    }
+}
+
+@Composable
 private fun CommentsSection(
     comments: List<LoteCommentResponse>,
+    canCreateComments: Boolean,
     commentDraft: String,
     commentBusy: Boolean,
     commentError: String?,
@@ -375,41 +445,44 @@ private fun CommentsSection(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Comentario", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-            Text(
-                "Bitácora del lote. Los comentarios no se pueden editar ni eliminar. Máx. ${ResultViewModel.COMMENT_MAX} caracteres.",
-                fontSize = 13.sp
-            )
+            Text("Comentarios", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
 
             if (comments.isEmpty()) {
-                Text("Sin comentarios en este lote.", fontSize = 14.sp)
+                Text("Sin comentarios", fontSize = 14.sp)
             } else {
                 comments.forEach { c ->
                     CommentItem(c)
                 }
             }
 
-            OutlinedTextField(
-                value = commentDraft,
-                onValueChange = onCommentDraft,
-                label = { Text("Escribe un comentario…") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 5,
-                shape = RoundedCornerShape(14.dp),
-                enabled = !commentBusy,
-                supportingText = { Text("${commentDraft.length}/${ResultViewModel.COMMENT_MAX}") }
-            )
-            if (commentError != null) {
-                Text(commentError, color = androidx.compose.ui.graphics.Color(0xFFB00020), fontSize = 13.sp)
+            if (canCreateComments) {
+                OutlinedTextField(
+                    value = commentDraft,
+                    onValueChange = onCommentDraft,
+                    label = { Text("Escribe un comentario…") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5,
+                    shape = RoundedCornerShape(14.dp),
+                    enabled = !commentBusy,
+                    supportingText = { Text("${commentDraft.length}/${ResultViewModel.COMMENT_MAX}") }
+                )
+                if (commentError != null) {
+                    Text(commentError, color = androidx.compose.ui.graphics.Color(0xFFB00020), fontSize = 13.sp)
+                }
+                PillButton(
+                    text = if (commentBusy) "Guardando…" else "Agregar comentario",
+                    onClick = onSubmitComment,
+                    containerColor = OlnGreen,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !commentBusy && commentDraft.isNotBlank()
+                )
+            } else {
+                Text(
+                    "Solo usuarios autorizados por el administrador pueden agregar comentarios.",
+                    fontSize = 13.sp
+                )
             }
-            PillButton(
-                text = if (commentBusy) "Guardando…" else "Agregar comentario",
-                onClick = onSubmitComment,
-                containerColor = OlnGreen,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !commentBusy && commentDraft.isNotBlank()
-            )
         }
     }
 }
@@ -437,34 +510,62 @@ private fun roleDisplay(role: String?): String {
         "INSPECCION" -> "INSPECCIÓN"
         "CALIDAD" -> "CALIDAD"
         "ALMACEN" -> "ALMACÉN"
+        "PRODUCCION" -> "PRODUCCIÓN"
+        "VALIDACION" -> "VALIDACIÓN"
         "ADMIN" -> "ADMINISTRADOR"
         else -> role?.uppercase(Locale.ROOT) ?: "—"
     }
 }
 
+private fun tipoFechaEtiqueta(caducidad: String?, reanalisis: String?): String? {
+    fun has(v: String?): Boolean {
+        val t = v?.trim().orEmpty()
+        return t.isNotEmpty() && t != "—"
+    }
+    return when {
+        has(reanalisis) -> "Reanálisis"
+        has(caducidad) -> "Caducidad"
+        else -> null
+    }
+}
+
+private val MexicoZone: ZoneId = ZoneId.of("America/Mexico_City")
+private val DateTimeMexicoFmt: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss", Locale("es", "MX")).withZone(MexicoZone)
+private val CommentMexicoFmt: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale("es", "MX")).withZone(MexicoZone)
+
 private fun formatCommentDateTime(raw: String?): String {
     if (raw.isNullOrBlank()) return "—"
-    return try {
-        val odt = OffsetDateTime.parse(raw)
-        odt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale("es", "MX")))
-    } catch (_: Exception) {
-        raw.take(16).replace('T', ' ')
-    }
+    return formatInstantMexico(raw, CommentMexicoFmt)
 }
 
 private fun formatLastSyncedAt(raw: String?): String {
     if (raw.isNullOrBlank()) return "—"
+    return formatInstantMexico(raw)
+}
+
+private fun formatInstantMexico(
+    raw: String,
+    formatter: DateTimeFormatter = DateTimeMexicoFmt
+): String {
+    val instant = parseInstant(raw)
+    return if (instant != null) formatter.format(instant) else raw.take(19).replace('T', ' ')
+}
+
+private fun parseInstant(raw: String): Instant? {
+    val value = raw.trim()
     return try {
-        val odt = OffsetDateTime.parse(raw)
-        odt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss", Locale("es", "MX")))
+        Instant.parse(value)
     } catch (_: Exception) {
         try {
-            val instant = java.time.Instant.parse(raw)
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss", Locale("es", "MX"))
-                .withZone(java.time.ZoneId.systemDefault())
-                .format(instant)
+            OffsetDateTime.parse(value).toInstant()
         } catch (_: Exception) {
-            raw.take(19).replace('T', ' ')
+            try {
+                LocalDateTime.parse(value).toInstant(ZoneOffset.UTC)
+            } catch (_: Exception) {
+                null
+            }
         }
     }
 }

@@ -147,7 +147,7 @@ const useStyles = makeStyles({
 type RequestUserPayload = {
   username: string;
   email: string;
-  roleRequested: "ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION";
+  roleRequested: "ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION" | "VALIDACION";
   password: string;
 };
 
@@ -157,7 +157,7 @@ export default function RegisterRequestPage() {
 
   const [nombre, setNombre] = React.useState("");
   const [correo, setCorreo] = React.useState("");
-  const [area, setArea] = React.useState<"ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION" | "">("");
+  const [area, setArea] = React.useState<"ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION" | "VALIDACION" | "">("");
   const [password, setPassword] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -251,7 +251,7 @@ export default function RegisterRequestPage() {
     <div className={s.root}>
       <div className={`${s.card} app-card`}>
         <div className={s.header}>
-          <BrandLogo size={48} title="Sistema Olnatura" subtitle="QR Suite" />
+          <BrandLogo size={48} title="Olnatura QR" />
           <div>
             <div className={s.title}>Crear usuario</div>
             <div className={s.subtitle}>Solicitud de alta para acceso al sistema</div>
@@ -267,9 +267,10 @@ export default function RegisterRequestPage() {
               className={s.input}
               value={nombre}
               onChange={(_, d) => setNombre(d.value)}
-              placeholder="Ingresa tu usuario"
+              placeholder="Ej. Irene Duarte"
               autoComplete="username"
             />
+            <span className={s.hintMuted}>Primer nombre + Primer apellido</span>
           </div>
 
           <div className={s.row}>
@@ -331,13 +332,14 @@ export default function RegisterRequestPage() {
               placeholder="Selecciona un área"
               selectedOptions={area ? [area] : []}
               onOptionSelect={(_, data) =>
-                setArea((data.optionValue ?? "") as "ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION" | "")
+                setArea((data.optionValue ?? "") as "ALMACEN" | "PRODUCCION" | "CALIDAD" | "INSPECCION" | "VALIDACION" | "")
               }
             >
               <Option value="ALMACEN">ALMACÉN</Option>
               <Option value="PRODUCCION">PRODUCCIÓN</Option>
               <Option value="CALIDAD">CONTROL DE CALIDAD</Option>
               <Option value="INSPECCION">INSPECCIÓN</Option>
+              <Option value="VALIDACION">VALIDACIÓN</Option>
             </Dropdown>
           </div>
 

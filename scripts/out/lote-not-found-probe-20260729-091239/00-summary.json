@@ -1,0 +1,58 @@
+﻿[
+    {
+        "name":  "01-ItemBatches-exact",
+        "ok":  false,
+        "count":  0,
+        "sample":  null,
+        "uri":  "https://olnatura-produccion.operations.dynamics.com`$filter=BatchNumber%20eq%20\u0027260722-MES0004513\u0027\u0026`$top=5\u0026`$select=ItemNumber%2CBatchNumber%2CBatchExpirationDate%2CBatchDispositionCode"
+    },
+    {
+        "name":  "02-QualityOrderHeaders-exact",
+        "ok":  false,
+        "count":  0,
+        "sample":  null,
+        "uri":  "https://olnatura-produccion.operations.dynamics.com`$filter=ItemBatchNumber%20eq%20\u0027260722-MES0004513\u0027\u0026`$top=5"
+    },
+    {
+        "name":  "03-InventDimBiEntities-exact",
+        "ok":  false,
+        "count":  0,
+        "sample":  null,
+        "uri":  "https://olnatura-produccion.operations.dynamics.com`$filter=inventBatchId%20eq%20\u0027260722-MES0004513\u0027\u0026`$top=50\u0026`$select=inventDimId%2CinventBatchId%2CInventLocationId%2CwMSLocationId"
+    },
+    {
+        "name":  "04-ItemBatches-endswith",
+        "ok":  false,
+        "count":  0,
+        "sample":  null,
+        "uri":  "https://olnatura-produccion.operations.dynamics.com`$filter=endswith(BatchNumber%2C\u0027MES0004513\u0027)\u0026`$top=10\u0026`$select=ItemNumber%2CBatchNumber%2CBatchDispositionCode"
+    },
+    {
+        "name":  "05-ItemBatches-contains",
+        "ok":  false,
+        "count":  0,
+        "sample":  null,
+        "uri":  "https://olnatura-produccion.operations.dynamics.com`$filter=contains(BatchNumber%2C\u0027MES0004513\u0027)\u0026`$top=10\u0026`$select=ItemNumber%2CBatchNumber%2CBatchDispositionCode"
+    },
+    {
+        "name":  "06-QO-endswith",
+        "ok":  false,
+        "count":  0,
+        "sample":  null,
+        "uri":  "https://olnatura-produccion.operations.dynamics.com`$filter=endswith(ItemBatchNumber%2C\u0027MES0004513\u0027)\u0026`$top=10"
+    },
+    {
+        "name":  "07-InventDim-endswith",
+        "ok":  false,
+        "count":  0,
+        "sample":  null,
+        "uri":  "https://olnatura-produccion.operations.dynamics.com`$filter=endswith(inventBatchId%2C\u0027MES0004513\u0027)\u0026`$top=20\u0026`$select=inventDimId%2CinventBatchId%2CInventLocationId%2CwMSLocationId"
+    },
+    {
+        "name":  "08-ItemBatches-known-MES4516",
+        "ok":  false,
+        "count":  0,
+        "sample":  null,
+        "uri":  "https://olnatura-produccion.operations.dynamics.com`$filter=BatchNumber%20eq%20\u0027260724-MES0004516\u0027\u0026`$top=1\u0026`$select=ItemNumber%2CBatchNumber%2CBatchDispositionCode"
+    }
+]
