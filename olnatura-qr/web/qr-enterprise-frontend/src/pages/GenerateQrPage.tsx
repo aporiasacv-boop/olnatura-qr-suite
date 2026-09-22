@@ -15,6 +15,7 @@ import {
   validateReprintRange,
 } from "../utils/labelPreviewPermissions";
 import { cantidadForEnvase, cantidadTotalOf, isRestosEnabled } from "../utils/envaseRestos";
+import { storedDateText } from "../utils/dateFormat";
 import { resolveLabelDocumentCode } from "../utils/labelDocumentCode";
 
 function logAudit(actionType: string, lote: string | null) {
@@ -281,17 +282,9 @@ export default function GenerateQrPage() {
                   materialName={String(labelData.nombre ?? "").trim() || "—"}
                   codigo={String(labelData.codigo ?? "").trim() || "—"}
                   lote={String(labelData.lote ?? "").trim() || "—"}
-                  fecha={labelData.fechaEntrada ?? "N/A"}
-                  caducidad={
-                    (labelData as any).fechaTipo === "REANALISIS"
-                      ? ""
-                      : ((labelData as any).fechaValor ?? labelData.caducidad ?? "")
-                  }
-                  reanalisis={
-                    (labelData as any).fechaTipo === "REANALISIS"
-                      ? ((labelData as any).fechaValor ?? labelData.reanalisis ?? "")
-                      : (labelData.reanalisis ?? "")
-                  }
+                  fecha={storedDateText(labelData.fechaEntrada) || "N/A"}
+                  caducidad={storedDateText(labelData.caducidad)}
+                  reanalisis={storedDateText(labelData.reanalisis)}
                   cantidad={(() => {
                     const n = Number(printTo);
                     const envase = Number.isFinite(n) && n >= 1 ? n : parseEnvaseTotal(labelData);

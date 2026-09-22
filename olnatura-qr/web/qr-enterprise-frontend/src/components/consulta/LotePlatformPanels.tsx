@@ -7,7 +7,7 @@ import LabelPreview from "../label/LabelPreview";
 import { PlainField } from "../ui/DataFields";
 import type { ToastItem } from "../ui/toasts";
 import type { QrResponse, Role } from "../../api/types";
-import { formatDateDDMMYYYY } from "../../utils/dateFormat";
+import { formatDateDDMMYYYY, storedDateText } from "../../utils/dateFormat";
 import { LABELS } from "../../utils/displayLabels";
 import { formatNumber } from "../../utils/formatNumber";
 import { generateQrPlain } from "../../utils/qrWithLogo";
@@ -125,8 +125,8 @@ export function PlatformFieldsBlock({ platform, platformLoading }: SharedProps) 
         <PlainField
           label="Reanálisis"
           value={
-            label.reanalisis
-              ? formatDateDDMMYYYY(String(label.reanalisis)) || asText(label.reanalisis)
+            storedDateText(label.reanalisis)
+              ? formatDateDDMMYYYY(storedDateText(label.reanalisis)) || asText(label.reanalisis)
               : "—"
           }
           boxed={false}
@@ -220,21 +220,9 @@ export function LabelPreviewPanel({
                 materialName={String(label.nombre ?? "").trim() || "—"}
                 codigo={String(label.codigo ?? "").trim() || "—"}
                 lote={String(label.lote ?? "").trim() || "—"}
-                fecha={label.fechaEntrada ?? "N/A"}
-                caducidad={
-                  (label as { fechaTipo?: string }).fechaTipo === "REANALISIS"
-                    ? ""
-                    : String(
-                        (label as { fechaValor?: string }).fechaValor ?? label.caducidad ?? ""
-                      )
-                }
-                reanalisis={
-                  (label as { fechaTipo?: string }).fechaTipo === "REANALISIS"
-                    ? String(
-                        (label as { fechaValor?: string }).fechaValor ?? label.reanalisis ?? ""
-                      )
-                    : String(label.reanalisis ?? "")
-                }
+                fecha={storedDateText(label.fechaEntrada) || "N/A"}
+                caducidad={storedDateText(label.caducidad)}
+                reanalisis={storedDateText(label.reanalisis)}
                 cantidad={cantidadForEnvase(label, Number(label.envaseTotal) || 1)}
                 envaseNum={
                   isRestosEnabled(label)

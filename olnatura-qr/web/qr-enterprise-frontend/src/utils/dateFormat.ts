@@ -84,3 +84,16 @@ export function isValidDDMMYYYY(input: string | null | undefined): boolean {
 export function isoToDisplay(iso: string | null | undefined): string {
   return formatDateDDMMYYYY(iso);
 }
+
+export function storedDateText(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string") return value.trim();
+  if (Array.isArray(value) && value.length >= 3) {
+    const year = Number(value[0]);
+    const month = Number(value[1]);
+    const day = Number(value[2]);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return "";
+    return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+  return String(value).trim();
+}
