@@ -85,6 +85,15 @@ export function isoToDisplay(iso: string | null | undefined): string {
   return formatDateDDMMYYYY(iso);
 }
 
+export function fechaTipoEtiqueta(
+  caducidad: unknown,
+  reanalisis: unknown
+): "REANALISIS" | "CADUCIDAD" | null {
+  if (storedDateText(reanalisis)) return "REANALISIS";
+  if (storedDateText(caducidad)) return "CADUCIDAD";
+  return null;
+}
+
 export function storedDateText(value: unknown): string {
   if (value == null) return "";
   if (typeof value === "string") return value.trim();

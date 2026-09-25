@@ -7,7 +7,7 @@ import LabelPreview from "../label/LabelPreview";
 import { PlainField } from "../ui/DataFields";
 import type { ToastItem } from "../ui/toasts";
 import type { QrResponse, Role } from "../../api/types";
-import { formatDateDDMMYYYY, storedDateText } from "../../utils/dateFormat";
+import { fechaTipoEtiqueta, formatDateDDMMYYYY, storedDateText } from "../../utils/dateFormat";
 import { LABELS } from "../../utils/displayLabels";
 import { formatNumber } from "../../utils/formatNumber";
 import { generateQrPlain } from "../../utils/qrWithLogo";
@@ -122,15 +122,24 @@ export function PlatformFieldsBlock({ platform, platformLoading }: SharedProps) 
             />
           );
         })}
-        <PlainField
-          label="Reanálisis"
-          value={
-            storedDateText(label.reanalisis)
-              ? formatDateDDMMYYYY(storedDateText(label.reanalisis)) || asText(label.reanalisis)
-              : "—"
-          }
-          boxed={false}
-        />
+        {fechaTipoEtiqueta(label.caducidad, label.reanalisis) === "REANALISIS" ? (
+          <PlainField
+            label="Reanálisis"
+            value={
+              formatDateDDMMYYYY(storedDateText(label.reanalisis)) || asText(label.reanalisis)
+            }
+            boxed={false}
+          />
+        ) : null}
+        {fechaTipoEtiqueta(label.caducidad, label.reanalisis) === "CADUCIDAD" ? (
+          <PlainField
+            label="Caducidad"
+            value={
+              formatDateDDMMYYYY(storedDateText(label.caducidad)) || asText(label.caducidad)
+            }
+            boxed={false}
+          />
+        ) : null}
       </div>
     </div>
   );
