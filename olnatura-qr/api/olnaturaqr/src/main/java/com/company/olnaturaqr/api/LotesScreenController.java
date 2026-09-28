@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.UUID;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
@@ -57,7 +58,18 @@ public class LotesScreenController {
             @RequestBody AdminLotDeleteService.DeleteRequest req
     ) {
         requireAccess(principal);
-        return ResponseEntity.ok(lotDeleteService.deleteLot(id, principal, req));
+        String motivo = req == null || req.motivo() == null ? "" : req.motivo().trim();
+        if (motivo.isEmpty()) {
+            throw new ResponseStatusException(BAD_REQUEST, "Motivo es requerido");
+        }
+        if (motivo.length() > 500) {
+            throw new ResponseStatusException(BAD_REQUEST, "Motivo demasiado largo");
+        }
+        return ResponseEntity.ok(lotDeleteService.deleteLot(
+                id,
+                principal,
+                new AdminLotDeleteService.DeleteRequest(req.confirm(), req.lote(), motivo)
+        ));
     }
 
     private void requireAccess(AuthPrincipal principal) {

@@ -8,6 +8,7 @@ import {
   DialogSurface,
   DialogTitle,
   Input,
+  Textarea,
   makeStyles,
   Table,
   TableBody,
@@ -62,6 +63,7 @@ export default function LotesPage() {
   const [actionId, setActionId] = React.useState<string | null>(null);
   const [target, setTarget] = React.useState<LotRow | null>(null);
   const [step, setStep] = React.useState<1 | 2>(1);
+  const [motivo, setMotivo] = React.useState("");
   const [typedLote, setTypedLote] = React.useState("");
 
   const load = React.useCallback(async () => {
@@ -91,6 +93,7 @@ export default function LotesPage() {
     if (actionId) return;
     setTarget(null);
     setStep(1);
+    setMotivo("");
     setTypedLote("");
   };
 
@@ -104,11 +107,13 @@ export default function LotesPage() {
       });
       return;
     }
+    const reason = motivo.trim();
+    if (!reason) return;
     setActionId(target.id);
     try {
       await api(`/lotes/${target.id}/delete`, {
         method: "POST",
-        body: { confirm: "ELIMINAR_LOTE", lote: expected },
+        body: { confirm: "ELIMINAR_LOTE", lote: expected, motivo: reason },
         toast: false,
       });
       setItems((prev) => (prev ?? []).filter((x) => x.id !== target.id));
@@ -119,6 +124,7 @@ export default function LotesPage() {
       });
       setTarget(null);
       setStep(1);
+      setMotivo("");
       setTypedLote("");
     } catch (err) {
       const ae = err as ApiError;
@@ -182,6 +188,7 @@ export default function LotesPage() {
                         onClick={() => {
                           setTarget(row);
                           setStep(1);
+                          setMotivo("");
                           setTypedLote("");
                         }}
                       >
@@ -202,7 +209,15 @@ export default function LotesPage() {
             <DialogTitle>Eliminar lote</DialogTitle>
             <DialogContent>
               {step === 1 ? (
-                <Text>¿Eliminar el lote {target?.lote}?</Text>
+                <div className={s.confirmBox}>
+                  <Text>¿Eliminar el lote {target?.lote}?</Text>
+                  <Textarea
+                    value={motivo}
+                    onChange={(_, d) => setMotivo(d.value)}
+                    placeholder="Motivo"
+                    disabled={!!actionId}
+                  />
+                </div>
               ) : (
                 <div className={s.confirmBox}>
                   <Text>Escribe el lote {target?.lote}</Text>
@@ -220,7 +235,7 @@ export default function LotesPage() {
                 Cancelar
               </Button>
               {step === 1 ? (
-                <Button appearance="primary" onClick={() => setStep(2)}>
+                <Button appearance="primary" disabled={!motivo.trim()} onClick={() => setStep(2)}>
                   Continuar
                 </Button>
               ) : (
