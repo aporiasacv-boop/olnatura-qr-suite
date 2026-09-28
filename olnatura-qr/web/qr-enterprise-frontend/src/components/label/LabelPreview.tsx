@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { formatDateLabelDDMMMYY } from "../../utils/dateFormat";
+import { etiquetaFechaCajas, formatDateLabelDDMMMYY } from "../../utils/dateFormat";
 import { resolveLabelDocumentCode } from "../../utils/labelDocumentCode";
 import { labelHeaderTitle } from "../../utils/labelHeaderTitle";
 
@@ -115,8 +115,9 @@ export default function LabelPreview({
   tipoMaterial,
 }: LabelPreviewProps) {
   const fechaFmt = formatDateLabelDDMMMYY(fecha) || "N/A";
-  const caducidadFmt = formatDateLabelDDMMMYY(caducidad);
-  const reanalisisFmt = formatDateLabelDDMMMYY(reanalisis);
+  const cajas = etiquetaFechaCajas(caducidad, reanalisis);
+  const caducidadFmt = cajas.caducidad;
+  const reanalisisFmt = cajas.reanalisis;
 
   const nombreStr = String(materialName ?? "").trim() || "N/A";
   const codigoStr = String(codigo ?? "").trim() || "N/A";

@@ -94,6 +94,26 @@ export function fechaTipoEtiqueta(
   return null;
 }
 
+export function etiquetaFechaCajas(
+  caducidad: unknown,
+  reanalisis: unknown
+): { caducidad: string; reanalisis: string } {
+  const tipo = fechaTipoEtiqueta(caducidad, reanalisis);
+  if (tipo === "REANALISIS") {
+    return {
+      caducidad: "N/A",
+      reanalisis: formatDateLabelDDMMMYY(storedDateText(reanalisis)) || "N/A",
+    };
+  }
+  if (tipo === "CADUCIDAD") {
+    return {
+      caducidad: formatDateLabelDDMMMYY(storedDateText(caducidad)) || "N/A",
+      reanalisis: "N/A",
+    };
+  }
+  return { caducidad: "N/A", reanalisis: "N/A" };
+}
+
 export function storedDateText(value: unknown): string {
   if (value == null) return "";
   if (typeof value === "string") return value.trim();

@@ -305,10 +305,20 @@ public class LabelController {
                 "Nombre: " + (q.getNombre() == null || q.getNombre().isBlank() ? "N/A" : q.getNombre().trim()));
         String codigo = ZplTextNormalizer.normalize(q.getCodigo());
         String fechaStr = ZplTextNormalizer.normalize(formatDate(q.getFechaEntrada()));
-        boolean hasCaducidad = q.getCaducidad() != null;
-        boolean hasReanalisis = q.getReanalisis() != null;
-        String caducidadStr = hasCaducidad ? ZplTextNormalizer.normalize(formatDate(q.getCaducidad())) : "";
-        String reanalisisStr = hasReanalisis ? ZplTextNormalizer.normalize(formatDate(q.getReanalisis())) : "";
+        boolean reanalisis = q.getReanalisis() != null;
+        boolean caducidad = q.getCaducidad() != null;
+        String caducidadStr;
+        String reanalisisStr;
+        if (reanalisis) {
+            reanalisisStr = ZplTextNormalizer.normalize(formatDate(q.getReanalisis()));
+            caducidadStr = "N/A";
+        } else if (caducidad) {
+            caducidadStr = ZplTextNormalizer.normalize(formatDate(q.getCaducidad()));
+            reanalisisStr = "N/A";
+        } else {
+            caducidadStr = "N/A";
+            reanalisisStr = "N/A";
+        }
         String documentCode = ZplTextNormalizer.normalize(LabelDocumentCode.resolve(q.getDocumentCode()));
         String cantidadNorm = ZplTextNormalizer.normalize(cantidadStr);
         String envaseDisplay = ZplTextNormalizer.normalize(
