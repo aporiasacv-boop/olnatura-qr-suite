@@ -27,6 +27,9 @@ public class User {
   @Column(name = "can_create_lote_comments", nullable = false)
   private boolean canCreateLoteComments = false;
 
+  @Column(name = "can_delete_lotes", nullable = false)
+  private boolean canDeleteLotes = false;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
 
@@ -76,6 +79,14 @@ public class User {
 
   public void setCanCreateLoteComments(boolean canCreateLoteComments) {
     this.canCreateLoteComments = canCreateLoteComments;
+  }
+
+  public boolean isCanDeleteLotes() {
+    return canDeleteLotes;
+  }
+
+  public void setCanDeleteLotes(boolean canDeleteLotes) {
+    this.canDeleteLotes = canDeleteLotes;
   }
 
   public Instant getCreatedAt() {

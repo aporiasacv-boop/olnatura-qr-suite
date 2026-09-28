@@ -121,12 +121,14 @@ public ResponseEntity<UserDto.LoginResponse> login(
 
         User user = userRepository.findById(principal.id()).orElse(null);
         boolean canCreateLoteComments = user != null && user.isCanCreateLoteComments();
+        boolean canDeleteLotes = user != null && user.isCanDeleteLotes();
 
         return ResponseEntity.ok(new MeResponse(
                 principal.id().toString(),
                 principal.username(),
                 principal.roles(),
-                canCreateLoteComments
+                canCreateLoteComments,
+                canDeleteLotes
         ));
     }
 
@@ -201,7 +203,8 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
             String id,
             String username,
             List<String> roles,
-            boolean canCreateLoteComments
+            boolean canCreateLoteComments,
+            boolean canDeleteLotes
     ) {}
 
     public record ErrorResponse(String message) {}

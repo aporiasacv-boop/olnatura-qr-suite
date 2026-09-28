@@ -12,8 +12,8 @@ import AdminAuditPage from "../pages/AdminAuditPage";
 import AdminMetricsPage from "../pages/AdminMetricsPage";
 import AdminUsersPage from "../pages/AdminUsersPage";
 import AdminLotsPage from "../pages/AdminLotsPage";
-import AdminDbPage from "../pages/AdminDbPage";
 import AdminProblemReportsPage from "../pages/AdminProblemReportsPage";
+import LotesPage from "../pages/LotesPage";
 
 import ScanHistoryPage from "../pages/ScanHistoryPage";
 import RegisterLabelPage from "../pages/RegisterLabelPage";
@@ -21,7 +21,7 @@ import GenerateQrPage from "../pages/GenerateQrPage";
 
 import OperationalStatusValidationTempPage from "../pages/temp/OperationalStatusValidationTempPage";
 
-import { RequireAuth, RequireAdmin } from "../auth/guards";
+import { RequireAuth, RequireAdmin, RequireLotDelete } from "../auth/guards";
 import { RequireRole } from "../auth/RequireRole";
 
 export const router = createBrowserRouter([
@@ -110,18 +110,18 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "lotes",
+        element: (
+          <RequireLotDelete>
+            <LotesPage />
+          </RequireLotDelete>
+        ),
+      },
+      {
         path: "admin/lots",
         element: (
           <RequireAdmin>
             <AdminLotsPage />
-          </RequireAdmin>
-        ),
-      },
-      {
-        path: "admin/db",
-        element: (
-          <RequireAdmin>
-            <AdminDbPage />
           </RequireAdmin>
         ),
       },

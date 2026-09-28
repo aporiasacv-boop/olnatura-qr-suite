@@ -15,7 +15,8 @@ data class MeResponse(
     val id: String,
     val username: String,
     val roles: List<String>,
-    val canCreateLoteComments: Boolean = false
+    val canCreateLoteComments: Boolean = false,
+    val canDeleteLotes: Boolean = false
 )
 
 data class QrResponse(

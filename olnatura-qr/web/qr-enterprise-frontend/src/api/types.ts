@@ -5,6 +5,7 @@ export type Me = {
   username: string;
   roles: Role[];
   canCreateLoteComments?: boolean;
+  canDeleteLotes?: boolean;
 };
 
 export type LoginRequest = {
