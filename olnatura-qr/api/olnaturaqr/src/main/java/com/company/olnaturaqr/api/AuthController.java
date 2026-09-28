@@ -160,11 +160,11 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
 
     if (userRepository.existsByUsernameIgnoreCase(username)) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(
-                "Ese usuario ya existe. Si olvidaste la contraseña, un administrador puede restablecerla en Usuarios."));
+                "Nombre de Usuario ya existente"));
     }
     if (userRepository.existsByEmailIgnoreCase(email)) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(
-                "Ese correo ya está registrado. Si olvidaste la contraseña, un administrador puede restablecerla en Usuarios."));
+                "Correo electrónico ya existente"));
     }
 
     Role role = roleRepository.findByName(roleName)
