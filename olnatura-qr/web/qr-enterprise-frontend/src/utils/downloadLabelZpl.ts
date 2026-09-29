@@ -4,6 +4,7 @@ export async function downloadLabelZplFile(opts: {
   totalEnvases: number;
   printFrom?: number;
   printTo?: number;
+  prueba?: boolean;
 }): Promise<void> {
   const key = (opts.labelIdOrLote ?? "").trim();
   if (!key) throw new Error("Identificador de etiqueta vacío");
@@ -17,6 +18,7 @@ export async function downloadLabelZplFile(opts: {
   params.set("total", String(total));
   params.set("from", String(from));
   params.set("to", String(to));
+  if (opts.prueba) params.set("prueba", "true");
   const qs = params.toString();
   const url = `${base}/api/v1/label/${encodeURIComponent(key)}/zpl${qs ? `?${qs}` : ""}`;
 
@@ -37,6 +39,8 @@ export async function downloadLabelZplFile(opts: {
   if (cd) {
     const m = cd.match(/filename="?([^";\n]+)"?/);
     if (m?.[1]) filename = m[1].trim();
+  } else if (opts.prueba) {
+    filename = `etiqueta-prueba-${key.replace(/[\s/\\]+/g, "_")}-del-${from}-al-${to}.zpl`;
   } else if (from !== to) {
     filename = `etiqueta-${key.replace(/[\s/\\]+/g, "_")}-del-${from}-al-${to}.zpl`;
   }

@@ -13,6 +13,7 @@ import com.company.olnaturaqr.support.workflow.OperationalStatusSyncService;
 import com.company.olnaturaqr.support.workflow.WorkflowStatus;
 import com.company.olnaturaqr.support.label.EnvaseRestos;
 import com.company.olnaturaqr.support.label.LabelDocumentCode;
+import com.company.olnaturaqr.support.label.LabelTestLogo;
 import com.company.olnaturaqr.support.label.LabelPrintDates;
 import com.company.olnaturaqr.support.zpl.ZplTextNormalizer;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -158,7 +159,11 @@ public class LabelController {
             @PathVariable String id,
             @RequestParam(required = false) Integer total,
             @RequestParam(required = false) Integer from,
-            @RequestParam(required = false) Integer to) {
+            @RequestParam(required = false) Integer to,
+            @RequestParam(required = false, defaultValue = "false") boolean prueba) {
+        if (prueba && !isAdmin(principal)) {
+            throw new ResponseStatusException(FORBIDDEN, "La etiqueta de prueba es solo para el administrador");
+        }
         String key = id == null ? "" : id.trim();
         QrLabel q = resolveLabel(key);
 
@@ -169,23 +174,24 @@ public class LabelController {
 
         StringBuilder zplAll = new StringBuilder();
         for (int seq = printFrom; seq <= printTo; seq++) {
-            zplAll.append(buildSingleZpl(q, seq, envaseTotal, null, EnvaseRestos.cantidadForEnvase(q, seq)));
+            zplAll.append(buildSingleZpl(q, seq, envaseTotal, null, EnvaseRestos.cantidadForEnvase(q, seq), prueba));
         }
 
         String safeLote = loteSafe(q.getLote());
+        String prefix = prueba ? "etiqueta-prueba-" : "etiqueta-";
         String filename = (printFrom == printTo)
-                ? "etiqueta-" + safeLote + ".zpl"
-                : "etiqueta-" + safeLote + "-del-" + printFrom + "-al-" + printTo + ".zpl";
+                ? prefix + safeLote + ".zpl"
+                : prefix + safeLote + "-del-" + printFrom + "-al-" + printTo + ".zpl";
 
-        auditService.log(principal, "PRINT_LABEL", q.getLote(),
-                java.util.Map.of(
-                        "labelId", q.getId().toString(),
-                        "lote", q.getLote(),
-                        "mode", "ZPL_DOWNLOAD",
-                        "from", printFrom,
-                        "to", printTo,
-                        "count", printTo - printFrom + 1),
-                null);
+        java.util.Map<String, Object> audit = new java.util.LinkedHashMap<>();
+        audit.put("labelId", q.getId().toString());
+        audit.put("lote", q.getLote());
+        audit.put("mode", "ZPL_DOWNLOAD");
+        audit.put("layout", prueba ? "PRUEBA" : "PRODUCCION");
+        audit.put("from", printFrom);
+        audit.put("to", printTo);
+        audit.put("count", printTo - printFrom + 1);
+        auditService.log(principal, "PRINT_LABEL", q.getLote(), audit, null);
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
@@ -222,7 +228,7 @@ public class LabelController {
 
         StringBuilder zplAll = new StringBuilder();
         for (int seq = printFrom; seq <= printTo; seq++) {
-            zplAll.append(buildSingleZpl(q, seq, envaseTotal, qrBase64, EnvaseRestos.cantidadForEnvase(q, seq)));
+            zplAll.append(buildSingleZpl(q, seq, envaseTotal, qrBase64, EnvaseRestos.cantidadForEnvase(q, seq), false));
         }
 
         String safeLote = loteSafe(q.getLote());
@@ -297,7 +303,15 @@ public class LabelController {
         return (lote == null ? "label" : lote).replaceAll("[\\s/\\\\]+", "_");
     }
 
-    private String buildSingleZpl(QrLabel q, int envaseNum, int envaseTotal, String qrImageBase64, String cantidadStr) {
+    private boolean isAdmin(AuthPrincipal principal) {
+        if (principal == null || principal.roles() == null) return false;
+        for (String role : principal.roles()) {
+            if (role != null && "ADMIN".equalsIgnoreCase(role.trim())) return true;
+        }
+        return false;
+    }
+
+    private String buildSingleZpl(QrLabel q, int envaseNum, int envaseTotal, String qrImageBase64, String cantidadStr, boolean prueba) {
         
         String lote = ZplTextNormalizer.normalize(q.getLote());
         String qrPayload = "OLNQR:1:" + ZplTextNormalizer.normalize(safe(q.getPublicToken()));
@@ -338,6 +352,19 @@ public class LabelController {
                 + " Propiedad de Olnatura S.A. de C.V. Prohibido su uso, divulgacion y/o reproduccion total o parcial. "
                 + "Si este documento no se encuentra controlado, se considera COPIA SOLO PARA INFORMACION.");
 
+        String headerBoxes = prueba
+                ? "^FO20,20^GB120,100,2^FS\n^FO140,20^GB640,50,2^FS\n^FO140,70^GB640,50,2^FS\n"
+                : "^FO20,20^GB90,100,2^FS\n^FO110,20^GB670,50,2^FS\n^FO110,70^GB670,50,2^FS\n";
+        String logoCmd = prueba
+                ? "^FO32,22\n" + LabelTestLogo.COMMAND + "^FS\n"
+                : "^FO25,25\n^GFA,1080,1080,12,0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001C00000000000000000000000FC000000000000000003FFE07F80000000000000001FFFFC7FE0000000000000007FFFFC3FF800000000000001FFFFFE3FFE00000000000007FFFFFE3FFF8000000000000FFFFFFE1FFFC000000000001FFFFFFF1FFFE000000000003FFFFFFF1FFFF000000000007FFE003F1FFFF80000000000FFF000070FFFF80000000001FFE000018FFFFC0000000003FF8000008FFFFE0000000003FF00000007FFFE0000000007FE00000007FFFE0000000007FC00000003FFFF000000000FFC00000001FFFF000000000FF800000001FFFF000000000FF8000000007FFF000000001FF0000000003FFF000000001FF0000000020FFF000000001FF00000000101FF000000001FF000000001C01C000000001FE000000001F000000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000003FE00000000000FF800000003FC00000000000FF800000007FC00000000000FFC00000007FC000000000007FC0000000FFC000000000007FE0000000FF8000000000003FF0000001FF8000000000003FF8000003FF0000000000001FFC000007FF0000000000001FFF00001FFE0000000000000FFF80007FFC00000000000007FFF001FFFC00000000000003FFFFFFFFF800000000000001FFFFFFFFF000000000000000FFFFFFFFE0000000000000007FFFFFFF80000000000000001FFFFFFF000000000000000007FFFFFC000000000000000001FFFFE00000000000000000001FFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000^FS\n";
+        String titleCmd = prueba
+                ? "^FO155,36^ADN,18,10^FB600,2,1,L,0" + fdField(title) + "\n"
+                : "^FO125,36^ADN,18,10" + fdField(title) + "\n";
+        String nameCmd = prueba
+                ? "^FO160,76^ADN,18,10^FB590,2,1,L,0" + fdField(nombre) + "\n"
+                : "^FO130,76^ADN,18,10^FB620,2,1,L,0" + fdField(nombre) + "\n";
+
         return "^XA\n" +
                 "^PW800\n" +
                 "^LL600\n" +
@@ -345,9 +372,7 @@ public class LabelController {
                 "\n" +
                 "^FO8,8^GB790,590,9^FS\n" +
                 "\n" +
-                "^FO20,20^GB90,100,2^FS\n" +
-                "^FO110,20^GB670,50,2^FS\n" +
-                "^FO110,70^GB670,50,2^FS\n" +
+                headerBoxes +
                 "\n" +
                 "^FO20,120^GB130,65,2^FS\n" +
                 "^FO150,120^GB230,65,2^FS\n" +
@@ -363,11 +388,10 @@ public class LabelController {
                 "\n" +
                 "^FO20,485^GB760,95,2^FS\n" +
                 "\n" +
-                "^FO25,25\n^GFA,1080,1080,12,0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001C00000000000000000000000FC000000000000000003FFE07F80000000000000001FFFFC7FE0000000000000007FFFFC3FF800000000000001FFFFFE3FFE00000000000007FFFFFE3FFF8000000000000FFFFFFE1FFFC000000000001FFFFFFF1FFFE000000000003FFFFFFF1FFFF000000000007FFE003F1FFFF80000000000FFF000070FFFF80000000001FFE000018FFFFC0000000003FF8000008FFFFE0000000003FF00000007FFFE0000000007FE00000007FFFE0000000007FC00000003FFFF000000000FFC00000001FFFF000000000FF800000001FFFF000000000FF8000000007FFF000000001FF0000000003FFF000000001FF0000000020FFF000000001FF00000000101FF000000001FF000000001C01C000000001FE000000001F000000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FE000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000001FE00000000001FF000000003FE00000000000FF800000003FC00000000000FF800000007FC00000000000FFC00000007FC000000000007FC0000000FFC000000000007FE0000000FF8000000000003FF0000001FF8000000000003FF8000003FF0000000000001FFC000007FF0000000000001FFF00001FFE0000000000000FFF80007FFC00000000000007FFF001FFFC00000000000003FFFFFFFFF800000000000001FFFFFFFFF000000000000000FFFFFFFFE0000000000000007FFFFFFF80000000000000001FFFFFFF000000000000000007FFFFFC000000000000000001FFFFE00000000000000000001FFF000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000^FS\n"
-                +
+                logoCmd +
                 "\n" +
-                "^FO125,36^ADN,18,10" + fdField(title) + "\n" +
-                "^FO130,76^ADN,18,10^FB620,2,1,L,0" + fdField(nombre) + "\n" +
+                titleCmd +
+                nameCmd +
                 "\n" +
                 "^FO28,128^ADN,14,8" + fdField(lblFecha) + "\n" +
                 "^FO28,150^ADN,18,10" + fdField(fechaStr) + "\n" +
