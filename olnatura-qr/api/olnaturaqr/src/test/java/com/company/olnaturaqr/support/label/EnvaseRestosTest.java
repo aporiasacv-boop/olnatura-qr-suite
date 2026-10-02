@@ -104,6 +104,18 @@ class EnvaseRestosTest {
     }
 
     @Test
+    void thousandSeparatorCommaIsNotADecimal() {
+        QrLabel q = base(3);
+        q.setCantidadPorEnvase("1,000");
+        EnvaseRestos.apply(q, List.of("250"), "1,000", 3);
+        assertEquals("1,000", EnvaseRestos.cantidadForEnvase(q, 1));
+        assertEquals("250", EnvaseRestos.cantidadForEnvase(q, 3));
+        assertEquals("2250", EnvaseRestos.cantidadTotal(q));
+        assertThrows(ResponseStatusException.class,
+                () -> EnvaseRestos.apply(q, List.of("1,000"), "1,000", 3));
+    }
+
+    @Test
     void fiveEnvasesWithOneRemainderMatchesExactDistribution() {
         QrLabel q = base(5);
         q.setCantidadPorEnvase("25");

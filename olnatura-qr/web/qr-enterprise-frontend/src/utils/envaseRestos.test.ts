@@ -8,6 +8,7 @@ import {
   cantidadesMenoresOk,
   envaseDistribution,
   envaseQuantities,
+  parseCantidad,
 } from "./envaseRestos.ts";
 
 test("A: lote sin cantidades menores", () => {
@@ -52,6 +53,19 @@ test("E: cuatro cantidades independientes y no una quinta", () => {
   assert.equal(cantidadForEnvase(label, 5), "3");
   assert.equal(cantidadForEnvase(label, 6), "6");
   assert.equal(cantidadesMenoresOf({ restosCantidades: ["5", " ", "8"] }).join(","), "5,8");
+});
+
+test("la coma de miles vale mil, no un decimal", () => {
+  assert.equal(parseCantidad("1,000"), 1000);
+  assert.equal(parseCantidad("1,000.5"), 1000.5);
+  assert.equal(parseCantidad("12,500"), 12500);
+  assert.equal(parseCantidad("1,5"), 1.5);
+  assert.equal(cantidadesMenoresOk(["250"], "1,000", 3), true);
+  assert.equal(cantidadesMenoresOk(["1,000"], "1,000", 3), false);
+  assert.equal(
+    cantidadTotalOf({ envaseTotal: 3, cantidadPorEnvase: "1,000", restosCantidades: ["250"] }),
+    "2250"
+  );
 });
 
 test("distribución exacta 5 envases con un resto", () => {

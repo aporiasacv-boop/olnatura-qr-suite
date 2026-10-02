@@ -135,7 +135,7 @@ public final class EnvaseRestos {
     }
 
     static BigDecimal parsePositive(String raw, String field) {
-        String n = raw.trim().replace(" ", "").replace(",", ".");
+        String n = prepareNumeric(raw);
         int i = 0;
         StringBuilder num = new StringBuilder();
         if (i < n.length() && (n.charAt(i) == '+' || n.charAt(i) == '-')) {
@@ -167,6 +167,17 @@ public final class EnvaseRestos {
         } catch (NumberFormatException ex) {
             throw new ResponseStatusException(BAD_REQUEST, field + " debe ser numérica");
         }
+    }
+
+    static String prepareNumeric(String raw) {
+        String n = raw.trim().replace(" ", "");
+        java.util.regex.Matcher thousands = java.util.regex.Pattern
+                .compile("^[+-]?\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?")
+                .matcher(n);
+        if (thousands.find()) {
+            return thousands.group().replace(",", "") + n.substring(thousands.end());
+        }
+        return n.replace(",", ".");
     }
 
     static String writeJson(List<String> list) {

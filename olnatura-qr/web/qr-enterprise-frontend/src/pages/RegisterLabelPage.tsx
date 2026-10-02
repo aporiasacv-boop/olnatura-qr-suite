@@ -585,7 +585,7 @@ export default function RegisterLabelPage() {
         />
         <Field
           label="Cantidad por envase"
-          placeholder="Cantidad"
+          placeholder="Ej. 1,000"
           value={form.cantidadPorEnvase}
           onChange={(v) => setForm((s) => ({ ...s, cantidadPorEnvase: v }))}
           requiredPending
@@ -595,7 +595,7 @@ export default function RegisterLabelPage() {
           <div key={idx} style={{ display: "grid", gap: 6 }}>
             <Field
               label={`Etiqueta de resto ${idx + 1}`}
-              placeholder="Ej. 5"
+              placeholder="Ej. 250"
               value={qty}
               onChange={(v) =>
                 setForm((s) => {

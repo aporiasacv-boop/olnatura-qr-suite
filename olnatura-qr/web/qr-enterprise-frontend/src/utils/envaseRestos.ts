@@ -47,7 +47,12 @@ export function cantidadForEnvase(label: LabelCantidades, envaseNum: number): st
 }
 
 export function parseCantidad(raw: string): number | null {
-  const n = String(raw ?? "").trim().replace(/\s/g, "").replace(",", ".");
+  const compact = String(raw ?? "").trim().replace(/\s/g, "");
+  if (!compact) return null;
+  const thousands = compact.match(/^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?/);
+  const n = thousands
+    ? thousands[0].replace(/,/g, "") + compact.slice(thousands[0].length)
+    : compact.replace(",", ".");
   const m = n.match(/^[+-]?(\d+(\.\d+)?)/);
   if (!m) return null;
   const v = Number(m[0]);
