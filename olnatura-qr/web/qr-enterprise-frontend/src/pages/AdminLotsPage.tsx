@@ -437,7 +437,7 @@ export default function AdminLotsPage() {
     <div className={s.wrap}>
       <div className={s.headerRow}>
         <div>
-          <h1 className={s.title}>Lotes (administración)</h1>
+          <h1 className={s.title}>Administración de insumos</h1>
           <p className={s.subtitle}>
             Trae a la base los datos actuales de Dynamics (nombre, código, fechas y estado).
             Se conservan envases, cantidad por envase y token QR.

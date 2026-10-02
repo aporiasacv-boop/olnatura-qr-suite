@@ -27,7 +27,7 @@ import type { LoteComment, QrResponse, ScanEvent } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
 import { useToasts } from "../../components/ui/toasts";
 import { brand } from "../../styles/brand";
-import { formatDateDDMMYYYY } from "../../utils/dateFormat";
+import { fechaTipoEtiqueta, formatDateDDMMYYYY, storedDateText } from "../../utils/dateFormat";
 import {
   formatDateTime,
   formatLastSyncedAt,
@@ -715,11 +715,14 @@ export default function OperationalStatusValidationTempPage() {
                   />
                   <PlainField label="Nombre" value={dash(data.nombre)} boxed={false} />
                   <PlainField label={LABELS.almacen} value={dash(data.almacen)} boxed={false} />
-                  <PlainField
-                    label="Fecha de vencimiento"
-                    value={formatMaybeDate(data.caducidad)}
-                    boxed={false}
-                  />
+                  {fechaTipoEtiqueta(platform?.label?.caducidad, platform?.label?.reanalisis) ==
+                  null ? (
+                    <PlainField
+                      label="Caducidad"
+                      value={formatMaybeDate(storedDateText(data.caducidad) || data.caducidad)}
+                      boxed={false}
+                    />
+                  ) : null}
                   <PlainField
                     label="Fecha entrada"
                     value={formatMaybeDate(data.fechaEntrada)}

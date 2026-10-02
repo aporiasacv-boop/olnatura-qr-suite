@@ -458,14 +458,25 @@ public class ExecutiveDashboardExportService {
             return new QtyUnit(null, null);
         }
         
-        java.util.regex.Matcher m = java.util.regex.Pattern
-                .compile("^\\s*([+-]?\\d+(?:[.,]\\d+)?)\\s*(.*)$")
-                .matcher(s);
-        if (!m.matches()) {
-            return new QtyUnit(null, s);
+        String compact = s.replace(" ", "");
+        java.util.regex.Matcher thousands = java.util.regex.Pattern
+                .compile("^([+-]?\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?)(.*)$")
+                .matcher(compact);
+        String numPart;
+        String unitPart;
+        if (thousands.matches()) {
+            numPart = thousands.group(1).replace(",", "");
+            unitPart = thousands.group(2) != null ? thousands.group(2).trim() : "";
+        } else {
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("^([+-]?\\d+(?:[.,]\\d+)?)(.*)$")
+                    .matcher(compact);
+            if (!m.matches()) {
+                return new QtyUnit(null, s);
+            }
+            numPart = m.group(1).replace(',', '.');
+            unitPart = m.group(2) != null ? m.group(2).trim() : "";
         }
-        String numPart = m.group(1).replace(',', '.');
-        String unitPart = m.group(2) != null ? m.group(2).trim() : "";
         try {
             double qty = Double.parseDouble(numPart);
             return new QtyUnit(qty, unitPart.isEmpty() ? null : unitPart);

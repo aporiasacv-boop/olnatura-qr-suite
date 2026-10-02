@@ -44,7 +44,7 @@ public class AdminLotDeleteService {
         this.auditService = auditService;
     }
 
-    public record DeleteRequest(String confirm, String lote) {}
+    public record DeleteRequest(String confirm, String lote, String motivo) {}
 
     public record DeleteResult(String id, String lote) {}
 
@@ -78,6 +78,10 @@ public class AdminLotDeleteService {
         md.put("labelId", labelId);
         md.put("lote", lote);
         md.put("publicToken", publicToken);
+        String motivo = req.motivo() == null ? "" : req.motivo().trim();
+        if (!motivo.isEmpty()) {
+            md.put("motivo", motivo);
+        }
         auditService.log(principal, AUDIT_ACTION, lote, md, null);
 
         return new DeleteResult(labelId, lote);

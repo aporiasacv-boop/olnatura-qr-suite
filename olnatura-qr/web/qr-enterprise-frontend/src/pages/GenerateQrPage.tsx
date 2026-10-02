@@ -15,6 +15,8 @@ import {
   validateReprintRange,
 } from "../utils/labelPreviewPermissions";
 import { cantidadForEnvase, cantidadTotalOf, isRestosEnabled } from "../utils/envaseRestos";
+import { storedDateText } from "../utils/dateFormat";
+import { useAuth } from "../auth/AuthContext";
 import { resolveLabelDocumentCode } from "../utils/labelDocumentCode";
 
 function logAudit(actionType: string, lote: string | null) {
@@ -55,6 +57,8 @@ const useStyles = makeStyles({
 
 export default function GenerateQrPage() {
   const s = useStyles();
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("ADMIN");
   const previewRef = useRef<HTMLDivElement>(null);
   const [lote, setLote] = useState("");
   const [labelData, setLabelData] = useState<QrResponse["label"] | null>(null);
@@ -124,7 +128,7 @@ export default function GenerateQrPage() {
     }
   }
 
-  async function reprintZpl() {
+  async function reprintZpl(prueba = false) {
     if (!labelData) {
       setError("Primero busca el lote para reimprimir.");
       return;
@@ -145,6 +149,7 @@ export default function GenerateQrPage() {
         totalEnvases: envaseTotal,
         printFrom: validated.from,
         printTo: validated.to,
+        prueba,
       });
     } catch (e) {
       setError(
@@ -245,11 +250,21 @@ export default function GenerateQrPage() {
               <Button
                 appearance="primary"
                 type="button"
-                onClick={() => void reprintZpl()}
+                onClick={() => void reprintZpl(false)}
                 disabled={zplBusy || busy}
               >
                 {zplBusy ? "Descargando…" : "Reimprimir (Zebra .zpl)"}
               </Button>
+              {isAdmin ? (
+                <Button
+                  appearance="secondary"
+                  type="button"
+                  onClick={() => void reprintZpl(true)}
+                  disabled={zplBusy || busy}
+                >
+                  {zplBusy ? "Descargando…" : "Imprimir etiqueta de prueba"}
+                </Button>
+              ) : null}
               <Link
                 onClick={() => setZplHelpOpen(true)}
                 style={{ alignSelf: "center", fontSize: 13 }}
@@ -281,17 +296,9 @@ export default function GenerateQrPage() {
                   materialName={String(labelData.nombre ?? "").trim() || "—"}
                   codigo={String(labelData.codigo ?? "").trim() || "—"}
                   lote={String(labelData.lote ?? "").trim() || "—"}
-                  fecha={labelData.fechaEntrada ?? "N/A"}
-                  caducidad={
-                    (labelData as any).fechaTipo === "REANALISIS"
-                      ? ""
-                      : ((labelData as any).fechaValor ?? labelData.caducidad ?? "")
-                  }
-                  reanalisis={
-                    (labelData as any).fechaTipo === "REANALISIS"
-                      ? ((labelData as any).fechaValor ?? labelData.reanalisis ?? "")
-                      : ""
-                  }
+                  fecha={storedDateText(labelData.fechaEntrada) || "N/A"}
+                  caducidad={storedDateText(labelData.caducidad)}
+                  reanalisis={storedDateText(labelData.reanalisis)}
                   cantidad={(() => {
                     const n = Number(printTo);
                     const envase = Number.isFinite(n) && n >= 1 ? n : parseEnvaseTotal(labelData);

@@ -49,6 +49,7 @@ type UserAdmin = {
   estado: string;
   enabled: boolean;
   canCreateLoteComments?: boolean;
+  canDeleteLotes?: boolean;
   createdAt?: string;
 };
 
@@ -83,7 +84,7 @@ function formatRefreshTime(d: Date | null): string {
 export default function AdminUsersPage() {
   const s = useStyles();
   const toasts = useToasts();
-  const { me } = useAuth();
+  const { me, refreshMe } = useAuth();
   const [items, setItems] = React.useState<UserAdmin[] | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
   const [exportingPdf, setExportingPdf] = React.useState(false);
@@ -120,7 +121,7 @@ export default function AdminUsersPage() {
 
   const patchUser = async (
     id: string,
-    body: { enabled?: boolean; role?: string; canCreateLoteComments?: boolean }
+    body: { enabled?: boolean; role?: string; canCreateLoteComments?: boolean; canDeleteLotes?: boolean }
   ) => {
     if (actionId) return;
     setActionId(id);
@@ -131,6 +132,9 @@ export default function AdminUsersPage() {
         toast: false,
       });
       setItems((prev) => (prev ?? []).map((u) => (u.id === id ? updated : u)));
+      if (me?.id != null && String(me.id) === String(id)) {
+        await refreshMe();
+      }
       setLastRefreshedAt(new Date());
       toasts.push({
         intent: "success",
@@ -267,12 +271,13 @@ export default function AdminUsersPage() {
             >
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: "16%" }}>Usuario</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "22%" }}>Correo</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "16%" }}>Rol</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "10%" }}>Estado</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "10%" }}>Habilitado</TableHeaderCell>
-                  <TableHeaderCell style={{ width: "14%" }}>Comentarios</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "14%" }}>Usuario</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "18%" }}>Correo</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "14%" }}>Rol</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "9%" }}>Estado</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "8%" }}>Habilitado</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "12%" }}>Comentarios</TableHeaderCell>
+                  <TableHeaderCell style={{ width: "13%" }}>Lotes</TableHeaderCell>
                   <TableHeaderCell style={{ width: "12%" }}>Acciones</TableHeaderCell>
                 </TableRow>
               </TableHeader>
@@ -282,6 +287,7 @@ export default function AdminUsersPage() {
                   const rowBusy = actionId === u.id;
                   const usuario = displayUserIdentity(undefined, u.username);
                   const canComment = !!u.canCreateLoteComments;
+                  const canDelete = !!u.canDeleteLotes;
                   return (
                     <TableRow key={u.id} className="table-hover-row">
                       <TableCell style={WRAP_CELL} title={cellTitle(usuario)}>
@@ -322,6 +328,17 @@ export default function AdminUsersPage() {
                           }
                         >
                           {rowBusy ? "…" : canComment ? "Puede crear" : "Solo ver"}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          appearance="transparent"
+                          disabled={rowBusy || refreshing || !u.enabled}
+                          onClick={() =>
+                            void patchUser(u.id, { canDeleteLotes: !canDelete })
+                          }
+                        >
+                          {rowBusy ? "…" : canDelete ? "Puede eliminar" : "Sin acceso"}
                         </Button>
                       </TableCell>
                       <TableCell>

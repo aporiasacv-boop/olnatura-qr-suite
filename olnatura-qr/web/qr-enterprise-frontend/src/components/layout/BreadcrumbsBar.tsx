@@ -23,8 +23,8 @@ function labelFor(seg: string) {
   if (seg === "audit") return LABELS.auditLog;
   if (seg === "metrics") return LABELS.metrics;
   if (seg === "users") return "Usuarios";
-  if (seg === "lots") return "Lotes";
-  if (seg === "db") return "Administración de BD";
+  if (seg === "lots") return "Administración de insumos";
+  if (seg === "lotes") return "Lotes";
   return seg;
 }
 

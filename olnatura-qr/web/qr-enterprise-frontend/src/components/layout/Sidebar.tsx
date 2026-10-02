@@ -76,6 +76,7 @@ export default function Sidebar() {
   const showRegister = can("REGISTER_LABEL");
   const showAudit = can("AUDIT");
   const showAdmin = hasRole("ADMIN");
+  const showLotes = !!me?.canDeleteLotes || showAdmin;
 
   return (
     <div className={s.root}>
@@ -104,6 +105,15 @@ export default function Sidebar() {
           <NavLink to="/scan-history" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
             Historial de escaneos
           </NavLink>
+        )}
+
+        {showLotes && (
+          <>
+            <div className={s.sectionLabel}>Lotes</div>
+            <NavLink to="/lotes" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
+              Lotes
+            </NavLink>
+          </>
         )}
 
         {(showGenerate || showRegister) && <div className={s.sectionLabel}>Etiquetas</div>}
@@ -136,10 +146,7 @@ export default function Sidebar() {
                   Usuarios
                 </NavLink>
                 <NavLink to="/admin/lots" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-                  Lotes
-                </NavLink>
-                <NavLink to="/admin/db" className={({ isActive }) => clsx(s.link, s.linkHover, isActive && s.active)}>
-                  Administración de BD
+                  Administración de insumos
                 </NavLink>
               </>
             )}

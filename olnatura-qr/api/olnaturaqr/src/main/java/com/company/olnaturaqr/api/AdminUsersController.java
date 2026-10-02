@@ -137,6 +137,12 @@ public class AdminUsersController {
             changed = true;
         }
 
+        if (req.canDeleteLotes() != null
+                && u.isCanDeleteLotes() != req.canDeleteLotes()) {
+            u.setCanDeleteLotes(req.canDeleteLotes());
+            changed = true;
+        }
+
         if (changed) {
             userRepository.save(u);
             Map<String, Object> md = new LinkedHashMap<>();
@@ -145,6 +151,7 @@ public class AdminUsersController {
             md.put("enabled", u.isEnabled());
             md.put("role", u.getRole() != null ? u.getRole().getName() : "?");
             md.put("canCreateLoteComments", u.isCanCreateLoteComments());
+            md.put("canDeleteLotes", u.isCanDeleteLotes());
             auditService.log(principal, "UPDATE_USER", null, md, null);
         }
 
@@ -184,6 +191,7 @@ public class AdminUsersController {
                 enabled ? "Activo" : "Deshabilitado",
                 enabled,
                 u.isCanCreateLoteComments(),
+                u.isCanDeleteLotes(),
                 u.getCreatedAt() != null ? u.getCreatedAt().toString() : null
         );
     }
@@ -196,10 +204,16 @@ public class AdminUsersController {
             String estado,
             boolean enabled,
             boolean canCreateLoteComments,
+            boolean canDeleteLotes,
             String createdAt
     ) {}
 
-    public record PatchUserRequest(Boolean enabled, String role, Boolean canCreateLoteComments) {}
+    public record PatchUserRequest(
+            Boolean enabled,
+            String role,
+            Boolean canCreateLoteComments,
+            Boolean canDeleteLotes
+    ) {}
 
     public record ResetPasswordRequest(String password) {}
 }

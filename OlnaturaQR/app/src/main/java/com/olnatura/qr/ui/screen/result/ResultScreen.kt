@@ -224,8 +224,13 @@ private fun SuccessContent(
     val nombreValue = str(dynamic?.nombre)
     val codigoValue = str(dynamic?.codigo)
     val fechaEntradaRaw = dynamic?.fechaEntrada
-    val caducidadRaw = dynamic?.caducidad
     val tipoFechaQr = tipoFechaEtiqueta(label.caducidad, label.reanalisis)
+    val fechaVigenciaRaw = when (tipoFechaQr) {
+        "Reanálisis" -> label.reanalisis
+        "Caducidad" -> label.caducidad?.takeIf { it.isNotBlank() } ?: dynamic?.caducidad
+        else -> dynamic?.caducidad
+    }
+    val tituloFecha = tipoFechaQr ?: "Caducidad"
 
     Spacer(Modifier.height(8.dp))
     StatusBanner(
@@ -279,8 +284,8 @@ private fun SuccessContent(
             LabelValueRow("Nombre", nombreValue)
             LabelValueRow("Almacén", str(dynamic?.almacen))
             FechaVencimientoRow(
-                dateText = dateDdMmYyyy(caducidadRaw),
-                tipoQr = tipoFechaQr
+                title = tituloFecha,
+                dateText = dateDdMmYyyy(fechaVigenciaRaw)
             )
             LabelValueRow("Fecha de entrada", dateDdMmYyyy(fechaEntradaRaw))
             LabelValueRow("Cantidad recibida", cantidadRecibidaText)
@@ -365,40 +370,15 @@ private fun SuccessContent(
 
 @Composable
 private fun FechaVencimientoRow(
-    dateText: String,
-    tipoQr: String?
+    title: String,
+    dateText: String
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 10.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Fecha de vencimiento",
-                color = OlnTextMuted,
-                modifier = Modifier.weight(1f)
-            )
-            if (!tipoQr.isNullOrBlank()) {
-                Surface(
-                    color = OlnCream,
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Text(
-                        tipoQr,
-                        color = OlnGreen,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
-                }
-            }
-        }
+        Text(title, color = OlnTextMuted)
         Text(dateText)
         HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
     }

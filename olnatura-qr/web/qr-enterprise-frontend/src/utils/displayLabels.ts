@@ -11,7 +11,6 @@ export const LABELS = {
   commentsCancel: "Cancelar",
   auditLog: "Historial de auditoría",
   metrics: "Métricas operativas",
-  adminDb: "Administración de BD",
   labelData: "Información del lote",
   dynamicState: "Estado Operativo (Dynamics)",
   platformStatus: "Estado de plataforma",
@@ -100,6 +99,10 @@ const METADATA_KEY_LABELS: Record<string, string> = {
   changes: "Campos modificados",
   commentId: "ID de comentario",
   preview: "Vista previa",
+  enabled: "Habilitado",
+  role: "Rol",
+  canCreateLoteComments: "Comentarios",
+  canDeleteLotes: "Acceso a Lotes",
 };
 
 export function metadataKeyToLabel(key: string): string {
@@ -114,10 +117,10 @@ function formatMetadataValue(key: string, value: unknown): string {
   if (key === "mode" && v === "ZPL_DOWNLOAD") return "Descarga ZPL";
   if (key === "exportType" && v === "PDF") return "PDF";
   if (key === "exportType" && v === "EXECUTIVE_DASHBOARD_XLSX") return "Excel Power BI";
-  if (key === "roleRequested" || key === "rol" || key === "approvalRole") {
+  if (key === "roleRequested" || key === "rol" || key === "approvalRole" || key === "role") {
     return translateRole(v);
   }
-  if (key === "calidadApproved" || key === "inspeccionApproved") {
+  if (key === "calidadApproved" || key === "inspeccionApproved" || key === "enabled" || key === "canCreateLoteComments" || key === "canDeleteLotes") {
     if (v === "TRUE") return "Sí";
     if (v === "FALSE") return "No";
   }

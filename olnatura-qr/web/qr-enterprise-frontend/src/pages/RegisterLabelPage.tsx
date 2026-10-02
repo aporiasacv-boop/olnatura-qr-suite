@@ -61,7 +61,8 @@ type CreateResponse = {
 };
 
 export default function RegisterLabelPage() {
-  const { me } = useAuth();
+  const { me, hasRole } = useAuth();
+  const isAdmin = hasRole("ADMIN");
   const previewRef = useRef<HTMLDivElement>(null);
 
   const canQr = useMemo(() => {
@@ -308,7 +309,7 @@ export default function RegisterLabelPage() {
     }
   };
 
-  const onDownloadZpl = async () => {
+  const onDownloadZpl = async (prueba = false) => {
     setErr(null);
     if (!createResp?.id) {
       setErr("Primero registra la etiqueta para descargar ZPL.");
@@ -322,6 +323,7 @@ export default function RegisterLabelPage() {
         totalEnvases: total,
         printFrom: ENVASE_INICIO,
         printTo: total,
+        prueba,
       });
     } catch {
       setErr("No se pudo descargar la etiqueta Zebra (.zpl). Comprueba la sesión y vuelve a intentar.");
@@ -583,7 +585,7 @@ export default function RegisterLabelPage() {
         />
         <Field
           label="Cantidad por envase"
-          placeholder="Cantidad"
+          placeholder="Ej. 1,000"
           value={form.cantidadPorEnvase}
           onChange={(v) => setForm((s) => ({ ...s, cantidadPorEnvase: v }))}
           requiredPending
@@ -593,7 +595,7 @@ export default function RegisterLabelPage() {
           <div key={idx} style={{ display: "grid", gap: 6 }}>
             <Field
               label={`Etiqueta de resto ${idx + 1}`}
-              placeholder="Ej. 5"
+              placeholder="Ej. 250"
               value={qty}
               onChange={(v) =>
                 setForm((s) => {
@@ -791,11 +793,20 @@ export default function RegisterLabelPage() {
           </Text>
           <Button
             appearance="primary"
-            onClick={onDownloadZpl}
+            onClick={() => void onDownloadZpl(false)}
             disabled={!canQr || !createResp || busy}
           >
             {busy ? "Descargando…" : "Descargar Zebra (.zpl)"}
           </Button>
+          {isAdmin ? (
+            <Button
+              appearance="secondary"
+              onClick={() => void onDownloadZpl(true)}
+              disabled={!canQr || !createResp || busy}
+            >
+              {busy ? "Descargando…" : "Imprimir etiqueta de prueba"}
+            </Button>
+          ) : null}
           <Link onClick={() => setZplHelpOpen(true)} style={{ fontSize: 13 }}>
             Cómo imprimir
           </Link>

@@ -121,12 +121,14 @@ public ResponseEntity<UserDto.LoginResponse> login(
 
         User user = userRepository.findById(principal.id()).orElse(null);
         boolean canCreateLoteComments = user != null && user.isCanCreateLoteComments();
+        boolean canDeleteLotes = user != null && user.isCanDeleteLotes();
 
         return ResponseEntity.ok(new MeResponse(
                 principal.id().toString(),
                 principal.username(),
                 principal.roles(),
-                canCreateLoteComments
+                canCreateLoteComments,
+                canDeleteLotes
         ));
     }
 
@@ -160,11 +162,11 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
 
     if (userRepository.existsByUsernameIgnoreCase(username)) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(
-                "Ese usuario ya existe. Si olvidaste la contraseña, un administrador puede restablecerla en Usuarios."));
+                "Nombre de Usuario ya existente"));
     }
     if (userRepository.existsByEmailIgnoreCase(email)) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(
-                "Ese correo ya está registrado. Si olvidaste la contraseña, un administrador puede restablecerla en Usuarios."));
+                "Correo electrónico ya existente"));
     }
 
     Role role = roleRepository.findByName(roleName)
@@ -201,7 +203,8 @@ public ResponseEntity<?> requestAccess(@RequestBody UserDto.RequestAccessRequest
             String id,
             String username,
             List<String> roles,
-            boolean canCreateLoteComments
+            boolean canCreateLoteComments,
+            boolean canDeleteLotes
     ) {}
 
     public record ErrorResponse(String message) {}

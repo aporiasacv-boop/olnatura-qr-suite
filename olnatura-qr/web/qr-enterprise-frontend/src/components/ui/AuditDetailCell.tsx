@@ -11,6 +11,7 @@ const COLLAPSE_ACTION_TYPES = new Set([
   "EXPORT_AUDIT_CSV",
   "EXPORT_AUDIT_PDF",
   "PRINT_LABEL",
+  "ELIMINAR_LOTE",
 ]);
 
 function parseMeta(metadata?: Record<string, unknown> | string | null): Record<string, unknown> | null {
@@ -47,6 +48,11 @@ function detailSummary(
   if (at === "EXPORT_AUDIT_CSV" || at === "EXPORT_AUDIT_PDF") {
     if (meta.countEvents != null) return `${formatNumber(meta.countEvents as number)} eventos`;
     if (meta.filename != null) return String(meta.filename);
+  }
+
+  if (at === "ELIMINAR_LOTE") {
+    const lote = meta.lote != null ? String(meta.lote).trim() : "";
+    return lote || "Eliminar lote";
   }
 
   if (at === "PRINT_LABEL") {
