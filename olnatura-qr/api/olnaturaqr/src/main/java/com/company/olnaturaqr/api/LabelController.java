@@ -116,7 +116,7 @@ public class LabelController {
         }
 
         try {
-            dynamicsLookupService.lookupByBatchNumber(lote).ifPresent(d ->
+            dynamicsLookupService.lookupByBatchNumber(lote, saved.getCodigo()).ifPresent(d ->
                     operationalStatusSyncService.applyDynamicsStatus(
                             saved,
                             d.operationalStatus(),

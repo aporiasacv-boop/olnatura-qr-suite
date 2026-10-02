@@ -50,11 +50,28 @@ public interface DynamicsClient {
             String wmsLocationId
     ) {}
 
+    /** Existencia de un artículo + lote en un almacén y ubicación (ProjInventoryOnHand, disponible físico). */
+    record BatchOnHandRecord(
+            String itemNumber,
+            String warehouseId,
+            String locationId,
+            Double availablePhysicalQuantity
+    ) {}
+
     java.util.Optional<ItemBatchRecord> findItemBatch(String batchNumber, String accessToken);
+
+    /** Todos los artículos que usan ese número de lote: el número de lote no es único entre artículos. */
+    java.util.List<ItemBatchRecord> findItemBatches(String batchNumber, String accessToken);
 
     java.util.Optional<InventoryOnHandRecord> findInventorySitesOnHand(String itemNumber, String accessToken);
 
+    /** Existencia actual del artículo + lote por almacén y ubicación. */
+    java.util.List<BatchOnHandRecord> findBatchOnHand(String itemNumber, String batchNumber, String accessToken);
+
     java.util.Optional<QualityOrderRecord> findQualityOrderByItemBatch(String itemBatchNumber, String accessToken);
+
+    /** Orden de calidad más reciente (mayor QualityOrderNumber) del artículo + lote. */
+    java.util.Optional<QualityOrderRecord> findLatestQualityOrder(String itemNumber, String itemBatchNumber, String accessToken);
 
     java.util.Optional<ReleasedProductRecord> findReleasedProduct(String itemNumber, String accessToken);
 

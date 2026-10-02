@@ -253,7 +253,7 @@ public class LabelDynamicsAlignService {
     }
 
     private AlignRow alignLabel(QrLabel label, AuthPrincipal principal) {
-        Optional<DynamicsLookupDto> dynOpt = dynamicsLookupService.lookupByBatchNumber(label.getLote());
+        Optional<DynamicsLookupDto> dynOpt = dynamicsLookupService.lookupByBatchNumber(label.getLote(), label.getCodigo());
         if (dynOpt.isEmpty()) {
             return new AlignRow(
                     label.getId().toString(),

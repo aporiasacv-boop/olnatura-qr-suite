@@ -1,7 +1,9 @@
 package com.company.olnaturaqr.support.workflow;
 
+import com.company.olnaturaqr.support.workflow.OperationalStatusResolver.StockLine;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,14 +13,26 @@ class OperationalStatusResolverTest {
 
     private static final String VALIDATED = "2026-07-28T19:45:17Z";
     private static final String SENTINEL_1900 = "1900-01-01T00:00:00Z";
+    private static final LocalDate TODAY = LocalDate.of(2026, 10, 2);
+    private static final String NOT_EXPIRED = "2028-01-01T12:00:00Z";
+    private static final String EXPIRED = "2026-04-30T12:00:00Z";
+
+    private static StockLine at(String warehouse, double qty) {
+        return new StockLine(warehouse, "Disponible", qty);
+    }
+
+    private static OperationalStatusResolver.Result resolve(List<StockLine> stock, String qo, String validated) {
+        return OperationalStatusResolver.resolve(stock, qo, validated, NOT_EXPIRED, TODAY, true);
+    }
+
+    // --- Existencia operable + rechazo (lote parcialmente rechazado, familia 3612) ---
 
     @Test
     void remWithOperableAndPassIsAprobadoWhenExperimentEnabled() {
         org.junit.jupiter.api.Assumptions.assumeTrue(
                 OperationalStatusResolver.ENABLE_PARTIAL_STATE_EXPERIMENT,
                 "Regla operable+REM/RES desactivada");
-        var r = OperationalStatusResolver.resolve(
-                List.of("MPM", "REM"), "MPM", "Aprobado", "Pass", VALIDATED, true);
+        var r = resolve(List.of(at("MPM", 100), at("REM", 5)), "Pass", VALIDATED);
         assertEquals("APROBADO", r.status());
         assertEquals("Almacén disponible + REM/RES", r.ruleApplied());
         assertEquals("REM", r.warehouseApplied());
@@ -29,22 +43,10 @@ class OperationalStatusResolverTest {
         org.junit.jupiter.api.Assumptions.assumeTrue(
                 OperationalStatusResolver.ENABLE_PARTIAL_STATE_EXPERIMENT,
                 "Regla operable+REM/RES desactivada");
-        var r = OperationalStatusResolver.resolve(
-                List.of("MPS", "RES"), "MPS", "Aprobado", "Pass", VALIDATED, true);
+        var r = resolve(List.of(at("MPS", 100), at("RES", 5)), "Pass", VALIDATED);
         assertEquals("APROBADO", r.status());
         assertEquals("Almacén disponible + REM/RES", r.ruleApplied());
         assertEquals("RES", r.warehouseApplied());
-    }
-
-    @Test
-    void memRemPassLike3612FamilyIsAprobadoWhenExperimentEnabled() {
-        org.junit.jupiter.api.Assumptions.assumeTrue(
-                OperationalStatusResolver.ENABLE_PARTIAL_STATE_EXPERIMENT,
-                "Regla operable+REM/RES desactivada");
-        var r = OperationalStatusResolver.resolve(
-                List.of("MEM", "REM"), "MEM", null, "Pass", VALIDATED, true);
-        assertEquals("APROBADO", r.status());
-        assertEquals("Almacén disponible + REM/RES", r.ruleApplied());
     }
 
     @Test
@@ -55,119 +57,150 @@ class OperationalStatusResolverTest {
     }
 
     @Test
+    void remWithOperableButOpenIsRechazado() {
+        var r = resolve(List.of(at("MEM", 10), at("REM", 5)), "Open", SENTINEL_1900);
+        assertEquals("RECHAZADO", r.status());
+        assertEquals("Almacén REM", r.ruleApplied());
+    }
+
+    // --- E1 / E2: la existencia decide, no el historial ni el almacén de la orden de calidad ---
+
+    @Test
+    void passLotMovedEntirelyToRemIsRechazado() {
+        // Caso 240923-MPM0003109: Pass en MPM, hoy 0 en MPM y 247,675 en REM. Antes salía APROBADO.
+        var r = resolve(List.of(at("MPM", 0), new StockLine("REM", "General", 247675)), "Pass", VALIDATED);
+        assertEquals("RECHAZADO", r.status());
+        assertEquals("Almacén REM", r.ruleApplied());
+        assertEquals("REM", r.warehouseApplied());
+    }
+
+    @Test
     void remAloneIsRechazado() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("REM"), "REM", null, "Pass", VALIDATED, true);
+        var r = resolve(List.of(at("REM", 1)), "Pass", VALIDATED);
         assertEquals("RECHAZADO", r.status());
         assertEquals("Almacén REM", r.ruleApplied());
     }
 
     @Test
     void resAloneIsRechazado() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("RES"), "RES", null, "Pass", VALIDATED, true);
+        var r = resolve(List.of(at("RES", 1)), "Pass", VALIDATED);
         assertEquals("RECHAZADO", r.status());
         assertEquals("Almacén RES", r.ruleApplied());
     }
 
     @Test
-    void remWithOperableButOpenIsRechazado() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MEM", "REM"), "MEM", null, "Open", SENTINEL_1900, true);
+    void drivexpressRejectWarehouseIsRechazado() {
+        var r = resolve(List.of(at("RES-D", 3)), "Pass", VALIDATED);
         assertEquals("RECHAZADO", r.status());
-        assertEquals("Almacén REM", r.ruleApplied());
+        assertEquals("Existencia solo en almacén de rechazo", r.ruleApplied());
+        assertEquals("RES-D", r.warehouseApplied());
     }
 
     @Test
-    void openQualityOrderIsCuarentenaEvenInMps() {
+    void rejectLocationInsideOperableWarehouseIsRechazado() {
+        var r = resolve(List.of(new StockLine("MPM", "Rechazo", 40)), "Pass", VALIDATED);
+        assertEquals("RECHAZADO", r.status());
+        assertEquals("Existencia solo en ubicación Rechazo", r.ruleApplied());
+    }
+
+    @Test
+    void zeroQuantityInRemDoesNotReject() {
+        var r = resolve(List.of(at("MPM", 50), at("REM", 0)), "Pass", VALIDATED);
+        assertEquals("APROBADO", r.status());
+        assertEquals("QualityOrder Pass + ValidatedDateTime", r.ruleApplied());
+        assertEquals("MPM", r.warehouseApplied());
+    }
+
+    @Test
+    void consumedLotKeepsQualityStatus() {
+        var r = resolve(List.of(at("MPM", 0)), "Pass", VALIDATED);
+        assertEquals("APROBADO", r.status());
+    }
+
+    // --- E3: Fail ---
+
+    @Test
+    void failInOperableWarehouseIsRechazado() {
+        var r = resolve(List.of(at("MEM", 5)), "Fail", VALIDATED);
+        assertEquals("RECHAZADO", r.status());
+        assertEquals("QualityOrderStatus Fail", r.ruleApplied());
+        assertEquals("MEM", r.warehouseApplied());
+    }
+
+    @Test
+    void failWithoutStockIsRechazado() {
+        var r = resolve(List.of(), "Fail", VALIDATED);
+        assertEquals("RECHAZADO", r.status());
+    }
+
+    // --- Caducidad ---
+
+    @Test
+    void expiredPassLotIsRechazado() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(OperationalStatusResolver.ENABLE_EXPIRED_AS_REJECTED);
         var r = OperationalStatusResolver.resolve(
-                List.of("MPS"), "MPS", null, "Open", SENTINEL_1900, true);
+                List.of(at("MPM", 10)), "Pass", VALIDATED, EXPIRED, TODAY, true);
+        assertEquals("RECHAZADO", r.status());
+        assertEquals("Lote caducado", r.ruleApplied());
+    }
+
+    @Test
+    void expiresTodayIsNotExpired() {
+        var r = OperationalStatusResolver.resolve(
+                List.of(at("MPM", 10)), "Pass", VALIDATED, "2026-10-02T12:00:00Z", TODAY, true);
+        assertEquals("APROBADO", r.status());
+    }
+
+    @Test
+    void sentinelExpirationIsIgnored() {
+        var r = OperationalStatusResolver.resolve(
+                List.of(at("MPM", 10)), "Pass", VALIDATED, "1900-01-01T12:00:00Z", TODAY, true);
+        assertEquals("APROBADO", r.status());
+    }
+
+    // --- Cuarentena / aprobado ---
+
+    @Test
+    void openQualityOrderIsCuarentenaEvenInMps() {
+        var r = resolve(List.of(at("MPS", 1)), "Open", SENTINEL_1900);
         assertEquals("CUARENTENA", r.status());
         assertEquals("QualityOrderStatus Open", r.ruleApplied());
         assertEquals("MPS", r.warehouseApplied());
     }
 
     @Test
-    void mps0006649Open() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MPS"), "MPS", "", "Open", SENTINEL_1900, true);
-        assertEquals("CUARENTENA", r.status());
-    }
-
-    @Test
     void openBeatsPassSignals() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MPS"), "MPS", "Aprobado", "Open", VALIDATED, true);
+        var r = resolve(List.of(at("MPS", 1)), "Open", VALIDATED);
         assertEquals("CUARENTENA", r.status());
         assertEquals("QualityOrderStatus Open", r.ruleApplied());
     }
 
     @Test
-    void passPlusValidatedMemIsAprobado() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MEM"), "MEM", null, "Pass", VALIDATED, true);
-        assertEquals("APROBADO", r.status());
-        assertEquals("QualityOrder Pass + ValidatedDateTime", r.ruleApplied());
-        assertEquals("MEM", r.warehouseApplied());
-    }
-
-    @Test
-    void passPlusValidatedMesIsAprobado() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MES"), "MES", "", "Pass", "2026-07-28T19:44:01Z", true);
-        assertEquals("APROBADO", r.status());
-        assertEquals("QualityOrder Pass + ValidatedDateTime", r.ruleApplied());
-    }
-
-    @Test
-    void passPlusValidatedMpmIsAprobado() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MPM"), "MPM", null, "Pass", "2026-07-27T21:43:16Z", true);
-        assertEquals("APROBADO", r.status());
-        assertEquals("QualityOrder Pass + ValidatedDateTime", r.ruleApplied());
-    }
-
-    @Test
-    void passPlusValidatedMpsIsAprobado() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MPS"), "MPS", "Aprobado", "Pass", "2026-07-27T21:52:43Z", true);
-        assertEquals("APROBADO", r.status());
-        assertEquals("QualityOrder Pass + ValidatedDateTime", r.ruleApplied());
+    void passPlusValidatedIsAprobadoInEveryOperableWarehouse() {
+        for (String wh : List.of("MEM", "MES", "MPM", "MPS")) {
+            var r = resolve(List.of(at(wh, 1)), "Pass", VALIDATED);
+            assertEquals("APROBADO", r.status(), wh);
+            assertEquals("QualityOrder Pass + ValidatedDateTime", r.ruleApplied(), wh);
+            assertEquals(wh, r.warehouseApplied(), wh);
+        }
     }
 
     @Test
     void passWith1900ValidatedIsDesconocido() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MPS"), "MPS", null, "Pass", SENTINEL_1900, true);
+        var r = resolve(List.of(at("MPS", 1)), "Pass", SENTINEL_1900);
         assertEquals("DESCONOCIDO", r.status());
         assertEquals("Información insuficiente", r.ruleApplied());
     }
 
     @Test
     void passWithoutValidatedIsDesconocido() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MEM"), "MEM", null, "Pass", null, true);
+        var r = resolve(List.of(at("MEM", 1)), "Pass", null);
         assertEquals("DESCONOCIDO", r.status());
-        assertEquals("Información insuficiente", r.ruleApplied());
     }
 
     @Test
-    void dispositionIgnoredWhenPassAndValidated() {
-        var r = OperationalStatusResolver.resolve(
-                List.of("MPM"), "MPM", null, "Pass", "2026-07-27T21:43:16Z", true);
-        assertEquals("APROBADO", r.status());
-    }
-
-    @Test
-    void warehouseOnlyWithoutQualityIsCuarentena() {
-        var r = OperationalStatusResolver.resolve(List.of("MPS"), "MPS", null, null, null, true);
-        assertEquals("CUARENTENA", r.status());
-        assertEquals("Almacén operable sin QualityOrder", r.ruleApplied());
-    }
-
-    @Test
-    void memWithoutQualityOrderIsCuarentena() {
-        var r = OperationalStatusResolver.resolve(List.of("MEM"), "MEM", null, null, null, true);
+    void operableWithoutQualityIsCuarentena() {
+        var r = resolve(List.of(at("MEM", 1)), null, null);
         assertEquals("CUARENTENA", r.status());
         assertEquals("Almacén operable sin QualityOrder", r.ruleApplied());
         assertEquals("MEM", r.warehouseApplied());
@@ -175,56 +208,29 @@ class OperationalStatusResolverTest {
 
     @Test
     void cuarentenaWarehouseAloneIsDesconocidoWithoutOpenOrPass() {
-        var r = OperationalStatusResolver.resolve(List.of("CUARENTENA"), null, null, null, null, true);
+        var r = resolve(List.of(at("CUARENTENA", 1)), null, null);
         assertEquals("DESCONOCIDO", r.status());
         assertEquals("Información insuficiente", r.ruleApplied());
     }
 
     @Test
-    void noDynamics() {
-        var r = OperationalStatusResolver.resolve(null, null, null, null, null, false);
+    void noStockAndNoQualityIsDesconocido() {
+        var r = resolve(List.of(), null, null);
         assertEquals("DESCONOCIDO", r.status());
         assertNull(r.warehouseApplied());
     }
 
     @Test
-    void qualityWarehouseRem() {
-        var r = OperationalStatusResolver.resolve(
-                List.of(), "REM", "Aprobado", "Pass", VALIDATED, true);
-        assertEquals("RECHAZADO", r.status());
-        assertEquals("Almacén REM", r.ruleApplied());
-    }
-
-    @Test
-    void legacyFourArgOverloadDelegatesWithoutQualityStatus() {
-        var r = OperationalStatusResolver.resolve(List.of("MPS"), "MPS", null, true);
-        assertEquals("CUARENTENA", r.status());
-        assertEquals("Almacén operable sin QualityOrder", r.ruleApplied());
-    }
-
-    @Test
-    void legacyFiveArgOverloadWithoutValidatedIsDesconocidoOnPass() {
-        var r = OperationalStatusResolver.resolve(List.of("MEM"), "MEM", null, "Pass", true);
+    void noDynamics() {
+        var r = OperationalStatusResolver.resolve(null, null, null, null, TODAY, false);
         assertEquals("DESCONOCIDO", r.status());
+        assertNull(r.warehouseApplied());
     }
 
     @Test
-    void validatedLotsFromCalidadAreAprobado() {
-        assertEquals("APROBADO", OperationalStatusResolver.resolve(
-                List.of("MEM"), "MEM", null, "Pass", "2026-07-28T19:45:17Z", true).status());
-        assertEquals("APROBADO", OperationalStatusResolver.resolve(
-                List.of("MES"), "MES", null, "Pass", "2026-07-28T19:44:01Z", true).status());
-        assertEquals("APROBADO", OperationalStatusResolver.resolve(
-                List.of("MEM"), "MEM", null, "Pass", "2026-07-28T19:44:40Z", true).status());
-        assertEquals("APROBADO", OperationalStatusResolver.resolve(
-                List.of("MPM"), "MPM", null, "Pass", "2026-07-27T21:43:16Z", true).status());
-        assertEquals("APROBADO", OperationalStatusResolver.resolve(
-                List.of("MPM"), "MPM", null, "Pass", "2026-07-27T21:45:58Z", true).status());
-        assertEquals("APROBADO", OperationalStatusResolver.resolve(
-                List.of("MPM"), "MPM", "Aprobado", "Pass", "2026-07-27T21:47:07Z", true).status());
-        assertEquals("APROBADO", OperationalStatusResolver.resolve(
-                List.of("MPM"), "MPM", "Aprobado", "Pass", "2026-07-28T14:04:20Z", true).status());
-        assertEquals("APROBADO", OperationalStatusResolver.resolve(
-                List.of("MPS"), "MPS", "Aprobado", "Pass", "2026-07-27T21:52:43Z", true).status());
+    void warehousesWithStockSkipsZeroAndDuplicates() {
+        var list = OperationalStatusResolver.warehousesWithStock(List.of(
+                at("MPM", 0), at("REM", 5), new StockLine("REM", "General", 2), at("MPS", 1)));
+        assertEquals(List.of("REM", "MPS"), list);
     }
 }

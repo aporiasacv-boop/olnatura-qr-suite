@@ -62,7 +62,7 @@ public class OperationalStatusBackfillRunner implements ApplicationRunner {
             checked++;
             String lote = snapshot.getLote();
             try {
-                Optional<DynamicsLookupDto> dyn = dynamicsLookupService.lookupByBatchNumber(lote);
+                Optional<DynamicsLookupDto> dyn = dynamicsLookupService.lookupByBatchNumber(lote, snapshot.getCodigo());
                 if (dyn.isEmpty()) {
                     notFound++;
                     continue;

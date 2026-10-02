@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +24,7 @@ public class DynamicsLookupService {
     private final DynamicsClient dynamicsClient;
     private final DynamicsProperties properties;
     private final ObjectProvider<DynamicsOAuthTokenClient> oauthTokenClient;
+    private Clock clock = Clock.systemDefaultZone();
 
     public DynamicsLookupService(
             DynamicsClient dynamicsClient,
@@ -35,6 +38,14 @@ public class DynamicsLookupService {
 
     
     public Optional<DynamicsLookupDto> lookupByBatchNumber(String rawBatchNumber) {
+        return lookupByBatchNumber(rawBatchNumber, null);
+    }
+
+    /**
+     * @param itemNumberHint artículo de la etiqueta ({@code QrLabel.codigo}) si se conoce. El número de lote
+     *                       no es único entre artículos; con el artículo se evita tomar el lote de otro producto.
+     */
+    public Optional<DynamicsLookupDto> lookupByBatchNumber(String rawBatchNumber, String itemNumberHint) {
         Optional<String> loteOpt = LoteExtractor.extract(rawBatchNumber);
         if (loteOpt.isEmpty()) {
             log.debug("DynamicsLookup: identificador vacío tras extract");
@@ -44,21 +55,26 @@ public class DynamicsLookupService {
 
         String accessToken = requestTokenForLookup();
         try {
-            return executeLookup(batchNumber, accessToken);
+            return executeLookup(batchNumber, blankToNull(itemNumberHint), accessToken);
         } finally {
             accessToken = null;
         }
     }
 
-    private Optional<DynamicsLookupDto> executeLookup(String batchNumber, String accessToken) {
+    /** Solo para pruebas: fija la fecha con la que se evalúa la caducidad. */
+    void setClock(Clock clock) {
+        this.clock = clock;
+    }
+
+    private Optional<DynamicsLookupDto> executeLookup(String batchNumber, String itemNumberHint, String accessToken) {
         try {
-            Optional<DynamicsClient.ItemBatchRecord> batchOpt =
-                    dynamicsClient.findItemBatch(batchNumber, accessToken);
-            if (batchOpt.isEmpty()) {
+            List<DynamicsClient.ItemBatchRecord> candidates = dynamicsClient.findItemBatches(batchNumber, accessToken);
+            if (candidates == null || candidates.isEmpty()) {
                 log.debug("DynamicsLookup: ItemBatches sin filas lote={}", batchNumber);
                 return Optional.empty();
             }
-            DynamicsClient.ItemBatchRecord batch = batchOpt.get();
+            ItemSelection selection = selectItem(candidates, itemNumberHint, batchNumber, accessToken);
+            DynamicsClient.ItemBatchRecord batch = selection.batch();
             String itemNumber = batch.itemNumber();
 
             Optional<DynamicsClient.InventoryOnHandRecord> onHandOpt =
@@ -67,13 +83,18 @@ public class DynamicsLookupService {
 
             String unidadInventario = resolveInventoryUnit(itemNumber, accessToken);
 
-            List<DynamicsClient.InventDimRecord> inventDims = resolveInventDims(batchNumber, accessToken);
+            List<DynamicsClient.BatchOnHandRecord> batchOnHand = selection.onHand() != null
+                    ? selection.onHand()
+                    : resolveBatchOnHand(itemNumber, batchNumber, accessToken);
+            List<OperationalStatusResolver.StockLine> stock = toStockLines(batchOnHand);
+            Double cantidadLote = sumQuantity(stock);
+
             BatchEntryInfo entryInfo = resolveBatchEntry(batchNumber, accessToken);
             String fechaEntrada = entryInfo.fechaEntrada();
             Double cantidadRecibida = entryInfo.cantidadRecibida();
 
             Optional<DynamicsClient.QualityOrderRecord> qualityOpt =
-                    dynamicsClient.findQualityOrderByItemBatch(batchNumber, accessToken);
+                    dynamicsClient.findLatestQualityOrder(itemNumber, batchNumber, accessToken);
             DynamicsClient.QualityOrderRecord quality = qualityOpt.orElse(null);
 
             String qualityOrderStatus = quality != null ? blankToNull(quality.qualityOrderStatus()) : null;
@@ -85,38 +106,31 @@ public class DynamicsLookupService {
             String qualityWarehouse = quality != null ? blankToNull(quality.warehouseId()) : null;
             String qualityLocation = quality != null ? blankToNull(quality.warehouseLocationId()) : null;
 
-            List<String> inventLocationIds = new ArrayList<>();
-            String firstInventLocation = null;
-            String firstInventWms = null;
-            for (DynamicsClient.InventDimRecord dim : inventDims) {
-                if (dim == null) {
-                    continue;
-                }
-                if (dim.inventLocationId() != null && !dim.inventLocationId().isBlank()) {
-                    inventLocationIds.add(dim.inventLocationId());
-                    if (firstInventLocation == null) {
-                        firstInventLocation = dim.inventLocationId();
-                        firstInventWms = dim.wmsLocationId();
-                    }
-                }
-            }
+            List<String> stockWarehouses = OperationalStatusResolver.warehousesWithStock(stock);
+            String firstStockWarehouse = stockWarehouses.isEmpty() ? null : stockWarehouses.get(0);
+            String firstStockLocation = stock.stream()
+                    .filter(s -> Math.abs(s.quantity()) > 1e-9)
+                    .map(OperationalStatusResolver.StockLine::locationId)
+                    .filter(l -> l != null && !l.isBlank())
+                    .findFirst()
+                    .orElse(null);
 
-            // batchDispositionCode se sigue leyendo para diagnóstico/DTO; la decisión EO usa ValidatedDateTime.
+            // batchDispositionCode se sigue leyendo para diagnóstico/DTO; la decisión EO usa la existencia del lote,
+            // la orden de calidad más reciente y la caducidad. El almacén de la orden de calidad no es existencia.
             OperationalStatusResolver.Result op = OperationalStatusResolver.resolve(
-                    inventLocationIds,
-                    qualityWarehouse,
-                    batchDispositionCode,
+                    stock,
                     qualityOrderStatus,
                     quality != null ? quality.validatedDateTime() : null,
+                    batch.batchExpirationDate(),
+                    LocalDate.now(clock),
                     true
             );
 
-            
-            String almacen = firstNonBlank(op.warehouseApplied(), qualityWarehouse, firstInventLocation);
+            String almacen = firstNonBlank(op.warehouseApplied(), firstStockWarehouse, qualityWarehouse);
             if (almacen == null && onHand != null) {
                 almacen = blankToNull(onHand.inventorySiteId());
             }
-            String ubicacion = firstNonBlank(qualityLocation, firstInventWms);
+            String ubicacion = firstNonBlank(firstStockLocation, qualityLocation);
 
             String fechaLiberacion = null;
             String liberadoPor = null;
@@ -125,17 +139,14 @@ public class DynamicsLookupService {
                 liberadoPor = blankToNull(quality.validatingPersonnelNumber());
             }
 
-            List<String> warehouses = new ArrayList<>(inventLocationIds);
-            if (qualityWarehouse != null && warehouses.stream().noneMatch(qualityWarehouse::equalsIgnoreCase)) {
-                warehouses.add(qualityWarehouse);
-            }
+            List<String> warehouses = new ArrayList<>(stockWarehouses);
 
             DynamicsLookupDto dto = new DynamicsLookupDto(
                     itemNumber,
                     onHand != null ? blankToNull(onHand.productName()) : null,
                     batch.batchNumber() != null ? batch.batchNumber() : batchNumber,
                     blankToNull(batch.batchExpirationDate()),
-                    onHand != null ? onHand.availableOnHandQuantity() : null,
+                    cantidadLote,
                     cantidadRecibida,
                     unidadInventario,
                     fechaEntrada,
@@ -153,13 +164,14 @@ public class DynamicsLookupService {
                     liberadoPor,
                     List.copyOf(warehouses)
             );
-            log.info("[EstadoOperativo] lote={} status={} rule={} warehouse={} BatchDispositionCode={} inventLocations={}",
+            log.info("[EstadoOperativo] lote={} item={} status={} rule={} warehouse={} BatchDispositionCode={} existencia={}",
                     dto.lote(),
+                    itemNumber,
                     dto.operationalStatus(),
                     dto.operationalStatusRule(),
                     nullToDash(op.warehouseApplied()),
                     nullToDash(batchDispositionCode),
-                    inventLocationIds);
+                    stockWarehouses);
             log.debug("DynamicsLookup OK lote={} fuente={}", dto.lote(), dto.fuente());
             return Optional.of(dto);
         } catch (DynamicsException ex) {
@@ -188,19 +200,90 @@ public class DynamicsLookupService {
         }
     }
 
-    private List<DynamicsClient.InventDimRecord> resolveInventDims(String batchNumber, String accessToken) {
+    private record ItemSelection(
+            DynamicsClient.ItemBatchRecord batch,
+            /** Existencia ya consultada al desempatar; null si no se consultó. */
+            List<DynamicsClient.BatchOnHandRecord> onHand
+    ) {}
+
+    /**
+     * Elige el artículo del lote: el de la etiqueta si coincide; si solo hay uno, ese; si hay varios,
+     * el primero (por ItemNumber) que tenga existencia distinta de cero.
+     */
+    private ItemSelection selectItem(
+            List<DynamicsClient.ItemBatchRecord> candidates,
+            String itemNumberHint,
+            String batchNumber,
+            String accessToken
+    ) {
+        if (itemNumberHint != null) {
+            for (DynamicsClient.ItemBatchRecord c : candidates) {
+                if (itemNumberHint.equalsIgnoreCase(c.itemNumber())) {
+                    return new ItemSelection(c, null);
+                }
+            }
+            log.warn("DynamicsLookup: el artículo de la etiqueta no tiene ese lote item={} lote={} candidatos={}",
+                    itemNumberHint, batchNumber, candidates.stream().map(DynamicsClient.ItemBatchRecord::itemNumber).toList());
+        }
+        if (candidates.size() == 1) {
+            return new ItemSelection(candidates.get(0), null);
+        }
+        log.warn("DynamicsLookup: lote con varios artículos lote={} candidatos={}",
+                batchNumber, candidates.stream().map(DynamicsClient.ItemBatchRecord::itemNumber).toList());
+        for (DynamicsClient.ItemBatchRecord c : candidates) {
+            List<DynamicsClient.BatchOnHandRecord> onHand = resolveBatchOnHand(c.itemNumber(), batchNumber, accessToken);
+            if (sumQuantity(toStockLines(onHand)) != null) {
+                return new ItemSelection(c, onHand);
+            }
+        }
+        return new ItemSelection(candidates.get(0), null);
+    }
+
+    private List<DynamicsClient.BatchOnHandRecord> resolveBatchOnHand(
+            String itemNumber,
+            String batchNumber,
+            String accessToken
+    ) {
         try {
-            List<DynamicsClient.InventDimRecord> dims = dynamicsClient.findInventDimsByBatch(batchNumber, accessToken);
-            return dims != null ? dims : List.of();
+            List<DynamicsClient.BatchOnHandRecord> rows = dynamicsClient.findBatchOnHand(itemNumber, batchNumber, accessToken);
+            return rows != null ? rows : List.of();
         } catch (DynamicsException ex) {
-            log.warn("DynamicsLookup: InventDim omitido lote={} reason={}",
-                    batchNumber, ex.getClass().getSimpleName());
+            log.warn("DynamicsLookup: existencia del lote omitida item={} lote={} reason={}",
+                    itemNumber, batchNumber, ex.getClass().getSimpleName());
             return List.of();
         } catch (Exception ex) {
-            log.warn("DynamicsLookup: InventDim error lote={} tipo={}",
-                    batchNumber, ex.getClass().getSimpleName());
+            log.warn("DynamicsLookup: existencia del lote error item={} lote={} tipo={}",
+                    itemNumber, batchNumber, ex.getClass().getSimpleName());
             return List.of();
         }
+    }
+
+    private static List<OperationalStatusResolver.StockLine> toStockLines(List<DynamicsClient.BatchOnHandRecord> rows) {
+        List<OperationalStatusResolver.StockLine> out = new ArrayList<>();
+        if (rows == null) {
+            return out;
+        }
+        for (DynamicsClient.BatchOnHandRecord r : rows) {
+            if (r == null || r.warehouseId() == null || r.availablePhysicalQuantity() == null) {
+                continue;
+            }
+            out.add(new OperationalStatusResolver.StockLine(
+                    r.warehouseId(), r.locationId(), r.availablePhysicalQuantity()));
+        }
+        return out;
+    }
+
+    /** Suma de la existencia del lote; null si no hay ninguna cantidad distinta de cero. */
+    private static Double sumQuantity(List<OperationalStatusResolver.StockLine> stock) {
+        double sum = 0d;
+        boolean any = false;
+        for (OperationalStatusResolver.StockLine s : stock) {
+            if (Math.abs(s.quantity()) > 1e-9) {
+                sum += s.quantity();
+                any = true;
+            }
+        }
+        return any ? sum : null;
     }
 
     private record BatchEntryInfo(String fechaEntrada, Double cantidadRecibida) {}

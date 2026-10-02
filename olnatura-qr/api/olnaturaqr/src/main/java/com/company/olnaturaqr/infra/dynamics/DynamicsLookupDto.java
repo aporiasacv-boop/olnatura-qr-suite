@@ -36,6 +36,6 @@ public record DynamicsLookupDto(
         
         String liberadoPor,
 
-        /** Almacenes ya resueltos en el lookup (InventDim + QualityOrder). Sin consultas extras. */
+        /** Almacenes donde el lote tiene existencia distinta de cero (ProjInventoryOnHand). Sin consultas extras. */
         List<String> warehouses
 ) {}

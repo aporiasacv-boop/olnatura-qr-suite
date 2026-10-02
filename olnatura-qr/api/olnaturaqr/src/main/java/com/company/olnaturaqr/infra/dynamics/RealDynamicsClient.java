@@ -70,6 +70,91 @@ public class RealDynamicsClient implements DynamicsClient {
     }
 
     @Override
+    public List<ItemBatchRecord> findItemBatches(String batchNumber, String accessToken) {
+        String filter = "BatchNumber eq '" + escapeOdataLiteral(batchNumber) + "'";
+        log.debug("Dynamics OData GET ItemBatches (todos los artículos) lote={}", batchNumber);
+        try {
+            ResponseEntity<ItemBatchesResponse> responseEntity = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/data/ItemBatches")
+                            .queryParam("$filter", filter)
+                            .queryParam("$select", "ItemNumber,BatchNumber,BatchExpirationDate,BatchDispositionCode")
+                            .queryParam("$orderby", "ItemNumber")
+                            .queryParam("$top", 20)
+                            .build())
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .toEntity(ItemBatchesResponse.class);
+            log.debug("Dynamics OData ItemBatches HTTP {}", responseEntity.getStatusCode().value());
+
+            ItemBatchesResponse body = responseEntity.getBody();
+            if (body == null || body.value == null || body.value.isEmpty()) {
+                return List.of();
+            }
+            List<ItemBatchRecord> out = new ArrayList<>();
+            for (ItemBatchesRow row : body.value) {
+                if (row == null || row.ItemNumber == null || row.ItemNumber.isBlank()) {
+                    continue;
+                }
+                String disposition = row.BatchDispositionCode;
+                out.add(new ItemBatchRecord(
+                        row.ItemNumber.trim(),
+                        row.BatchNumber != null ? row.BatchNumber.trim() : batchNumber,
+                        row.BatchExpirationDate,
+                        disposition != null && !disposition.isBlank() ? disposition.trim() : null
+                ));
+            }
+            return List.copyOf(out);
+        } catch (RestClientException ex) {
+            log.warn("Dynamics OData ItemBatches falló lote={} tipo={}",
+                    batchNumber, ex.getClass().getSimpleName());
+            throw DynamicsExceptionClassifier.fromOData("ItemBatches", batchNumber, ex);
+        }
+    }
+
+    @Override
+    public List<BatchOnHandRecord> findBatchOnHand(String itemNumber, String batchNumber, String accessToken) {
+        String filter = "ItemNumber eq '" + escapeOdataLiteral(itemNumber) + "' and BatchNumber eq '"
+                + escapeOdataLiteral(batchNumber) + "'";
+        log.debug("Dynamics OData GET ProjInventoryOnHand item={} lote={}", itemNumber, batchNumber);
+        try {
+            ResponseEntity<BatchOnHandResponse> responseEntity = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/data/ProjInventoryOnHand")
+                            .queryParam("$filter", filter)
+                            .queryParam("$select", "ItemNumber,BatchNumber,WarehouseId,LocationId,AvailPhysical")
+                            .queryParam("$top", 200)
+                            .build())
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .toEntity(BatchOnHandResponse.class);
+            log.debug("Dynamics OData ProjInventoryOnHand HTTP {}", responseEntity.getStatusCode().value());
+
+            BatchOnHandResponse body = responseEntity.getBody();
+            if (body == null || body.value == null || body.value.isEmpty()) {
+                return List.of();
+            }
+            List<BatchOnHandRecord> out = new ArrayList<>();
+            for (BatchOnHandRow row : body.value) {
+                if (row == null || row.WarehouseId == null || row.WarehouseId.isBlank()) {
+                    continue;
+                }
+                out.add(new BatchOnHandRecord(
+                        row.ItemNumber != null ? row.ItemNumber.trim() : itemNumber,
+                        row.WarehouseId.trim(),
+                        blankToNull(row.LocationId),
+                        row.AvailPhysical
+                ));
+            }
+            return List.copyOf(out);
+        } catch (RestClientException ex) {
+            log.warn("Dynamics OData ProjInventoryOnHand falló item={} lote={} tipo={}",
+                    itemNumber, batchNumber, ex.getClass().getSimpleName());
+            throw DynamicsExceptionClassifier.fromOData("ProjInventoryOnHand", batchNumber, ex);
+        }
+    }
+
+    @Override
     public Optional<InventoryOnHandRecord> findInventorySitesOnHand(String itemNumber, String accessToken) {
         String filter = "ItemNumber eq '" + escapeOdataLiteral(itemNumber) + "'";
         log.debug("Dynamics OData GET InventorySitesOnHand item={}", itemNumber);
@@ -141,6 +226,51 @@ public class RealDynamicsClient implements DynamicsClient {
         } catch (RestClientException ex) {
             log.warn("Dynamics OData QualityOrderHeaders falló lote={} tipo={}",
                     itemBatchNumber, ex.getClass().getSimpleName());
+            throw DynamicsExceptionClassifier.fromOData("QualityOrderHeaders", itemBatchNumber, ex);
+        }
+    }
+
+    @Override
+    public Optional<QualityOrderRecord> findLatestQualityOrder(String itemNumber, String itemBatchNumber, String accessToken) {
+        String filter = "ItemNumber eq '" + escapeOdataLiteral(itemNumber) + "' and ItemBatchNumber eq '"
+                + escapeOdataLiteral(itemBatchNumber) + "'";
+        log.debug("Dynamics OData GET QualityOrderHeaders (más reciente) item={} lote={}", itemNumber, itemBatchNumber);
+        try {
+            ResponseEntity<QualityOrderResponse> responseEntity = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/data/QualityOrderHeaders")
+                            .queryParam("$filter", filter)
+                            .queryParam("$select",
+                                    "QualityOrderNumber,ItemBatchNumber,ItemNumber,QualityOrderStatus,PassedBatchDispositionCode,"
+                                            + "WarehouseId,WarehouseLocationId,ValidatedDateTime,ValidatingPersonnelNumber")
+                            .queryParam("$orderby", "QualityOrderNumber desc")
+                            .queryParam("$top", 1)
+                            .build())
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .toEntity(QualityOrderResponse.class);
+            log.debug("Dynamics OData QualityOrderHeaders HTTP {}", responseEntity.getStatusCode().value());
+
+            QualityOrderResponse body = responseEntity.getBody();
+            if (body == null || body.value == null || body.value.isEmpty() || body.value.get(0) == null) {
+                return Optional.empty();
+            }
+            QualityOrderRow row = body.value.get(0);
+            log.debug("Dynamics QualityOrderHeaders más reciente={} item={} lote={}",
+                    row.QualityOrderNumber, itemNumber, itemBatchNumber);
+            return Optional.of(new QualityOrderRecord(
+                    row.ItemBatchNumber,
+                    row.ItemNumber,
+                    row.QualityOrderStatus,
+                    row.PassedBatchDispositionCode,
+                    row.WarehouseId,
+                    row.WarehouseLocationId,
+                    blankToNull(row.ValidatedDateTime),
+                    blankToNull(row.ValidatingPersonnelNumber)
+            ));
+        } catch (RestClientException ex) {
+            log.warn("Dynamics OData QualityOrderHeaders falló item={} lote={} tipo={}",
+                    itemNumber, itemBatchNumber, ex.getClass().getSimpleName());
             throw DynamicsExceptionClassifier.fromOData("QualityOrderHeaders", itemBatchNumber, ex);
         }
     }
@@ -426,7 +556,20 @@ public class RealDynamicsClient implements DynamicsClient {
         public List<QualityOrderRow> value;
     }
 
+    private static class BatchOnHandResponse {
+        public List<BatchOnHandRow> value;
+    }
+
+    private static class BatchOnHandRow {
+        public String ItemNumber;
+        public String BatchNumber;
+        public String WarehouseId;
+        public String LocationId;
+        public Double AvailPhysical;
+    }
+
     private static class QualityOrderRow {
+        public String QualityOrderNumber;
         public String ItemBatchNumber;
         public String ItemNumber;
         public String QualityOrderStatus;
