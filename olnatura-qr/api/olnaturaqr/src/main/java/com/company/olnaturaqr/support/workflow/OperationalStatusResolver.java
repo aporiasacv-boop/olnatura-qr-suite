@@ -40,8 +40,9 @@ public final class OperationalStatusResolver {
     public static final boolean ENABLE_PARTIAL_STATE_EXPERIMENT = true;
 
     // Un lote caducado con existencia no se puede usar aunque su orden de calidad diga Pass.
-    // Pendiente de Calidad: si debe verse como RECHAZADO o como un estado aparte (D002 §3.3).
-    public static final boolean ENABLE_EXPIRED_AS_REJECTED = true;
+    // APAGADA hasta que Calidad confirme cómo queda el reanálisis en Dynamics: si el lote reanalizado
+    // conserva su BatchExpirationDate vieja, esta regla lo marcaría RECHAZADO aunque esté liberado.
+    public static final boolean ENABLE_EXPIRED_AS_REJECTED = false;
 
     private OperationalStatusResolver() {}
 

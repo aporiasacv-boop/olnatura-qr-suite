@@ -145,6 +145,22 @@ class OperationalStatusResolverTest {
     }
 
     @Test
+    void expiredPassLotIsAprobadoWhileRuleIsOff() {
+        org.junit.jupiter.api.Assumptions.assumeFalse(OperationalStatusResolver.ENABLE_EXPIRED_AS_REJECTED);
+        var r = OperationalStatusResolver.resolve(
+                List.of(at("MPM", 10)), "Pass", VALIDATED, EXPIRED, TODAY, true);
+        assertEquals("APROBADO", r.status());
+        assertEquals("QualityOrder Pass + ValidatedDateTime", r.ruleApplied());
+    }
+
+    @Test
+    void expiredRuleIsOffUntilCalidadConfirmsReanalysis() {
+        org.junit.jupiter.api.Assertions.assertFalse(
+                OperationalStatusResolver.ENABLE_EXPIRED_AS_REJECTED,
+                "La regla de caducidad debe seguir apagada hasta confirmar el reanálisis (D003)");
+    }
+
+    @Test
     void expiresTodayIsNotExpired() {
         var r = OperationalStatusResolver.resolve(
                 List.of(at("MPM", 10)), "Pass", VALIDATED, "2026-10-02T12:00:00Z", TODAY, true);

@@ -161,7 +161,7 @@ class DynamicsLookupServiceTest {
     }
 
     @Test
-    void failIsRechazadoAndExpiredPassIsRechazado() {
+    void failIsRechazadoAndExpiredPassFollowsTheFlag() {
         FakeClient c = new FakeClient();
         c.batches.add(new DynamicsClient.ItemBatchRecord("400615440900", "260619-MEM0003625", "2027-06-19T12:00:00Z", null));
         c.batches.add(new DynamicsClient.ItemBatchRecord("100623401100", "260206-MPM0003363", "2026-04-03T12:00:00Z", "Aprobado"));
@@ -176,8 +176,13 @@ class DynamicsLookupServiceTest {
         DynamicsLookupService s = service(c);
         assertEquals("RECHAZADO", s.lookupByBatchNumber("260619-MEM0003625").orElseThrow().operationalStatus());
         DynamicsLookupDto expired = s.lookupByBatchNumber("260206-MPM0003363").orElseThrow();
-        assertEquals("RECHAZADO", expired.operationalStatus());
-        assertEquals("Lote caducado", expired.operationalStatusRule());
+        if (com.company.olnaturaqr.support.workflow.OperationalStatusResolver.ENABLE_EXPIRED_AS_REJECTED) {
+            assertEquals("RECHAZADO", expired.operationalStatus());
+            assertEquals("Lote caducado", expired.operationalStatusRule());
+        } else {
+            assertEquals("APROBADO", expired.operationalStatus());
+            assertEquals("QualityOrder Pass + ValidatedDateTime", expired.operationalStatusRule());
+        }
     }
 
     @Test
