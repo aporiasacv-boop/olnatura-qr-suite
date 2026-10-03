@@ -104,7 +104,7 @@ public class QrQueryService {
                 ? OperationalStatusSyncService.REASON_SYNC_MANUAL
                 : OperationalStatusSyncService.REASON_CONSULTA;
 
-        QrDto.Dynamic dyn = lookupDynamicsOrFail(lote)
+        QrDto.Dynamic dyn = lookupDynamicsOrFail(lote, label.getCodigo())
                 .map(d -> {
                     OperationalStatusSyncService.SyncResult sync =
                             operationalStatusSyncService.applyDynamicsStatusById(
@@ -146,7 +146,10 @@ public class QrQueryService {
                         "DB_ONLY",
                         syncedAt,
                         null,
-                        null
+                        null,
+                        null,
+                        null,
+                        List.of()
                     );
                 });
 
@@ -172,8 +175,8 @@ public class QrQueryService {
         return OperationalStatusSyncService.normalizeStored(label.getStatus());
     }
 
-    private Optional<DynamicsLookupDto> lookupDynamicsOrFail(String lote) {
-        return dynamicsLookupService.lookupByBatchNumber(lote);
+    private Optional<DynamicsLookupDto> lookupDynamicsOrFail(String lote, String codigo) {
+        return dynamicsLookupService.lookupByBatchNumber(lote, codigo);
     }
 
     private static QrDto.Dynamic toDynamicDto(
@@ -203,7 +206,10 @@ public class QrQueryService {
                 d.fuente(),
                 lastSyncedAt,
                 d.fechaLiberacion(),
-                d.liberadoPor()
+                d.liberadoPor(),
+                d.cantidadAprobada(),
+                d.cantidadRechazada(),
+                d.almacenesRechazo() != null ? d.almacenesRechazo() : List.of()
         );
     }
 

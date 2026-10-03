@@ -140,6 +140,7 @@ public class DynamicsLookupService {
             }
 
             List<String> warehouses = new ArrayList<>(stockWarehouses);
+            OperationalStatusResolver.StockSplit split = OperationalStatusResolver.split(stock);
 
             DynamicsLookupDto dto = new DynamicsLookupDto(
                     itemNumber,
@@ -162,7 +163,10 @@ public class DynamicsLookupService {
                     resolveFuente(),
                     fechaLiberacion,
                     liberadoPor,
-                    List.copyOf(warehouses)
+                    List.copyOf(warehouses),
+                    split.usableQuantity(),
+                    split.rejectedQuantity(),
+                    split.rejectedPlaces()
             );
             log.info("[EstadoOperativo] lote={} item={} status={} rule={} warehouse={} BatchDispositionCode={} existencia={}",
                     dto.lote(),

@@ -111,6 +111,25 @@ class DynamicsLookupServiceTest {
     }
 
     @Test
+    void mixedLotIsAprobadoAndReportsBothParts() {
+        FakeClient c = new FakeClient();
+        c.batches.add(new DynamicsClient.ItemBatchRecord("100623401100", "260206-MPM0003363", "2027-04-03T12:00:00Z", "Aprobado"));
+        c.onHand.put(FakeClient.key("100623401100", "260206-MPM0003363"), List.of(
+                new DynamicsClient.BatchOnHandRecord("100623401100", "MPM", "Disponible", 1000d),
+                new DynamicsClient.BatchOnHandRecord("100623401100", "REM", "General", 25d)));
+        c.latestQuality.put(FakeClient.key("100623401100", "260206-MPM0003363"), pass("100623401100", "260206-MPM0003363", "MPM"));
+
+        DynamicsLookupDto dto = service(c).lookupByBatchNumber("260206-MPM0003363").orElseThrow();
+
+        assertEquals("APROBADO", dto.operationalStatus());
+        assertEquals("Almacén disponible + REM/RES", dto.operationalStatusRule());
+        assertEquals(1025d, dto.cantidadAlmacen());
+        assertEquals(1000d, dto.cantidadAprobada());
+        assertEquals(25d, dto.cantidadRechazada());
+        assertEquals(List.of("REM"), dto.almacenesRechazo());
+    }
+
+    @Test
     void itemHintPicksTheLabelItemWhenBatchNumberIsShared() {
         FakeClient c = new FakeClient();
         c.batches.add(new DynamicsClient.ItemBatchRecord("501235000100", "2407025", null, null));

@@ -93,12 +93,26 @@ export function PlatformFieldsBlock({ platform, platformLoading }: SharedProps) 
       : `${formatNumber(label.envaseNum)} / ${formatNumber(label.envaseTotal)}`;
   const cantidadesMenores = cantidadesMenoresOf(label);
 
+  // Lote con parte en almacén de uso y parte en rechazo: el estado es el de la parte aprobada,
+  // pero la parte rechazada se menciona con su cantidad y dónde está.
+  const dyn = platform.dynamic ?? {};
+  const unidad = typeof dyn.unidadInventario === "string" && dyn.unidadInventario.trim() ? ` ${dyn.unidadInventario.trim()}` : "";
+  const cantidadRechazada = typeof dyn.cantidadRechazada === "number" && dyn.cantidadRechazada > 0 ? dyn.cantidadRechazada : null;
+  const cantidadAprobada = typeof dyn.cantidadAprobada === "number" && dyn.cantidadAprobada > 0 ? dyn.cantidadAprobada : null;
+  const lugaresRechazo = Array.isArray(dyn.almacenesRechazo) ? dyn.almacenesRechazo.join(", ") : "";
+  const mostrarParcial = cantidadRechazada != null && cantidadAprobada != null;
+
   return (
     <div style={{ display: "grid", gap: 14 }}>
       {platformStatus ? (
         <div className={s.statusRow}>
           <div className={s.statusLabel}>{LABELS.platformStatus}</div>
           <StatusTag status={platformStatus} />
+          {mostrarParcial ? (
+            <Text size={200} style={{ color: "#7A5A12" }}>
+              {`Parte aprobada: ${formatNumber(cantidadAprobada)}${unidad}. Parte rechazada: ${formatNumber(cantidadRechazada)}${unidad}${lugaresRechazo ? ` en ${lugaresRechazo}` : ""}.`}
+            </Text>
+          ) : null}
         </div>
       ) : null}
 

@@ -87,8 +87,14 @@ public class QrDto {
             Instant lastSyncedAt,
             
             String fechaLiberacion,
-            
-            String liberadoPor
+
+            String liberadoPor,
+
+            Double cantidadAprobada,
+
+            Double cantidadRechazada,
+
+            List<String> almacenesRechazo
     ) {}
 
     public record Response(

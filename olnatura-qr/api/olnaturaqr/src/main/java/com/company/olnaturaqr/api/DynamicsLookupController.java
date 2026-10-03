@@ -52,7 +52,10 @@ public class DynamicsLookupController {
                 dto.fuente(),
                 dto.fechaLiberacion(),
                 dto.liberadoPor(),
-                dto.warehouses()
+                dto.warehouses(),
+                dto.cantidadAprobada(),
+                dto.cantidadRechazada(),
+                dto.almacenesRechazo()
         );
     }
 }

@@ -228,6 +228,23 @@ class OperationalStatusResolverTest {
     }
 
     @Test
+    void splitSeparatesUsableAndRejectedStock() {
+        var split = OperationalStatusResolver.split(List.of(
+                at("MPM", 100), at("REM", 5), new StockLine("MPS", "Rechazo", 2), at("CUARENTENA", 9), at("MPM", 0)));
+        assertEquals(100d, split.usableQuantity());
+        assertEquals(7d, split.rejectedQuantity());
+        assertEquals(List.of("REM", "MPS/Rechazo"), split.rejectedPlaces());
+    }
+
+    @Test
+    void splitWithoutRejectedStockHasNullRejected() {
+        var split = OperationalStatusResolver.split(List.of(at("MEM", 3)));
+        assertEquals(3d, split.usableQuantity());
+        assertNull(split.rejectedQuantity());
+        assertEquals(List.of(), split.rejectedPlaces());
+    }
+
+    @Test
     void warehousesWithStockSkipsZeroAndDuplicates() {
         var list = OperationalStatusResolver.warehousesWithStock(List.of(
                 at("MPM", 0), at("REM", 5), new StockLine("REM", "General", 2), at("MPS", 1)));

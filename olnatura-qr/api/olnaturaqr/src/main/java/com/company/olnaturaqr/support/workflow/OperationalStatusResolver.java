@@ -172,6 +172,41 @@ public final class OperationalStatusResolver {
         return List.copyOf(set);
     }
 
+    /**
+     * Existencia separada en parte de uso y parte rechazada. Las cantidades son null cuando son cero;
+     * {@code rejectedPlaces} lista "REM" o "MPM/Rechazo" sin repetir.
+     */
+    public record StockSplit(Double usableQuantity, Double rejectedQuantity, List<String> rejectedPlaces) {}
+
+    public static StockSplit split(List<StockLine> stock) {
+        double usable = 0d;
+        double rejected = 0d;
+        Set<String> places = new LinkedHashSet<>();
+        if (stock != null) {
+            for (StockLine line : stock) {
+                if (line == null || Math.abs(line.quantity()) <= 1e-9 || isBlank(line.warehouseId())) {
+                    continue;
+                }
+                String wh = normalizeWarehouse(line.warehouseId());
+                if (REJECT_WAREHOUSES.contains(wh)) {
+                    rejected += line.quantity();
+                    places.add(line.warehouseId().trim());
+                } else if (OPERABLE_WAREHOUSES.contains(wh)) {
+                    if (isRejectLocation(line.locationId())) {
+                        rejected += line.quantity();
+                        places.add(line.warehouseId().trim() + "/" + line.locationId().trim());
+                    } else {
+                        usable += line.quantity();
+                    }
+                }
+            }
+        }
+        return new StockSplit(
+                Math.abs(usable) > 1e-9 ? usable : null,
+                Math.abs(rejected) > 1e-9 ? rejected : null,
+                List.copyOf(places));
+    }
+
     private static String rejectRule(String warehouse) {
         String wh = normalizeWarehouse(warehouse);
         if ("REM".equals(wh)) {
