@@ -78,6 +78,37 @@ public class MockDynamicsClient implements DynamicsClient {
     }
 
     @Override
+    public List<ItemBatchRecord> findItemBatches(String batchNumber, String accessToken) {
+        return findItemBatch(batchNumber, accessToken).map(List::of).orElse(List.of());
+    }
+
+    @Override
+    public List<BatchOnHandRecord> findBatchOnHand(String itemNumber, String batchNumber, String accessToken) {
+        FakeBatch b = fake.get(batchNumber);
+        if (b == null || !b.itemNumber().equals(itemNumber)
+                || b.inventLocationIds() == null || b.inventLocationIds().isEmpty()) {
+            return List.of();
+        }
+        return b.inventLocationIds().stream()
+                .map(loc -> new BatchOnHandRecord(
+                        b.itemNumber(),
+                        loc,
+                        "REM".equalsIgnoreCase(loc) || "RES".equalsIgnoreCase(loc) ? "General" : "Disponible",
+                        b.qty()
+                ))
+                .toList();
+    }
+
+    @Override
+    public Optional<QualityOrderRecord> findLatestQualityOrder(String itemNumber, String itemBatchNumber, String accessToken) {
+        FakeBatch b = fake.get(itemBatchNumber);
+        if (b == null || !b.itemNumber().equals(itemNumber)) {
+            return Optional.empty();
+        }
+        return findQualityOrderByItemBatch(itemBatchNumber, accessToken);
+    }
+
+    @Override
     public Optional<InventoryOnHandRecord> findInventorySitesOnHand(String itemNumber, String accessToken) {
         return fake.values().stream()
                 .filter(b -> b.itemNumber().equals(itemNumber))

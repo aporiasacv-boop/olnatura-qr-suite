@@ -84,6 +84,11 @@ export type DynamicsLookupResponse = {
   lastSyncedAt?: string | null;
   fechaLiberacion?: string | null;
   liberadoPor?: string | null;
+  /** Existencia del lote en almacén de uso. */
+  cantidadAprobada?: number | null;
+  /** Existencia del lote en almacén o ubicación de rechazo. */
+  cantidadRechazada?: number | null;
+  almacenesRechazo?: string[] | null;
 };
 
 export type ApprovalLeg = {
